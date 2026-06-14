@@ -6,123 +6,143 @@ import (
 
 	"recipe-backend/internal/domain"
 	"recipe-backend/internal/testutil"
+	"recipe-backend/internal/testutil/factory"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestUserRepo_CreateAndFind(t *testing.T) {
+// arrangeUserRepo は結合テストの前提を整え、alice を1人作成済みの repo を返す。
+// Create / Find 系の検証を「1テスト1観点」に分割するための共通セットアップ。
+func arrangeUserRepo(t *testing.T) (context.Context, domain.UserRepository, *domain.ApplicationUser) {
+	t.Helper()
 	testutil.RequireIntegration(t)
 	truncateAll(t)
 	ctx := context.Background()
 	repo := NewUserRepository(testDB)
-
-	u := &domain.ApplicationUser{
-		Username: "alice",
-		Email:    "alice@example.com",
-		Password: "hashed",
-		IsActive: true,
-	}
-	if err := repo.Create(ctx, u); err != nil {
-		t.Fatalf("create: %v", err)
-	}
-	if u.ID == 0 {
-		t.Fatalf("ID should be assigned after create")
-	}
-
-	byName, err := repo.FindByUsername(ctx, "alice")
-	if err != nil || byName == nil {
-		t.Fatalf("findByUsername: got=%v err=%v", byName, err)
-	}
-	if byName.Email != "alice@example.com" {
-		t.Errorf("email = %q, want alice@example.com", byName.Email)
-	}
-
-	byEmail, err := repo.FindByEmail(ctx, "alice@example.com")
-	if err != nil || byEmail == nil {
-		t.Fatalf("findByEmail: got=%v err=%v", byEmail, err)
-	}
-	if byEmail.Username != "alice" {
-		t.Errorf("username = %q, want alice", byEmail.Username)
-	}
-
-	byID, err := repo.FindByID(ctx, u.ID)
-	if err != nil || byID == nil {
-		t.Fatalf("findByID: got=%v err=%v", byID, err)
-	}
-	if byID.Username != "alice" {
-		t.Errorf("username = %q, want alice", byID.Username)
-	}
+	alice := factory.NewUser(factory.WithUsername("alice"), factory.WithEmail("alice@example.com"))
+	require.NoError(t, repo.Create(ctx, alice))
+	return ctx, repo, alice
 }
 
+// ユーザーを作成した時、ID が採番されること。
+func TestUserRepo_Create_AssignsID(t *testing.T) {
+	// Arrange & Act: 作成はヘルパー内で実行される
+	_, _, alice := arrangeUserRepo(t)
+
+	// Assert
+	assert.NotZero(t, alice.ID) // 作成後にIDが採番されること
+}
+
+// 作成済みユーザーがいる時、FindByUsername で該当ユーザーが返ること。
+func TestUserRepo_FindByUsername_ReturnsUser(t *testing.T) {
+	// Arrange
+	ctx, repo, _ := arrangeUserRepo(t)
+
+	// Act
+	got, err := repo.FindByUsername(ctx, "alice")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, "alice@example.com", got.Email)
+}
+
+// 作成済みユーザーがいる時、FindByEmail で該当ユーザーが返ること。
+func TestUserRepo_FindByEmail_ReturnsUser(t *testing.T) {
+	// Arrange
+	ctx, repo, _ := arrangeUserRepo(t)
+
+	// Act
+	got, err := repo.FindByEmail(ctx, "alice@example.com")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, "alice", got.Username)
+}
+
+// 作成済みユーザーがいる時、FindByID で該当ユーザーが返ること。
+func TestUserRepo_FindByID_ReturnsUser(t *testing.T) {
+	// Arrange
+	ctx, repo, alice := arrangeUserRepo(t)
+
+	// Act
+	got, err := repo.FindByID(ctx, alice.ID)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, "alice", got.Username)
+}
+
+// username が既存と重複する時、Create がエラーになること。
 func TestUserRepo_Create_DuplicateUsername(t *testing.T) {
+	// Arrange
 	testutil.RequireIntegration(t)
 	truncateAll(t)
 	ctx := context.Background()
 	repo := NewUserRepository(testDB)
+	require.NoError(t, repo.Create(ctx, factory.NewUser(factory.WithUsername("alice"), factory.WithEmail("alice@example.com"))))
 
-	first := &domain.ApplicationUser{Username: "alice", Email: "alice@example.com", Password: "x", IsActive: true}
-	if err := repo.Create(ctx, first); err != nil {
-		t.Fatalf("first create: %v", err)
-	}
+	// Act: 同じ username（email は別）で再作成
+	err := repo.Create(ctx, factory.NewUser(factory.WithUsername("alice"), factory.WithEmail("other@example.com")))
 
-	// 同じ username（email は別）→ uniqueIndex 制約でエラーになること
-	dup := &domain.ApplicationUser{Username: "alice", Email: "other@example.com", Password: "x", IsActive: true}
-	if err := repo.Create(ctx, dup); err == nil {
-		t.Fatalf("duplicate username should fail with unique constraint, got nil error")
-	}
+	// Assert: uniqueIndex 制約でエラーになること
+	assert.Error(t, err)
 }
 
+// email が既存と重複する時、Create がエラーになること。
 func TestUserRepo_Create_DuplicateEmail(t *testing.T) {
+	// Arrange
 	testutil.RequireIntegration(t)
 	truncateAll(t)
 	ctx := context.Background()
 	repo := NewUserRepository(testDB)
+	require.NoError(t, repo.Create(ctx, factory.NewUser(factory.WithUsername("alice"), factory.WithEmail("alice@example.com"))))
 
-	first := &domain.ApplicationUser{Username: "alice", Email: "alice@example.com", Password: "x", IsActive: true}
-	if err := repo.Create(ctx, first); err != nil {
-		t.Fatalf("first create: %v", err)
-	}
+	// Act: 同じ email（username は別）で再作成
+	err := repo.Create(ctx, factory.NewUser(factory.WithUsername("bob"), factory.WithEmail("alice@example.com")))
 
-	// 同じ email（username は別）→ uniqueIndex 制約でエラーになること
-	dup := &domain.ApplicationUser{Username: "bob", Email: "alice@example.com", Password: "x", IsActive: true}
-	if err := repo.Create(ctx, dup); err == nil {
-		t.Fatalf("duplicate email should fail with unique constraint, got nil error")
-	}
+	// Assert: uniqueIndex 制約でエラーになること
+	assert.Error(t, err)
 }
 
+// 該当ユーザーがいない時、FindByUsername で (nil, nil) が返ること。
 func TestUserRepo_FindByUsername_NotFound(t *testing.T) {
+	// Arrange
 	testutil.RequireIntegration(t)
 	truncateAll(t)
 	ctx := context.Background()
 	repo := NewUserRepository(testDB)
 
-	// 見つからない場合は (nil, nil)
+	// Act
 	got, err := repo.FindByUsername(ctx, "nobody")
-	if err != nil {
-		t.Fatalf("findByUsername: unexpected err=%v", err)
-	}
-	if got != nil {
-		t.Errorf("should be nil for missing user, got %+v", got)
-	}
+
+	// Assert: 見つからない場合は (nil, nil)
+	require.NoError(t, err)
+	assert.Nil(t, got)
 }
 
+// 複数ユーザーがいる時、FindAll で ID 昇順のまま全件が返ること。
 func TestUserRepo_FindAll_OrderedByID(t *testing.T) {
+	// Arrange
 	testutil.RequireIntegration(t)
 	truncateAll(t)
 	ctx := context.Background()
 	repo := NewUserRepository(testDB)
-
 	seedUser(t, "alice")
 	seedUser(t, "bob")
 	seedUser(t, "carol")
 
+	// Act
 	users, err := repo.FindAll(ctx)
-	if err != nil {
-		t.Fatalf("findAll: %v", err)
+
+	// Assert: ID 昇順で全件返ること
+	require.NoError(t, err)
+	names := make([]string, len(users))
+	for i, u := range users {
+		names[i] = u.Username
 	}
-	if len(users) != 3 {
-		t.Fatalf("len = %d, want 3", len(users))
-	}
-	// ID 昇順で返ること
-	if users[0].Username != "alice" || users[1].Username != "bob" || users[2].Username != "carol" {
-		t.Errorf("order = [%s %s %s], want [alice bob carol]", users[0].Username, users[1].Username, users[2].Username)
-	}
+	assert.Equal(t, []string{"alice", "bob", "carol"}, names)
 }

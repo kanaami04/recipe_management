@@ -59,3 +59,27 @@ func (m *mockRecipeService) Update(ctx context.Context, userID, recipeID uint, r
 func (m *mockRecipeService) Delete(ctx context.Context, userID, recipeID uint) error {
 	return m.deleteFn(ctx, userID, recipeID)
 }
+
+// --- UserService のモック ---
+
+type mockUserService struct {
+	getByIDFn func(ctx context.Context, id uint) (*domain.ApplicationUser, error)
+	listFn    func(ctx context.Context) ([]domain.ApplicationUser, error)
+}
+
+func (m *mockUserService) GetByID(ctx context.Context, id uint) (*domain.ApplicationUser, error) {
+	return m.getByIDFn(ctx, id)
+}
+func (m *mockUserService) List(ctx context.Context) ([]domain.ApplicationUser, error) {
+	return m.listFn(ctx)
+}
+
+// --- LabelService のモック ---
+
+type mockLabelService struct {
+	listFn func(ctx context.Context) ([]domain.RecipeLabel, error)
+}
+
+func (m *mockLabelService) List(ctx context.Context) ([]domain.RecipeLabel, error) {
+	return m.listFn(ctx)
+}
