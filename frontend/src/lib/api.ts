@@ -1,5 +1,6 @@
-import axios from 'axios'
 import type { AxiosInstance } from 'axios'
+import axios from 'axios'
+
 import type { Token } from '@/type/LoginUser'
 
 // baseURL はハードコードせず環境変数から取る (ADR-0009 #1)。

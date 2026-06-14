@@ -1,15 +1,15 @@
+import { Label } from '@/components/ui/label'
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectGroup,
   SelectItem,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type SelectInputProps = {
-  className: string;
+  className: string
   label: string
   value: string
   placeholder?: string
@@ -21,7 +21,7 @@ export function SelectInput({
   className,
   label,
   value,
-  placeholder = "選択してください",
+  placeholder = '選択してください',
   onChange,
   options,
 }: SelectInputProps) {

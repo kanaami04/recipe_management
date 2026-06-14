@@ -1,13 +1,13 @@
 export type LoginUser = {
-	username: string;
-	email: string;
-	password: string;
-};
+  username: string
+  email: string
+  password: string
+}
 
-export type Token = string | null;
+export type Token = string | null
 
 export type UserContextType = {
-  user: LoginUser | null;
-  token: Token;
-  setToken: (token: Token) => void;
-};
+  user: LoginUser | null
+  token: Token
+  setToken: (token: Token) => void
+}

@@ -1,10 +1,10 @@
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 type MultiSelectInputProps = {
-  className?: string;
+  className?: string
   label?: string
   value: string[]
   placeholder?: string
@@ -13,10 +13,10 @@ type MultiSelectInputProps = {
 }
 
 export function MultiSelectInput({
-  className = "",
+  className = '',
   label,
   value,
-  placeholder = "選択してください",
+  placeholder = '選択してください',
   onChange,
   options,
 }: MultiSelectInputProps) {
@@ -38,7 +38,10 @@ export function MultiSelectInput({
                 value.map((item) => {
                   const opt = options.find((o) => o.value === item)
                   return (
-                    <span key={item} className="inline-flex items-center gap-1 px-2 py-1 rounded-full border text-sm">
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full border text-sm"
+                    >
                       {opt?.label ?? value}
                     </span>
                   )
@@ -54,7 +57,10 @@ export function MultiSelectInput({
                 key={opt.value}
                 className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded hover:bg-muted"
               >
-                <Checkbox checked={value.includes(opt.value)} onCheckedChange={() => toggle(opt.value)} />
+                <Checkbox
+                  checked={value.includes(opt.value)}
+                  onCheckedChange={() => toggle(opt.value)}
+                />
                 <span>{opt.label}</span>
               </label>
             ))}
