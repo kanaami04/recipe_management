@@ -73,21 +73,34 @@ func (m *mockRecipeRepo) GetOrCreateSeasoning(_ context.Context, name string) (*
 }
 
 type mockUserRepo struct {
-	byName map[string]*domain.ApplicationUser
+	byName  map[string]*domain.ApplicationUser
+	byEmail map[string]*domain.ApplicationUser
+	nextID  uint
 }
 
 func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.ApplicationUser, error) {
-	u, ok := m.byName[username]
-	if !ok {
-		return nil, nil
-	}
-	return u, nil
+	return m.byName[username], nil
+}
+func (m *mockUserRepo) FindByEmail(_ context.Context, email string) (*domain.ApplicationUser, error) {
+	return m.byEmail[email], nil
 }
 func (m *mockUserRepo) FindByID(_ context.Context, id uint) (*domain.ApplicationUser, error) {
 	return nil, nil
 }
-func (m *mockUserRepo) FindAll(_ context.Context) ([]domain.ApplicationUser, error)  { return nil, nil }
-func (m *mockUserRepo) Create(_ context.Context, user *domain.ApplicationUser) error { return nil }
+func (m *mockUserRepo) FindAll(_ context.Context) ([]domain.ApplicationUser, error) { return nil, nil }
+func (m *mockUserRepo) Create(_ context.Context, user *domain.ApplicationUser) error {
+	m.nextID++
+	user.ID = m.nextID
+	if m.byName == nil {
+		m.byName = map[string]*domain.ApplicationUser{}
+	}
+	if m.byEmail == nil {
+		m.byEmail = map[string]*domain.ApplicationUser{}
+	}
+	m.byName[user.Username] = user
+	m.byEmail[user.Email] = user
+	return nil
+}
 
 // --- テスト ---
 

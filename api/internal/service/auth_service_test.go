@@ -101,3 +101,46 @@ func TestAuthRefresh_Garbage(t *testing.T) {
 		t.Fatalf("err = %v, want ErrInvalidCredentials", err)
 	}
 }
+
+func TestAuthRegister_Success(t *testing.T) {
+	ur := &mockUserRepo{}
+	svc := NewAuthService(ur, jwtpkg.NewManager("test-secret"))
+
+	user, err := svc.Register(context.Background(), "alice", "alice@example.com", "password123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if user.ID == 0 {
+		t.Error("expected an assigned ID")
+	}
+	if user.Password == "password123" {
+		t.Error("password must be hashed, not stored as plaintext")
+	}
+	if stored, _ := ur.FindByUsername(context.Background(), "alice"); stored == nil {
+		t.Error("user should be stored")
+	}
+}
+
+func TestAuthRegister_DuplicateUsername(t *testing.T) {
+	ur := &mockUserRepo{byName: map[string]*domain.ApplicationUser{
+		"alice": {ID: 1, Username: "alice"},
+	}}
+	svc := NewAuthService(ur, jwtpkg.NewManager("s"))
+
+	_, err := svc.Register(context.Background(), "alice", "new@example.com", "password123")
+	if !errors.Is(err, ErrUserAlreadyExists) {
+		t.Fatalf("err = %v, want ErrUserAlreadyExists", err)
+	}
+}
+
+func TestAuthRegister_DuplicateEmail(t *testing.T) {
+	ur := &mockUserRepo{byEmail: map[string]*domain.ApplicationUser{
+		"taken@example.com": {ID: 1, Email: "taken@example.com"},
+	}}
+	svc := NewAuthService(ur, jwtpkg.NewManager("s"))
+
+	_, err := svc.Register(context.Background(), "newuser", "taken@example.com", "password123")
+	if !errors.Is(err, ErrUserAlreadyExists) {
+		t.Fatalf("err = %v, want ErrUserAlreadyExists", err)
+	}
+}

@@ -25,8 +25,9 @@ func newTestEcho() *echo.Echo {
 // --- サービスのモック（関数フィールドで差し替え）---
 
 type mockAuthService struct {
-	loginFn   func(ctx context.Context, username, password string) (string, string, error)
-	refreshFn func(ctx context.Context, refresh string) (string, error)
+	loginFn    func(ctx context.Context, username, password string) (string, string, error)
+	refreshFn  func(ctx context.Context, refresh string) (string, error)
+	registerFn func(ctx context.Context, username, email, password string) (*domain.ApplicationUser, error)
 }
 
 func (m *mockAuthService) Login(ctx context.Context, u, p string) (string, string, error) {
@@ -34,6 +35,9 @@ func (m *mockAuthService) Login(ctx context.Context, u, p string) (string, strin
 }
 func (m *mockAuthService) Refresh(ctx context.Context, r string) (string, error) {
 	return m.refreshFn(ctx, r)
+}
+func (m *mockAuthService) Register(ctx context.Context, u, e, p string) (*domain.ApplicationUser, error) {
+	return m.registerFn(ctx, u, e, p)
 }
 
 type mockRecipeService struct {

@@ -29,6 +29,18 @@ func (r *userRepository) FindByUsername(ctx context.Context, username string) (*
 	return &u, nil
 }
 
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.ApplicationUser, error) {
+	var u domain.ApplicationUser
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&u).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
 func (r *userRepository) FindByID(ctx context.Context, id uint) (*domain.ApplicationUser, error) {
 	var u domain.ApplicationUser
 	err := r.db.WithContext(ctx).First(&u, id).Error

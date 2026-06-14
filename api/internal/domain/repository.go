@@ -7,6 +7,7 @@ import "context"
 
 type UserRepository interface {
 	FindByUsername(ctx context.Context, username string) (*ApplicationUser, error)
+	FindByEmail(ctx context.Context, email string) (*ApplicationUser, error)
 	FindByID(ctx context.Context, id uint) (*ApplicationUser, error)
 	FindAll(ctx context.Context) ([]ApplicationUser, error)
 	Create(ctx context.Context, user *ApplicationUser) error
