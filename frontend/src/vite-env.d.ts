@@ -1,1 +1,10 @@
 /// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  /** API のベース URL。既定は空文字 = 相対 /api (ADR-0009 #1)。 */
+  readonly VITE_API_BASE_URL?: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
