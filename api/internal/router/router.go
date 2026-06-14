@@ -14,16 +14,36 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 	api := e.Group("/api")
 
 	// 認証不要
-	api.POST("/token/", h.Auth.Token)
-	api.POST("/token/refresh/", h.Auth.Refresh)
+	{
+		// 認証
+		{
+			api.POST("/token/", h.Auth.Token)
+			api.POST("/token/refresh/", h.Auth.Refresh)
+			api.POST("/auth/register/", h.Auth.Register)
+		}
+	}
 
 	// 認証必須
-	auth := api.Group("", appmw.JWT(jwtManager))
-	auth.GET("/user_info/", h.User.Info)
-	auth.GET("/users/", h.User.List)
-	auth.GET("/label/", h.Label.List)
-	auth.GET("/recipes/", h.Recipe.List)
-	auth.POST("/recipes/", h.Recipe.Create)
-	auth.PUT("/recipes/:id/", h.Recipe.Update)
-	auth.DELETE("/recipes/:id/", h.Recipe.Delete)
+	{
+		authorized := api.Group("", appmw.JWT(jwtManager))
+
+		// ユーザー
+		{
+			authorized.GET("/user_info/", h.User.Info)
+			authorized.GET("/users/", h.User.List)
+		}
+
+		// ラベル
+		{
+			authorized.GET("/label/", h.Label.List)
+		}
+
+		// レシピ
+		{
+			authorized.GET("/recipes/", h.Recipe.List)
+			authorized.POST("/recipes/", h.Recipe.Create)
+			authorized.PUT("/recipes/:id/", h.Recipe.Update)
+			authorized.DELETE("/recipes/:id/", h.Recipe.Delete)
+		}
+	}
 }

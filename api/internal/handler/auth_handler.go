@@ -55,3 +55,23 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, response.RefreshResponse{Access: access})
 }
+
+// Register は POST /api/auth/register/。新規ユーザーを作成する。
+func (h *AuthHandler) Register(c echo.Context) error {
+	var req request.RegisterRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	user, err := h.svc.Register(c.Request().Context(), req.Username, req.Email, req.Password)
+	if err != nil {
+		if errors.Is(err, service.ErrUserAlreadyExists) {
+			return echo.NewHTTPError(http.StatusConflict, err.Error())
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	}
+	return c.JSON(http.StatusCreated, response.ToUserInfo(user))
+}
