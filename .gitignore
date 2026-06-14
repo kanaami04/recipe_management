@@ -1,0 +1,12 @@
+# OS / editor
+.DS_Store
+.vscode/
+
+# 個人用メモ
+project/
+
+# env
+.env
+
+# claude
+Claude.md
