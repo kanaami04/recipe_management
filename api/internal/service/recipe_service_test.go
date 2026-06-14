@@ -2,190 +2,148 @@ package service
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"recipe-backend/internal/domain"
 	"recipe-backend/internal/dto/request"
+	"recipe-backend/internal/testutil/factory"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// --- モック実装 ---
-
-type mockRecipeRepo struct {
-	store      map[uint]*domain.Recipe
-	nextID     uint
-	labelSeq   uint
-	ingSeq     uint
-	seaSeq     uint
-	created    *domain.Recipe
-	updated    *domain.Recipe
-	deletedIDs []uint
-}
-
-func newMockRecipeRepo() *mockRecipeRepo {
-	return &mockRecipeRepo{store: map[uint]*domain.Recipe{}, nextID: 1}
-}
-
-func (m *mockRecipeRepo) FindAllForUser(_ context.Context, userID uint) ([]domain.Recipe, error) {
-	var out []domain.Recipe
-	for _, r := range m.store {
-		out = append(out, *r)
-	}
-	return out, nil
-}
-func (m *mockRecipeRepo) FindByID(_ context.Context, id uint) (*domain.Recipe, error) {
-	r, ok := m.store[id]
-	if !ok {
-		return nil, nil
-	}
-	return r, nil
-}
-func (m *mockRecipeRepo) Create(_ context.Context, recipe *domain.Recipe) error {
-	recipe.ID = m.nextID
-	m.nextID++
-	cp := *recipe
-	m.store[recipe.ID] = &cp
-	m.created = &cp
-	return nil
-}
-func (m *mockRecipeRepo) Update(_ context.Context, recipe *domain.Recipe) error {
-	cp := *recipe
-	m.store[recipe.ID] = &cp
-	m.updated = &cp
-	return nil
-}
-func (m *mockRecipeRepo) Delete(_ context.Context, recipe *domain.Recipe) error {
-	delete(m.store, recipe.ID)
-	m.deletedIDs = append(m.deletedIDs, recipe.ID)
-	return nil
-}
-func (m *mockRecipeRepo) GetOrCreateLabel(_ context.Context, name string) (*domain.RecipeLabel, error) {
-	m.labelSeq++
-	return &domain.RecipeLabel{ID: m.labelSeq, Name: name}, nil
-}
-func (m *mockRecipeRepo) GetOrCreateIngredient(_ context.Context, name string) (*domain.Ingredient, error) {
-	m.ingSeq++
-	return &domain.Ingredient{ID: m.ingSeq, Name: name}, nil
-}
-func (m *mockRecipeRepo) GetOrCreateSeasoning(_ context.Context, name string) (*domain.Seasoning, error) {
-	m.seaSeq++
-	return &domain.Seasoning{ID: m.seaSeq, Name: name}, nil
-}
-
-type mockUserRepo struct {
-	byName  map[string]*domain.ApplicationUser
-	byEmail map[string]*domain.ApplicationUser
-	nextID  uint
-}
-
-func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.ApplicationUser, error) {
-	return m.byName[username], nil
-}
-func (m *mockUserRepo) FindByEmail(_ context.Context, email string) (*domain.ApplicationUser, error) {
-	return m.byEmail[email], nil
-}
-func (m *mockUserRepo) FindByID(_ context.Context, id uint) (*domain.ApplicationUser, error) {
-	return nil, nil
-}
-func (m *mockUserRepo) FindAll(_ context.Context) ([]domain.ApplicationUser, error) { return nil, nil }
-func (m *mockUserRepo) Create(_ context.Context, user *domain.ApplicationUser) error {
-	m.nextID++
-	user.ID = m.nextID
-	if m.byName == nil {
-		m.byName = map[string]*domain.ApplicationUser{}
-	}
-	if m.byEmail == nil {
-		m.byEmail = map[string]*domain.ApplicationUser{}
-	}
-	m.byName[user.Username] = user
-	m.byEmail[user.Email] = user
-	return nil
-}
-
-// --- テスト ---
-
-func TestCreate_SetsOwnerAndDefaults(t *testing.T) {
+// レシピを作成した時、owner・デフォルト値・各関連まで反映されたレシピが構築されること。
+func TestRecipeCreate_BuildsRecipe(t *testing.T) {
+	// Arrange
 	rr := newMockRecipeRepo()
-	ur := &mockUserRepo{byName: map[string]*domain.ApplicationUser{}}
-	svc := NewRecipeService(rr, ur)
-
-	_, err := svc.Create(context.Background(), 42, request.RecipeRequest{
+	svc := NewRecipeService(rr, &mockUserRepo{})
+	req := request.RecipeRequest{
 		Title: "カレー",
 		// create_for 未指定 → 1 に正規化される想定
 		Label:   []request.LabelInput{{Name: "夕食"}},
 		Cooking: []request.CookingInput{{Ingredients: request.NameInput{Name: "玉ねぎ"}, Quantity: 2, Unit: "個"}},
 		Season:  []request.SeasonInput{{Seasoning: request.NameInput{Name: "塩"}, Quantity: 1, Unit: "g"}},
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
 	}
-	if rr.created.OwnerID != 42 {
-		t.Errorf("owner = %d, want 42", rr.created.OwnerID)
+
+	// Act
+	_, err := svc.Create(context.Background(), 42, req)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, rr.created)
+	want := domain.Recipe{
+		ID:          1,
+		Title:       "カレー",
+		CreateFor:   1, // 未指定はデフォルト1
+		OwnerID:     42,
+		Labels:      []domain.RecipeLabel{{ID: 1, Name: "夕食"}},
+		SharedUsers: []domain.ApplicationUser{},
+		Cooking:     []domain.Cooking{{IngredientID: 1, Quantity: 2, Unit: "個"}},
+		Season:      []domain.Season{{SeasoningID: 1, Quantity: 1, Unit: "g"}},
 	}
-	if rr.created.CreateFor != 1 {
-		t.Errorf("create_for = %d, want 1 (default)", rr.created.CreateFor)
-	}
-	if len(rr.created.Labels) != 1 || len(rr.created.Cooking) != 1 || len(rr.created.Season) != 1 {
-		t.Errorf("associations not built: labels=%d cooking=%d season=%d",
-			len(rr.created.Labels), len(rr.created.Cooking), len(rr.created.Season))
-	}
+	assert.Equal(t, want, *rr.created)
 }
 
-func TestCreate_SharedUserNotFound(t *testing.T) {
+// 存在しないユーザーを共有先に指定した時、ErrSharedUserNotFound が返ること。
+func TestRecipeCreate_SharedUserNotFound(t *testing.T) {
+	// Arrange
 	rr := newMockRecipeRepo()
-	ur := &mockUserRepo{byName: map[string]*domain.ApplicationUser{}}
-	svc := NewRecipeService(rr, ur)
-
-	_, err := svc.Create(context.Background(), 1, request.RecipeRequest{
+	svc := NewRecipeService(rr, &mockUserRepo{})
+	req := request.RecipeRequest{
 		Title:      "親子丼",
 		SharedUser: []request.SharedUserInput{{Username: "ghost"}},
-	})
-	if !errors.Is(err, ErrSharedUserNotFound) {
-		t.Fatalf("err = %v, want ErrSharedUserNotFound", err)
 	}
+
+	// Act
+	_, err := svc.Create(context.Background(), 1, req)
+
+	// Assert
+	assert.ErrorIs(t, err, ErrSharedUserNotFound)
 }
 
-func TestUpdate_ForbiddenForNonOwnerNonShared(t *testing.T) {
+// 自分のレシピがある時、List でそのレシピが返ること。
+func TestRecipeList_ReturnsRecipes(t *testing.T) {
+	// Arrange
 	rr := newMockRecipeRepo()
-	rr.store[1] = &domain.Recipe{ID: 1, OwnerID: 100} // 所有者は 100
-	ur := &mockUserRepo{byName: map[string]*domain.ApplicationUser{}}
-	svc := NewRecipeService(rr, ur)
+	rr.store[1] = factory.NewRecipe(factory.WithRecipeID(1), factory.WithOwnerID(5))
+	svc := NewRecipeService(rr, &mockUserRepo{})
 
-	_, err := svc.Update(context.Background(), 999, 1, request.RecipeRequest{Title: "x"}) // 別人 999
-	if !errors.Is(err, ErrForbidden) {
-		t.Fatalf("err = %v, want ErrForbidden", err)
-	}
+	// Act
+	recipes, err := svc.List(context.Background(), 5)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Len(t, recipes, 1)
 }
 
-func TestUpdate_AllowedForSharedUser(t *testing.T) {
+// owner でも共有先でもないユーザーが更新する時、ErrForbidden が返ること。
+func TestRecipeUpdate_ForbiddenForNonOwnerNonShared(t *testing.T) {
+	// Arrange
 	rr := newMockRecipeRepo()
-	rr.store[1] = &domain.Recipe{
+	rr.store[1] = factory.NewRecipe(factory.WithRecipeID(1), factory.WithOwnerID(100)) // 所有者は100
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	_, err := svc.Update(context.Background(), 999, 1, request.RecipeRequest{Title: "x"}) // 別人999
+
+	// Assert
+	assert.ErrorIs(t, err, ErrForbidden)
+}
+
+// 共有先ユーザーが更新した時、タイトルが変わり owner は保持されたレシピになること。
+func TestRecipeUpdate_SharedUserUpdatesRecipe(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	rr.store[1] = factory.NewRecipe(
+		factory.WithRecipeID(1),
+		factory.WithOwnerID(100),
+		factory.WithSharedUsers(*factory.NewUser(factory.WithID(7))),
+	)
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	_, err := svc.Update(context.Background(), 7, 1, request.RecipeRequest{Title: "更新"}) // 共有先7は許可
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, rr.updated)
+	want := domain.Recipe{
 		ID:          1,
-		OwnerID:     100,
-		SharedUsers: []domain.ApplicationUser{{ID: 7}},
+		Title:       "更新",
+		CreateFor:   1,
+		OwnerID:     100, // owner は変更されない
+		Labels:      []domain.RecipeLabel{},
+		SharedUsers: []domain.ApplicationUser{},
+		Cooking:     []domain.Cooking{},
+		Season:      []domain.Season{},
 	}
-	ur := &mockUserRepo{byName: map[string]*domain.ApplicationUser{}}
-	svc := NewRecipeService(rr, ur)
-
-	_, err := svc.Update(context.Background(), 7, 1, request.RecipeRequest{Title: "更新"}) // 共有先 7 は許可
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if rr.updated == nil || rr.updated.Title != "更新" {
-		t.Errorf("update not applied: %+v", rr.updated)
-	}
-	if rr.updated.OwnerID != 100 {
-		t.Errorf("owner changed to %d, want unchanged 100", rr.updated.OwnerID)
-	}
+	assert.Equal(t, want, *rr.updated)
 }
 
-func TestDelete_NotFound(t *testing.T) {
+// 自分のレシピを削除する時、対象 ID が削除されること。
+func TestRecipeDelete_Success(t *testing.T) {
+	// Arrange
 	rr := newMockRecipeRepo()
-	ur := &mockUserRepo{byName: map[string]*domain.ApplicationUser{}}
-	svc := NewRecipeService(rr, ur)
+	rr.store[1] = factory.NewRecipe(factory.WithRecipeID(1), factory.WithOwnerID(5))
+	svc := NewRecipeService(rr, &mockUserRepo{})
 
+	// Act
+	err := svc.Delete(context.Background(), 5, 1)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Contains(t, rr.deletedIDs, uint(1))
+}
+
+// 存在しないレシピを削除する時、ErrNotFound が返ること。
+func TestRecipeDelete_NotFound(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
 	err := svc.Delete(context.Background(), 1, 12345)
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatalf("err = %v, want ErrNotFound", err)
-	}
+
+	// Assert
+	assert.ErrorIs(t, err, ErrNotFound)
 }

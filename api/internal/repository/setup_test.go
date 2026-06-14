@@ -11,6 +11,7 @@ import (
 	"recipe-backend/internal/database"
 	"recipe-backend/internal/domain"
 	"recipe-backend/internal/testutil"
+	"recipe-backend/internal/testutil/factory"
 
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"gorm.io/gorm"
@@ -68,15 +69,10 @@ func truncateAll(t *testing.T) {
 	}
 }
 
-// seedUser はテスト用ユーザーを作成する。
+// seedUser はテスト用ユーザーを作成する。データ生成はファクトリに集約している。
 func seedUser(t *testing.T, username string) *domain.ApplicationUser {
 	t.Helper()
-	u := &domain.ApplicationUser{
-		Username: username,
-		Email:    username + "@example.com",
-		Password: "x",
-		IsActive: true,
-	}
+	u := factory.NewUser(factory.WithUsername(username), factory.WithEmail(username+"@example.com"))
 	if err := testDB.Create(u).Error; err != nil {
 		t.Fatalf("seed user %q: %v", username, err)
 	}
