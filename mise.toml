@@ -1,3 +1,8 @@
 [tools]
 node = "22.22.3"
 go = "1.25.11"
+
+[tasks.gen-api]
+description = "openapi.yaml から Go 型を生成 (api ADR-0005)"
+dir = "api"
+run = "go tool oapi-codegen -config oapi-codegen.config.yaml openapi.yaml"
