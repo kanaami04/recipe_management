@@ -1,11 +1,11 @@
-import './index.css'
+import './styles/index.css'
 
 import { QueryClientProvider } from '@tanstack/react-query'
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
 import { Toaster } from 'sonner'
 
-import { UserProvider } from './hooks/UserContext'
 import { configureApiClient } from './shared/api/client'
+import { UserProvider } from './shared/auth/UserContext'
 import { queryClient } from './shared/lib/queryClient'
 
 // 生成 API クライアントに baseURL・withCredentials・auth interceptor を適用する (ADR-0004/0007)。

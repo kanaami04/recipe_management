@@ -1,5 +1,5 @@
 dist
 node_modules
 package-lock.json
-src/components/ui
+src/shared/ui
 src/shared/api/generated
