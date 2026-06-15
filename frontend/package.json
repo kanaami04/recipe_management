@@ -12,6 +12,7 @@
     "gen:api": "openapi-ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview --outDir build/client"
@@ -52,6 +53,7 @@
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@hey-api/openapi-ts": "^0.98.2",
+    "@playwright/test": "^1.60.0",
     "@react-router/dev": "^7.17.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
