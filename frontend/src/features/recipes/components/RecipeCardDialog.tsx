@@ -81,8 +81,8 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
                     {s.unit}
                   </p>
                 ))}
-                <Label>説明</Label>
-                <p>{recipe.procedure}</p>
+                <Label>作り方</Label>
+                <p className="whitespace-pre-line">{recipe.procedure}</p>
               </div>
               <div>
                 {recipe.label.map((label) => (
@@ -98,10 +98,10 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">閉じる</Button>
             </DialogClose>
             <Button type="button" onClick={() => setIsEditing(true)}>
-              Edit
+              編集
             </Button>
             <Button
               type="button"
@@ -109,7 +109,7 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
               disabled={deleteMutation.isPending}
               onClick={() => setIsConfirmingDelete(true)}
             >
-              Delete
+              削除
             </Button>
           </DialogFooter>
         </DialogContent>
