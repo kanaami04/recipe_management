@@ -52,7 +52,7 @@ export function RecipesHeader() {
         <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
         <h1 className="text-base font-medium">MyRecipes</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Input placeholder="search" className="sm-w-40" />
+          <Input placeholder="search" className="sm:w-40" />
           <Separator orientation="vertical" className="data-[orientation=vertical]:h-4" />
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>

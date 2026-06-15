@@ -8,6 +8,7 @@ import {
   listRecipesQueryKey,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { RecipeResponse } from '@/shared/api/generated/types.gen'
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { Button } from '@/shared/ui/button'
 import {
   Dialog,
@@ -26,6 +27,7 @@ import { RecipeDetailEditDialog } from './RecipeDetailEditDialog'
 export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
   const [isEditing, setIsEditing] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const queryClient = useQueryClient()
 
   // 削除は生成 mutation + 一覧 query の無効化に集約する (ADR-0003)。
@@ -40,6 +42,7 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
   })
 
   const handleDeleteRecipe = () => {
+    setIsConfirmingDelete(false)
     deleteMutation.mutate({ path: { id: recipe.id } })
   }
 
@@ -100,7 +103,12 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
             <Button type="button" onClick={() => setIsEditing(true)}>
               Edit
             </Button>
-            <Button type="button" onClick={handleDeleteRecipe}>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => setIsConfirmingDelete(true)}
+            >
               Delete
             </Button>
           </DialogFooter>
@@ -111,6 +119,15 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
           onOpenChange={() => setIsEditing(false)}
         />
       </Dialog>
+      <ConfirmDialog
+        title="レシピを削除しますか？"
+        description={`「${recipe.title}」を削除します。\nこの操作は取り消せません。`}
+        open={isConfirmingDelete}
+        onOpenChange={setIsConfirmingDelete}
+        onConfirm={handleDeleteRecipe}
+        confirmLabel="削除"
+        destructive
+      />
     </>
   )
 }
