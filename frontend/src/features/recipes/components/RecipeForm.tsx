@@ -114,8 +114,9 @@ export function RecipeForm({
           render={({ field }) => (
             <RecipeInputForm
               label="ingredients"
-              initialInputData={mode === 'create' ? null : field.value}
+              value={field.value}
               onChange={field.onChange}
+              minRows={1}
             />
           )}
         />
@@ -128,8 +129,9 @@ export function RecipeForm({
           render={({ field }) => (
             <RecipeInputForm
               label="seasoning"
-              initialInputData={mode === 'create' ? null : field.value}
+              value={field.value}
               onChange={field.onChange}
+              minRows={0}
             />
           )}
         />

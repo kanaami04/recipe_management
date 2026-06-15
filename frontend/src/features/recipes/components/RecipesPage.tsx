@@ -6,24 +6,32 @@ import { listRecipesOptions } from '@/shared/api/generated/@tanstack/react-query
 
 export function RecipesPage() {
   // サーバ状態は生成 Query フックで取得する (ADR-0003/0007)。認証は interceptor が付与する。
-  const { data: recipesData, error } = useQuery(listRecipesOptions())
+  const { data: recipesData, isPending, isError } = useQuery(listRecipesOptions())
 
   return (
     <>
       <RecipesHeader />
-      <div className="flex flex-wrap">
-        {recipesData ? (
-          recipesData.map((recipe) => (
+      {isPending ? (
+        <div className="flex items-center justify-center min-h-60">
+          <p className="text-muted-foreground">読み込み中...</p>
+        </div>
+      ) : isError ? (
+        <div className="flex items-center justify-center min-h-60">
+          <p className="text-destructive">レシピの取得に失敗しました</p>
+        </div>
+      ) : recipesData.length === 0 ? (
+        <div className="flex items-center justify-center min-h-60">
+          <p className="text-muted-foreground">レシピがまだありません</p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap">
+          {recipesData.map((recipe) => (
             <div key={recipe.id} className="gap-2 py-2 md:gap-4 md:py-4 ">
               <RecipeCardDialog recipe={recipe} />
             </div>
-          ))
-        ) : (
-          <div className="flex items-center justify-center min-h-screen">
-            {error ? <p>fetch error</p> : <p>no data...</p>}
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </>
   )
 }

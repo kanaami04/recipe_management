@@ -34,18 +34,16 @@ export function toFormValues(recipe?: RecipeResponse): RecipeFormValues {
     archiveFlg: recipe?.archive_flg ?? false,
     label: recipe?.label.map((l) => l.name) ?? [],
     sharedUser: recipe?.shared_user.map((u) => u.username) ?? [],
-    ingredients:
-      recipe?.cooking.map((c) => ({
-        name: c.ingredients.name,
-        quantity: c.quantity,
-        unit: c.unit,
-      })) ?? [],
-    seasoning:
-      recipe?.season.map((s) => ({
-        name: s.seasoning.name,
-        quantity: s.quantity,
-        unit: s.unit,
-      })) ?? [],
+    ingredients: recipe?.cooking.map((c) => ({
+      name: c.ingredients.name,
+      quantity: c.quantity,
+      unit: c.unit,
+    })) ?? [{ name: '', quantity: 0, unit: '' }],
+    seasoning: recipe?.season.map((s) => ({
+      name: s.seasoning.name,
+      quantity: s.quantity,
+      unit: s.unit,
+    })) ?? [{ name: '', quantity: 0, unit: '' }],
   }
 }
 

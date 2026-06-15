@@ -15,7 +15,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeResponse }) {
               <div className="my-2">
                 <Label>食材</Label>
                 {recipe.cooking.map((cooking) => (
-                  <p key={recipe.id}>
+                  <p key={cooking.ingredients.name}>
                     {cooking.ingredients.name} : {cooking.quantity}
                     {cooking.unit}
                   </p>
@@ -23,9 +23,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeResponse }) {
               </div>
               <Label>調味料</Label>
               {recipe.season.map((season) => (
-                <p key={recipe.id}>
-                  {season.seasoning.name} : {season.unit}
-                  {season.quantity}
+                <p key={season.seasoning.name}>
+                  {season.seasoning.name} : {season.quantity}
+                  {season.unit}
                 </p>
               ))}
             </div>
