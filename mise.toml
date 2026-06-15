@@ -2,6 +2,10 @@
 node = "22.22.3"
 go = "1.25.11"
 
+[tasks.dev]
+description = "実機テスト用に DB + バックエンド(air) + フロント(LAN公開) を一括起動 (macOS 専用)"
+run = "{{config_root}}/dev.sh"
+
 [tasks.gen-api]
 description = "openapi.yaml から Go 型を生成 (api ADR-0005)"
 dir = "api/openapi"
