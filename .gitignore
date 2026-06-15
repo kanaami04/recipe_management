@@ -1,6 +1,10 @@
 # OS / editor
 .DS_Store
-.vscode/
+# .vscode はグローバル gitignore でも無視されるため、ディレクトリごと一旦戻し、
+# 共有したい settings.json だけ追跡する(親ディレクトリの除外解除が必要)
+!.vscode/
+.vscode/*
+!.vscode/settings.json
 
 # 個人用メモ
 project/
