@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # 実機テスト用ワンコマンド起動スクリプト。
-#   Postgres(docker) + バックエンド(Go, :8000) + フロント(Vite dev, :5173 を LAN 公開)
+#   Postgres(docker) + バックエンド(Go, :8000) + フロント(Vite dev, :5273 を LAN 公開)
 # をまとめて立ち上げ、スマホからアクセスできる URL を表示する。
 #
 #   使い方:  ./dev.sh
@@ -45,7 +45,7 @@ free_port() {
 trap 'echo; echo "▶ 停止します..."; kill 0 2>/dev/null || true' EXIT
 
 echo "▶ 旧 dev サーバを片付け中..."
-free_port 5173
+free_port 5273
 free_port 8000
 sleep 1
 
@@ -58,7 +58,7 @@ echo "▶ バックエンド(:8000, air ホットリロード)を起動..."
 ( cd "$ROOT/api" && "$AIR_BIN" ) &
 
 # 3) フロント(Vite dev、--host で LAN 公開)
-echo "▶ フロント(:5173, --host)を起動..."
+echo "▶ フロント(:5273, --host)を起動..."
 ( cd "$ROOT/frontend" && npm run dev -- --host 0.0.0.0 ) &
 
 # LAN IP(Wi-Fi)を取得して案内を表示
@@ -68,7 +68,7 @@ echo
 echo "================================================================"
 echo "  スマホ(Mac と同じ Wi-Fi)から次の URL を開く:"
 echo
-echo "      http://$IP:5173"
+echo "      http://$IP:5273"
 echo
 echo "  停止: このターミナルで Ctrl+C"
 echo "================================================================"
