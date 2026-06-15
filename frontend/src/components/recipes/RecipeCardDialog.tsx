@@ -1,7 +1,7 @@
 import { DialogDescription } from '@radix-ui/react-dialog'
-import axios from 'axios'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { mutate } from 'swr'
+import { toast } from 'sonner'
 
 import {
   Dialog,
@@ -12,42 +12,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { useUser } from '@/hooks/UserContext'
-import { api } from '@/lib/api'
-import type { RecipeDataType } from '@/type/RecipeDataType'
+import {
+  deleteRecipeMutation,
+  listRecipesQueryKey,
+} from '@/shared/api/generated/@tanstack/react-query.gen'
+import type { RecipeResponse } from '@/shared/api/generated/types.gen'
 
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { RecipeCard } from './RecipeCard'
 import { RecipeDetailEditDialog } from './RecipeDetailEditDialog'
 
-export function RecipeCardDialog({ recipe }: { recipe: RecipeDataType }) {
+export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
   const [isEditing, setIsEditing] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const queryClient = useQueryClient()
 
-  const { token } = useUser()
+  // 削除は生成 mutation + 一覧 query の無効化に集約する (ADR-0003)。
+  const deleteMutation = useMutation({
+    ...deleteRecipeMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: listRecipesQueryKey() })
+      toast.success('レシピを削除しました')
+      setIsOpen(false)
+    },
+    onError: () => toast.error('削除に失敗しました'),
+  })
 
-  const handleDeleteRecipe = async () => {
-    if (!token) {
-      return
-    }
-
-    try {
-      const res = await api.delete(`/api/recipes/${recipe.id}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      console.log('レシピ削除成功', res.data)
-    } catch (error: unknown) {
-      console.error('レシピ削除失敗', error)
-      if (axios.isAxiosError(error)) {
-        console.error('APIエラー詳細:', error.response?.data)
-        alert('削除に失敗しました: ' + JSON.stringify(error.response?.data))
-      } else {
-        alert('通信エラーが発生しました。')
-      }
-    }
-    mutate('/api/recipes/')
-    setIsOpen(false)
+  const handleDeleteRecipe = () => {
+    deleteMutation.mutate({ path: { id: recipe.id } })
   }
 
   return (

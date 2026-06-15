@@ -1,13 +1,9 @@
-export type LoginUser = {
-  username: string
-  email: string
-  password: string
-}
+import type { UserInfoResponse } from '@/shared/api/generated/types.gen'
 
 export type Token = string | null
 
 export type UserContextType = {
-  user: LoginUser | null
+  user: UserInfoResponse | null
   token: Token
   setToken: (token: Token) => void
 }

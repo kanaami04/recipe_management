@@ -1,9 +1,9 @@
-import axios from 'axios'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { mutate } from 'swr'
+import { toast } from 'sonner'
 
-import { MessageAlertDialog } from '@/components/MessageAlertDialog'
 import { RecipeForm } from '@/components/recipes/RecipeForm'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -15,45 +15,34 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
-import { useFetchRecipeLabel, useFetchSharedUser } from '@/hooks/useFetchData'
-import { useUser } from '@/hooks/UserContext'
-import { api } from '@/lib/api'
-import type { RecipeDataType } from '@/type/RecipeDataType'
-
-import { Button } from '../ui/button'
+import {
+  createRecipeMutation,
+  listLabelsOptions,
+  listRecipesQueryKey,
+  listUsersOptions,
+} from '@/shared/api/generated/@tanstack/react-query.gen'
+import type { RecipeRequest } from '@/shared/api/generated/types.gen'
 
 export function RecipesHeader() {
-  const { token } = useUser()
-  const { data: sharedUserData } = useFetchSharedUser(token)
-  const { data: labelData } = useFetchRecipeLabel(token)
+  const queryClient = useQueryClient()
+  const { data: sharedUserData } = useQuery(listUsersOptions())
+  const { data: labelData } = useQuery(listLabelsOptions())
 
   const [isOpen, setIsOpen] = useState(false)
-  const [isSuccessOpen, setIsSuccessOpen] = useState(false)
 
-  const handleCreate = async (payload: RecipeDataType) => {
-    if (!token) {
-      alert('作成できません。ログインしてください。')
-      return
-    }
-    try {
-      const res = await api.post('/api/recipes/', payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+  // 作成は生成 mutation + 一覧 query の無効化に集約する (ADR-0003)。
+  const createMutation = useMutation({
+    ...createRecipeMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: listRecipesQueryKey() })
+      toast.success('レシピを作成しました')
+      setIsOpen(false)
+    },
+    onError: () => toast.error('レシピの作成に失敗しました'),
+  })
 
-      console.log('レシピ作成成功', res.data)
-      setIsSuccessOpen(true)
-    } catch (error: unknown) {
-      console.error('レシピ作成失敗', error)
-      if (axios.isAxiosError(error)) {
-        console.error('APIエラー詳細:', error.response?.data)
-        alert('作成に失敗しました: ' + JSON.stringify(error.response?.data))
-      } else {
-        alert('通信エラーが発生しました。')
-      }
-    }
-
-    mutate('/api/recipes/')
-    setIsOpen(false)
+  const handleCreate = async (payload: RecipeRequest) => {
+    createMutation.mutate({ body: payload })
   }
 
   return (
@@ -85,12 +74,6 @@ export function RecipesHeader() {
               />
             </DialogContent>
           </Dialog>
-          <MessageAlertDialog
-            title="レシピ作成成功"
-            description={`レシピが作成されました。`}
-            open={isSuccessOpen}
-            onOpenChange={() => setIsSuccessOpen(false)}
-          />
         </div>
       </div>
     </header>

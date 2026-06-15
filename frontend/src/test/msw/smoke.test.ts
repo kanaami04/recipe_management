@@ -1,7 +1,6 @@
+import axios from 'axios'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
-
-import { api } from '@/lib/api'
 
 import { server } from './server'
 
@@ -11,7 +10,7 @@ describe('MSW + axios', () => {
     server.use(http.get('*/api/ping', () => HttpResponse.json({ message: 'pong' })))
 
     // Act
-    const res = await api.get('/api/ping')
+    const res = await axios.get('/api/ping')
 
     // Assert
     expect(res.data).toEqual({ message: 'pong' })

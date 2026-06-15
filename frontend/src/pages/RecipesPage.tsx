@@ -1,14 +1,12 @@
+import { useQuery } from '@tanstack/react-query'
+
 import { RecipeCardDialog } from '@/components/recipes/RecipeCardDialog'
 import { RecipesHeader } from '@/components/recipes/RecipesHeader'
-import { useFetchRecipes } from '@/hooks/useFetchData'
-import { useUser } from '@/hooks/UserContext'
+import { listRecipesOptions } from '@/shared/api/generated/@tanstack/react-query.gen'
 
 export function RecipesPage() {
-  const { token } = useUser()
-
-  const { data: recipesData, error } = useFetchRecipes(token)
-
-  console.log('recipe', recipesData)
+  // サーバ状態は生成 Query フックで取得する (ADR-0003/0007)。認証は interceptor が付与する。
+  const { data: recipesData, error } = useQuery(listRecipesOptions())
 
   return (
     <>
