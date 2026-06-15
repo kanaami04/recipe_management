@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 import { globalIgnores } from 'eslint/config'
 
 export default tseslint.config([
-  globalIgnores(['dist', 'src/shared/api/generated']),
+  globalIgnores(['dist', 'build', '.react-router', 'src/shared/api/generated']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -40,6 +40,14 @@ export default tseslint.config([
     // テストヘルパー・テストは dev の Fast Refresh グラフに乗らないため、
     // 非コンポーネントの export(RTL 再エクスポート等)を許可する。
     files: ['src/test/**', '**/*.test.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    // framework mode のルート/ルートモジュールは loader/action/ErrorBoundary/Layout 等を
+    // default コンポーネントと併せて export する規約のため、fast-refresh ルールを無効化する。
+    files: ['src/root.tsx', 'src/routes.ts', 'src/routes/**'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },
