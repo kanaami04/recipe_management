@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -73,22 +72,16 @@ export function NavUser() {
                       <span className="text-muted-foreground truncate text-xs">{user.email}</span>
                     </>
                   ) : (
-                    <span className="truncate font-medium">no login</span>
+                    <span className="truncate font-medium">未ログイン</span>
                   )}
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>Account</DropdownMenuItem>
-              <DropdownMenuItem>Billing</DropdownMenuItem>
-              <DropdownMenuItem>Notifications</DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
             {user ? (
-              <DropdownMenuItem onClick={onClickLogout}>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={onClickLogout}>ログアウト</DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={onClickLogIn}>Log In</DropdownMenuItem>
+              <DropdownMenuItem onClick={onClickLogIn}>ログイン</DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

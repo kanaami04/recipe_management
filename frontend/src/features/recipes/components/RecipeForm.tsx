@@ -61,13 +61,13 @@ export function RecipeForm({
       <div className="grid gap-4 overflow-auto pr-1">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="grid flex-2 gap-3">
-            <Label>title</Label>
+            <Label>タイトル</Label>
             <Controller
               control={control}
               name="title"
               render={({ field }) => (
                 <Input
-                  placeholder="title"
+                  placeholder="タイトル"
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
@@ -82,10 +82,10 @@ export function RecipeForm({
             render={({ field }) => (
               <SelectInput
                 className="grid flex-1 gap-3"
-                label="create_for"
+                label="人数"
                 value={field.value}
                 onChange={field.onChange}
-                placeholder="number"
+                placeholder="選択"
                 options={[...Array(10)].map((_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))}
               />
             )}
@@ -96,10 +96,10 @@ export function RecipeForm({
             render={({ field }) => (
               <SelectInput
                 className="grid flex-1 gap-3"
-                label="create_time"
+                label="調理時間(分)"
                 value={field.value}
                 onChange={field.onChange}
-                placeholder="time"
+                placeholder="選択"
                 options={[...Array(30)].map((_, i) => {
                   const val = (i + 1) * 5
                   return { label: `${val}`, value: `${val}` }
@@ -113,7 +113,7 @@ export function RecipeForm({
           name="ingredients"
           render={({ field }) => (
             <RecipeInputForm
-              label="ingredients"
+              label="食材"
               value={field.value}
               onChange={field.onChange}
               minRows={1}
@@ -128,7 +128,7 @@ export function RecipeForm({
           name="seasoning"
           render={({ field }) => (
             <RecipeInputForm
-              label="seasoning"
+              label="調味料"
               value={field.value}
               onChange={field.onChange}
               minRows={0}
@@ -136,12 +136,12 @@ export function RecipeForm({
           )}
         />
         <div className="grid gap-3">
-          <Label>procedure</Label>
+          <Label>作り方</Label>
           <Controller
             control={control}
             name="procedure"
             render={({ field }) => (
-              <Textarea placeholder="..." value={field.value} onChange={field.onChange} />
+              <Textarea placeholder="作り方を入力" value={field.value} onChange={field.onChange} />
             )}
           />
         </div>
@@ -153,7 +153,7 @@ export function RecipeForm({
               render={({ field }) => (
                 <MultiSelectInput
                   className="grid flex-1 gap-2"
-                  label="label"
+                  label="ラベル"
                   value={field.value}
                   onChange={field.onChange}
                   options={labelData.map((l) => ({ label: l.name, value: l.name }))}
@@ -168,7 +168,7 @@ export function RecipeForm({
               render={({ field }) => (
                 <MultiSelectInput
                   className="grid flex-1 gap-2"
-                  label="shared"
+                  label="共有ユーザー"
                   value={field.value}
                   onChange={field.onChange}
                   options={sharedUserData.map((u) => ({ label: u.username, value: u.username }))}
@@ -189,16 +189,16 @@ export function RecipeForm({
               />
             )}
           />
-          <Label htmlFor="archive_flg">archive</Label>
+          <Label htmlFor="archive_flg">アーカイブ</Label>
         </div>
       </div>
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" onClick={onClickCancel}>
-            Cancel
+            キャンセル
           </Button>
         </DialogClose>
-        <Button type="submit">{mode === 'create' ? 'Create' : 'Update'}</Button>
+        <Button type="submit">{mode === 'create' ? '作成' : '更新'}</Button>
       </DialogFooter>
     </form>
   )
