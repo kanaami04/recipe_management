@@ -25,7 +25,7 @@ func New(cfg *config.Config, db *gorm.DB, logger *slog.Logger) *echo.Echo {
 	// 各層をそれぞれの New で配線（下位層 → 上位層）。
 	repos := repository.New(db)
 	services := service.New(repos.User, repos.Label, repos.Recipe, jwtManager)
-	handlers := handler.New(services)
+	handlers := handler.New(services, cfg.CookieSecure)
 
 	e := echo.New()
 	e.HideBanner = true
@@ -43,6 +43,9 @@ func New(cfg *config.Config, db *gorm.DB, logger *slog.Logger) *echo.Echo {
 			http.MethodDelete, http.MethodOptions,
 		},
 		AllowHeaders: []string{echo.HeaderAuthorization, echo.HeaderContentType},
+		// refresh Cookie をクロスオリジンでも送受信するため credentials を許可する
+		// (api ADR-0004)。AllowOrigins はワイルドカード不可・特定オリジンのみ。
+		AllowCredentials: true,
 	}))
 
 	router.Register(e, handlers, jwtManager)

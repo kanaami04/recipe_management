@@ -14,13 +14,11 @@ export const zTokenRequest = z.object({
     password: z.string()
 });
 
+/**
+ * refresh は body に含めず Cookie で発行する (api ADR-0004)
+ */
 export const zTokenResponse = z.object({
-    access: z.string(),
-    refresh: z.string()
-});
-
-export const zRefreshRequest = z.object({
-    refresh: z.string()
+    access: z.string()
 });
 
 export const zRefreshResponse = z.object({
@@ -125,12 +123,15 @@ export const zLoginBody = zTokenRequest;
  */
 export const zLoginResponse = zTokenResponse;
 
-export const zRefreshTokenBody = zRefreshRequest;
-
 /**
  * 再発行成功
  */
 export const zRefreshTokenResponse = zRefreshResponse;
+
+/**
+ * 失効成功(本文なし)
+ */
+export const zLogoutResponse = z.void();
 
 export const zRegisterBody = zRegisterRequest;
 

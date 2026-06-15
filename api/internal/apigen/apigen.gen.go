@@ -88,11 +88,6 @@ type RecipeResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-// RefreshRequest defines model for RefreshRequest.
-type RefreshRequest struct {
-	Refresh string `json:"refresh" validate:"required"`
-}
-
 // RefreshResponse defines model for RefreshResponse.
 type RefreshResponse struct {
 	Access string `json:"access"`
@@ -130,10 +125,9 @@ type TokenRequest struct {
 	Username string `json:"username" validate:"required"`
 }
 
-// TokenResponse defines model for TokenResponse.
+// TokenResponse refresh は body に含めず Cookie で発行する (api ADR-0004)
 type TokenResponse struct {
-	Access  string `json:"access"`
-	Refresh string `json:"refresh"`
+	Access string `json:"access"`
 }
 
 // UserInfoResponse defines model for UserInfoResponse.
@@ -178,6 +172,3 @@ type UpdateRecipeJSONRequestBody = RecipeRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = TokenRequest
-
-// RefreshTokenJSONRequestBody defines body for RefreshToken for application/json ContentType.
-type RefreshTokenJSONRequestBody = RefreshRequest

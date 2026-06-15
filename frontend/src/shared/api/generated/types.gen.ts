@@ -16,13 +16,11 @@ export type TokenRequest = {
     password: string;
 };
 
+/**
+ * refresh は body に含めず Cookie で発行する (api ADR-0004)
+ */
 export type TokenResponse = {
     access: string;
-    refresh: string;
-};
-
-export type RefreshRequest = {
-    refresh: string;
 };
 
 export type RefreshResponse = {
@@ -165,17 +163,13 @@ export type LoginResponses = {
 export type LoginResponse = LoginResponses[keyof LoginResponses];
 
 export type RefreshTokenData = {
-    body: RefreshRequest;
+    body?: never;
     path?: never;
     query?: never;
     url: '/api/token/refresh/';
 };
 
 export type RefreshTokenErrors = {
-    /**
-     * リクエスト不正・バリデーション失敗
-     */
-    400: Error;
     /**
      * 未認証・トークン無効/期限切れ・クレデンシャル不正
      */
@@ -192,6 +186,22 @@ export type RefreshTokenResponses = {
 };
 
 export type RefreshTokenResponse = RefreshTokenResponses[keyof RefreshTokenResponses];
+
+export type LogoutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/logout/';
+};
+
+export type LogoutResponses = {
+    /**
+     * 失効成功(本文なし)
+     */
+    204: void;
+};
+
+export type LogoutResponse = LogoutResponses[keyof LogoutResponses];
 
 export type RegisterData = {
     body: RegisterRequest;

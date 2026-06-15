@@ -20,6 +20,7 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 			api.POST("/token/", h.Auth.Token)
 			api.POST("/token/refresh/", h.Auth.Refresh)
 			api.POST("/auth/register/", h.Auth.Register)
+			api.POST("/auth/logout/", h.Auth.Logout)
 		}
 	}
 
