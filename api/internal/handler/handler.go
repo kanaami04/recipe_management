@@ -11,9 +11,10 @@ type Handlers struct {
 }
 
 // New は全サービスから全ハンドラを生成する（ハンドラ層の合成）。
-func New(s *service.Services) *Handlers {
+// cookieSecure は refresh Cookie の Secure 属性に渡す (api ADR-0004)。
+func New(s *service.Services, cookieSecure bool) *Handlers {
 	return &Handlers{
-		Auth:   NewAuthHandler(s.Auth),
+		Auth:   NewAuthHandler(s.Auth, cookieSecure),
 		User:   NewUserHandler(s.User),
 		Label:  NewLabelHandler(s.Label),
 		Recipe: NewRecipeHandler(s.Recipe),

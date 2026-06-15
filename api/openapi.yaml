@@ -25,7 +25,10 @@ paths:
   /api/token/:
     post:
       tags: [auth]
-      summary: ログイン(access / refresh トークン発行)
+      summary: ログイン(access を body、refresh を httpOnly Cookie で発行)
+      description: |
+        access を JSON body で返し、refresh は `HttpOnly; Secure; SameSite=Lax` Cookie
+        (Path=/api/token/refresh/)でセットする (api ADR-0004)。body に refresh は含めない。
       operationId: login
       security: []
       requestBody:
@@ -37,6 +40,11 @@ paths:
       responses:
         '200':
           description: 発行成功
+          headers:
+            Set-Cookie:
+              description: 'refresh トークン(HttpOnly; Secure; SameSite=Lax; Path=/api/token/refresh/)'
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -49,15 +57,12 @@ paths:
   /api/token/refresh/:
     post:
       tags: [auth]
-      summary: access トークンの再発行
+      summary: access トークンの再発行(refresh は Cookie から読む)
+      description: |
+        refresh トークンは body ではなく Cookie から読む (api ADR-0004)。
+        Cookie が無い・失効・改竄の場合は 401。
       operationId: refreshToken
       security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshRequest'
       responses:
         '200':
           description: 再発行成功
@@ -65,10 +70,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RefreshResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/logout/:
+    post:
+      tags: [auth]
+      summary: ログアウト(refresh Cookie を失効させる)
+      description: refresh Cookie を Max-Age=0 で上書きして失効させる (api ADR-0004)。
+      operationId: logout
+      security: []
+      responses:
+        '204':
+          description: 失効成功(本文なし)
+          headers:
+            Set-Cookie:
+              description: 失効した refresh Cookie(Max-Age=0)
+              schema:
+                type: string
 
   /api/auth/register/:
     post:
@@ -299,21 +318,11 @@ components:
 
     TokenResponse:
       type: object
-      required: [access, refresh]
+      description: refresh は body に含めず Cookie で発行する (api ADR-0004)
+      required: [access]
       properties:
         access:
           type: string
-        refresh:
-          type: string
-
-    RefreshRequest:
-      type: object
-      required: [refresh]
-      properties:
-        refresh:
-          type: string
-          x-oapi-codegen-extra-tags:
-            validate: required
 
     RefreshResponse:
       type: object

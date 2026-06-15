@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses } from './types.gen';
+import type { CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,7 +19,11 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
- * ログイン(access / refresh トークン発行)
+ * ログイン(access を body、refresh を httpOnly Cookie で発行)
+ *
+ * access を JSON body で返し、refresh は `HttpOnly; Secure; SameSite=Lax` Cookie
+ * (Path=/api/token/refresh/)でセットする (api ADR-0004)。body に refresh は含めない。
+ *
  */
 export const login = <ThrowOnError extends boolean = false>(options: Options<LoginData, ThrowOnError>): RequestResult<LoginResponses, LoginErrors, ThrowOnError> => (options.client ?? client).post<LoginResponses, LoginErrors, ThrowOnError>({
     responseType: 'json',
@@ -32,17 +36,24 @@ export const login = <ThrowOnError extends boolean = false>(options: Options<Log
 });
 
 /**
- * access トークンの再発行
+ * access トークンの再発行(refresh は Cookie から読む)
+ *
+ * refresh トークンは body ではなく Cookie から読む (api ADR-0004)。
+ * Cookie が無い・失効・改竄の場合は 401。
+ *
  */
-export const refreshToken = <ThrowOnError extends boolean = false>(options: Options<RefreshTokenData, ThrowOnError>): RequestResult<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError> => (options.client ?? client).post<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError>({
+export const refreshToken = <ThrowOnError extends boolean = false>(options?: Options<RefreshTokenData, ThrowOnError>): RequestResult<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError> => (options?.client ?? client).post<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/token/refresh/',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+    ...options
 });
+
+/**
+ * ログアウト(refresh Cookie を失効させる)
+ *
+ * refresh Cookie を Max-Age=0 で上書きして失効させる (api ADR-0004)。
+ */
+export const logout = <ThrowOnError extends boolean = false>(options?: Options<LogoutData, ThrowOnError>): RequestResult<LogoutResponses, unknown, ThrowOnError> => (options?.client ?? client).post<LogoutResponses, unknown, ThrowOnError>({ url: '/api/auth/logout/', ...options });
 
 /**
  * ユーザー登録

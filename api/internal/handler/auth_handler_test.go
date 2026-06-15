@@ -17,7 +17,7 @@ import (
 // serveToken は loginFn を差し替えた AuthHandler に POST /api/token/ し、結果を返す。
 func serveToken(loginFn func(context.Context, string, string) (string, string, error), body string) *httptest.ResponseRecorder {
 	e := newTestEcho()
-	h := NewAuthHandler(&mockAuthService{loginFn: loginFn})
+	h := NewAuthHandler(&mockAuthService{loginFn: loginFn}, false)
 	e.POST("/api/token/", h.Token)
 	req := httptest.NewRequest(http.MethodPost, "/api/token/", strings.NewReader(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -29,13 +29,49 @@ func serveToken(loginFn func(context.Context, string, string) (string, string, e
 // serveRegister は registerFn を差し替えた AuthHandler に POST /api/auth/register/ し、結果を返す。
 func serveRegister(registerFn func(context.Context, string, string, string) (*domain.ApplicationUser, error), body string) *httptest.ResponseRecorder {
 	e := newTestEcho()
-	h := NewAuthHandler(&mockAuthService{registerFn: registerFn})
+	h := NewAuthHandler(&mockAuthService{registerFn: registerFn}, false)
 	e.POST("/api/auth/register/", h.Register)
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/register/", strings.NewReader(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	return rec
+}
+
+// serveRefresh は refreshFn を差し替えた AuthHandler に POST /api/token/refresh/ する。
+// cookieValue が空でなければ refresh Cookie を付ける(空なら Cookie なし)。
+func serveRefresh(refreshFn func(context.Context, string) (string, error), cookieValue string) *httptest.ResponseRecorder {
+	e := newTestEcho()
+	h := NewAuthHandler(&mockAuthService{refreshFn: refreshFn}, false)
+	e.POST("/api/token/refresh/", h.Refresh)
+	req := httptest.NewRequest(http.MethodPost, "/api/token/refresh/", nil)
+	if cookieValue != "" {
+		req.AddCookie(&http.Cookie{Name: refreshCookieName, Value: cookieValue})
+	}
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	return rec
+}
+
+// serveLogout は AuthHandler に POST /api/auth/logout/ する。
+func serveLogout() *httptest.ResponseRecorder {
+	e := newTestEcho()
+	h := NewAuthHandler(&mockAuthService{}, false)
+	e.POST("/api/auth/logout/", h.Logout)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout/", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	return rec
+}
+
+// findCookie はレスポンスから指定名の Set-Cookie を探す。
+func findCookie(rec *httptest.ResponseRecorder, name string) *http.Cookie {
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == name {
+			return c
+		}
+	}
+	return nil
 }
 
 // okLogin は常に固定トークンを返す loginFn。
@@ -48,28 +84,15 @@ func okRegister(_ context.Context, u, em, _ string) (*domain.ApplicationUser, er
 	return &domain.ApplicationUser{ID: 1, Username: u, Email: em}, nil
 }
 
-const (
-	validLoginBody    = `{"username":"alice","password":"pw"}`
-	validRegisterBody = `{"username":"alice","email":"alice@example.com","password":"password123"}`
-	validRefreshBody  = `{"refresh":"some-refresh-token"}`
-)
-
-// serveRefresh は refreshFn を差し替えた AuthHandler に POST /api/token/refresh/ し、結果を返す。
-func serveRefresh(refreshFn func(context.Context, string) (string, error), body string) *httptest.ResponseRecorder {
-	e := newTestEcho()
-	h := NewAuthHandler(&mockAuthService{refreshFn: refreshFn})
-	e.POST("/api/token/refresh/", h.Refresh)
-	req := httptest.NewRequest(http.MethodPost, "/api/token/refresh/", strings.NewReader(body))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	return rec
-}
-
 // okRefresh は固定のアクセストークンを返す refreshFn。
 func okRefresh(_ context.Context, _ string) (string, error) {
 	return "new-access-tok", nil
 }
+
+const (
+	validLoginBody    = `{"username":"alice","password":"pw"}`
+	validRegisterBody = `{"username":"alice","email":"alice@example.com","password":"password123"}`
+)
 
 // 正しい資格情報でトークン取得した時、200 が返ること。
 func TestAuthHandler_Token_Success_Returns200(t *testing.T) {
@@ -80,7 +103,7 @@ func TestAuthHandler_Token_Success_Returns200(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 }
 
-// 正しい資格情報でトークン取得した時、レスポンスにアクセストークンが含まれること。
+// 正しい資格情報でトークン取得した時、レスポンス body にアクセストークンが含まれること。
 func TestAuthHandler_Token_Success_ReturnsAccessToken(t *testing.T) {
 	// Arrange & Act
 	rec := serveToken(okLogin, validLoginBody)
@@ -89,13 +112,25 @@ func TestAuthHandler_Token_Success_ReturnsAccessToken(t *testing.T) {
 	assert.Contains(t, rec.Body.String(), "access-tok")
 }
 
-// 正しい資格情報でトークン取得した時、レスポンスにリフレッシュトークンが含まれること。
-func TestAuthHandler_Token_Success_ReturnsRefreshToken(t *testing.T) {
+// 正しい資格情報でトークン取得した時、refresh が httpOnly Cookie でセットされること。
+func TestAuthHandler_Token_Success_SetsRefreshCookie(t *testing.T) {
 	// Arrange & Act
 	rec := serveToken(okLogin, validLoginBody)
 
 	// Assert
-	assert.Contains(t, rec.Body.String(), "refresh-tok")
+	cookie := findCookie(rec, refreshCookieName)
+	assert.NotNil(t, cookie)
+	assert.Equal(t, "refresh-tok", cookie.Value)
+	assert.True(t, cookie.HttpOnly)
+}
+
+// 正しい資格情報でトークン取得した時、refresh が body には含まれないこと。
+func TestAuthHandler_Token_Success_DoesNotReturnRefreshInBody(t *testing.T) {
+	// Arrange & Act
+	rec := serveToken(okLogin, validLoginBody)
+
+	// Assert
+	assert.NotContains(t, rec.Body.String(), "refresh-tok")
 }
 
 // 認証情報が誤っている時、401 が返ること。
@@ -173,54 +208,63 @@ func TestAuthHandler_Register_ValidationError(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
-// 有効なリフレッシュトークンで更新した時、200 が返ること。
+// 有効な refresh Cookie で更新した時、200 が返ること。
 func TestAuthHandler_Refresh_Success_Returns200(t *testing.T) {
 	// Arrange & Act
-	rec := serveRefresh(okRefresh, validRefreshBody)
+	rec := serveRefresh(okRefresh, "some-refresh-token")
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rec.Code)
 }
 
-// 有効なリフレッシュトークンで更新した時、レスポンスに新しいアクセストークンが含まれること。
+// 有効な refresh Cookie で更新した時、レスポンスに新しいアクセストークンが含まれること。
 func TestAuthHandler_Refresh_Success_ReturnsAccessToken(t *testing.T) {
 	// Arrange & Act
-	rec := serveRefresh(okRefresh, validRefreshBody)
+	rec := serveRefresh(okRefresh, "some-refresh-token")
 
 	// Assert
 	assert.Contains(t, rec.Body.String(), "new-access-tok")
 }
 
-// リフレッシュトークンが無効な時、401 が返ること。
+// refresh Cookie が無効な時、401 が返ること。
 func TestAuthHandler_Refresh_Invalid(t *testing.T) {
 	// Arrange & Act
 	rec := serveRefresh(func(_ context.Context, _ string) (string, error) {
 		return "", service.ErrInvalidCredentials
-	}, validRefreshBody)
+	}, "bad-refresh-token")
 
 	// Assert
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
-// refresh が欠けている時、サービスを呼ばず 400 が返ること。
-func TestAuthHandler_Refresh_ValidationError(t *testing.T) {
+// refresh Cookie が無い時、サービスを呼ばず 401 が返ること。
+func TestAuthHandler_Refresh_MissingCookie(t *testing.T) {
 	// Arrange & Act
 	rec := serveRefresh(func(_ context.Context, _ string) (string, error) {
-		t.Fatal("validation fail 時に service を呼んではいけない")
+		t.Fatal("Cookie が無い時に service を呼んではいけない")
 		return "", nil
-	}, `{}`) // refresh 欠落
+	}, "")
 
 	// Assert
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
-// JSON として壊れたボディの時、400 が返ること。
-func TestAuthHandler_Refresh_MalformedBody(t *testing.T) {
+// ログアウトした時、204 が返ること。
+func TestAuthHandler_Logout_Returns204(t *testing.T) {
 	// Arrange & Act
-	rec := serveRefresh(func(_ context.Context, _ string) (string, error) {
-		return "", nil
-	}, `{not json`)
+	rec := serveLogout()
 
 	// Assert
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// ログアウトした時、refresh Cookie が失効(値が空)で上書きされること。
+func TestAuthHandler_Logout_ClearsRefreshCookie(t *testing.T) {
+	// Arrange & Act
+	rec := serveLogout()
+
+	// Assert
+	cookie := findCookie(rec, refreshCookieName)
+	assert.NotNil(t, cookie)
+	assert.Empty(t, cookie.Value)
 }
