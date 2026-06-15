@@ -52,19 +52,18 @@ export function RecipesHeader() {
         <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
         <h1 className="text-base font-medium">MyRecipes</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Input placeholder="search" className="sm:w-40" />
+          <Input placeholder="検索" className="sm:w-40" />
           <Separator orientation="vertical" className="data-[orientation=vertical]:h-4" />
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => setIsOpen(true)}>
-                {' '}
-                +{' '}
+              <Button size="sm" aria-label="レシピを追加" onClick={() => setIsOpen(true)}>
+                +
               </Button>
             </DialogTrigger>
             <DialogContent className="flex max-h-[90dvh] w-full flex-col sm:max-w-3xl">
               <DialogHeader>
-                <DialogTitle>new recipe</DialogTitle>
-                <DialogDescription>create new recipe.</DialogDescription>
+                <DialogTitle>レシピを新規作成</DialogTitle>
+                <DialogDescription>新しいレシピを登録します</DialogDescription>
               </DialogHeader>
               <RecipeForm
                 mode="create"

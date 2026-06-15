@@ -9,7 +9,7 @@ import {
 } from '@/shared/ui/select'
 
 type SelectInputProps = {
-  className: string
+  className?: string
   label: string
   value: string
   placeholder?: string
@@ -18,7 +18,7 @@ type SelectInputProps = {
 }
 
 export function SelectInput({
-  className,
+  className = '',
   label,
   value,
   placeholder = '選択してください',

@@ -59,11 +59,11 @@ export function SignUpForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Create your account</CardTitle>
+        <CardTitle>アカウント作成</CardTitle>
         <CardDescription>アカウントを作成してレシピを管理しましょう</CardDescription>
         <CardAction>
           <Button variant="link" onClick={() => navigate('/')}>
-            Login
+            ログイン
           </Button>
         </CardAction>
       </CardHeader>
@@ -71,7 +71,7 @@ export function SignUpForm() {
         <CardContent>
           <div className="flex flex-col gap-6">
             <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">ユーザー名</Label>
               <Controller
                 control={control}
                 name="username"
@@ -90,7 +90,7 @@ export function SignUpForm() {
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">メールアドレス</Label>
               <Controller
                 control={control}
                 name="email"
@@ -107,7 +107,7 @@ export function SignUpForm() {
               {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">パスワード</Label>
               <Controller
                 control={control}
                 name="password"
@@ -129,7 +129,7 @@ export function SignUpForm() {
         </CardContent>
         <CardFooter className="mt-6 flex-col gap-2">
           <Button type="submit" className="w-full" disabled={register.isPending}>
-            Sign Up
+            登録
           </Button>
         </CardFooter>
       </form>

@@ -43,7 +43,7 @@ export function RecipeInputForm({ label, value, onChange, minRows = 0 }: InputPr
           <div key={index} className="flex gap-1">
             <div className="flex-2">
               <Input
-                placeholder="name"
+                placeholder="名前"
                 value={material.name}
                 onChange={(e) => handleInputChange(index, 'name', e.target.value)}
               />
@@ -51,14 +51,14 @@ export function RecipeInputForm({ label, value, onChange, minRows = 0 }: InputPr
             <div className="flex-1">
               <Input
                 type="number"
-                placeholder="quantity"
+                placeholder="数量"
                 value={material.quantity}
                 onChange={(e) => handleInputChange(index, 'quantity', e.target.value)}
               />
             </div>
             <div className="flex-1">
               <Input
-                placeholder="unit"
+                placeholder="単位"
                 value={material.unit}
                 onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
               />
