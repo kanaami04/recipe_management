@@ -46,7 +46,7 @@ export function RecipeDetailEditDialog({ recipe, open, onOpenChange }: EditDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-full">
+      <DialogContent className="flex max-h-[90dvh] w-full flex-col sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>レシピ編集</DialogTitle>
           <DialogDescription>レシピを編集します</DialogDescription>

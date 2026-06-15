@@ -30,8 +30,11 @@ export function MultiSelectInput({
       {label && <Label>{label}</Label>}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full text-left">
-            <div>
+          <Button
+            variant="outline"
+            className="h-auto min-h-9 w-full justify-start whitespace-normal text-left"
+          >
+            <div className="flex flex-wrap gap-1">
               {value.length === 0 ? (
                 <span className="text-muted-foreground">{placeholder}</span>
               ) : (
@@ -40,7 +43,7 @@ export function MultiSelectInput({
                   return (
                     <span
                       key={item}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full border text-sm"
+                      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm"
                     >
                       {opt?.label ?? item}
                     </span>

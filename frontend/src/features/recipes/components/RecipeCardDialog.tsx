@@ -50,16 +50,16 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <div role="button" style={{ display: 'inline-block', cursor: 'pointer' }}>
-            <RecipeCard key={recipe.id} recipe={recipe} />
-          </div>
+          <button type="button" className="block h-full w-full cursor-pointer text-left">
+            <RecipeCard recipe={recipe} />
+          </button>
         </DialogTrigger>
-        <DialogContent className="max-w-3xl w-full">
+        <DialogContent className="flex max-h-[90dvh] w-full flex-col sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{recipe.title}</DialogTitle>
             <DialogDescription>レシピの詳細</DialogDescription>
           </DialogHeader>
-          <div className="gap-4 h-140 overflow-auto">
+          <div className="flex-1 overflow-auto">
             <div className="grid gap-3">
               <div className="flex gap-3 w-full justify-start">
                 <Label>{recipe.create_for}人前</Label>

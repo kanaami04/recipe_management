@@ -24,11 +24,9 @@ export function RecipesPage() {
           <p className="text-muted-foreground">レシピがまだありません</p>
         </div>
       ) : (
-        <div className="flex flex-wrap">
+        <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4 lg:grid-cols-4 xl:grid-cols-5">
           {recipesData.map((recipe) => (
-            <div key={recipe.id} className="gap-2 py-2 md:gap-4 md:py-4 ">
-              <RecipeCardDialog recipe={recipe} />
-            </div>
+            <RecipeCardDialog key={recipe.id} recipe={recipe} />
           ))}
         </div>
       )}

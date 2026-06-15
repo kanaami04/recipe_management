@@ -61,7 +61,7 @@ export function RecipesHeader() {
                 +{' '}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl w-full">
+            <DialogContent className="flex max-h-[90dvh] w-full flex-col sm:max-w-3xl">
               <DialogHeader>
                 <DialogTitle>new recipe</DialogTitle>
                 <DialogDescription>create new recipe.</DialogDescription>
