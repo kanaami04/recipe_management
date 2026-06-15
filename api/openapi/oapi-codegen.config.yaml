@@ -1,7 +1,7 @@
 # openapi.yaml から Go の型(モデル)を生成する設定 (api ADR-0005)。
-# 生成は types-only。既存ハンドラ/DTO はこの段階では差し替えない。
+# 生成は types-only。出力先・spec パスはこのディレクトリ(api/openapi)からの相対。
 package: apigen
-output: internal/apigen/apigen.gen.go
+output: ../internal/apigen/apigen.gen.go
 generate:
   models: true
 output-options:
