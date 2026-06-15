@@ -5,5 +5,8 @@
     "RUN_INTEGRATION": "1"
   },
   // 結合テストはコンテナ起動を含むためタイムアウトを延ばす。
-  "go.testTimeout": "120s"
+  "go.testTimeout": "120s",
+  // Tailwind v4 の独自 at-rule(@custom-variant / @theme / @apply 等)を
+  // 標準 CSS 検証が「Unknown at rule」と誤検知するため無効化する。ビルドには無関係。
+  "css.lint.unknownAtRules": "ignore"
 }
