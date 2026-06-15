@@ -1,0 +1,573 @@
+openapi: 3.0.3
+info:
+  title: Recipe Management API
+  version: 1.0.0
+  description: |
+    レシピ管理アプリの API 契約。
+    本ファイルを契約の単一ソースとし、Go(oapi-codegen)と
+    TypeScript(フロント)双方の型を生成する (api ADR-0005 / frontend ADR-0007)。
+
+servers:
+  - url: /
+    description: 同一オリジン(dev は Vite proxy で /api を転送、本番はリバースプロキシ)
+
+tags:
+  - name: auth
+    description: 認証(ログイン・リフレッシュ・登録)
+  - name: users
+    description: ユーザー
+  - name: recipes
+    description: レシピ
+  - name: labels
+    description: ラベル
+
+paths:
+  /api/token/:
+    post:
+      tags: [auth]
+      summary: ログイン(access / refresh トークン発行)
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: 発行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/token/refresh/:
+    post:
+      tags: [auth]
+      summary: access トークンの再発行
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: 再発行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/register/:
+    post:
+      tags: [auth]
+      summary: ユーザー登録
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/user_info/:
+    get:
+      tags: [users]
+      summary: ログイン中ユーザーの情報取得
+      operationId: getUserInfo
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users/:
+    get:
+      tags: [users]
+      summary: 全ユーザー一覧(共有先の選択用)
+      operationId: listUsers
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserListItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/label/:
+    get:
+      tags: [labels]
+      summary: 全ラベル一覧
+      operationId: listLabels
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LabelResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/recipes/:
+    get:
+      tags: [recipes]
+      summary: 自分が所有または共有されたレシピ一覧
+      operationId: listRecipes
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [recipes]
+      summary: レシピ作成
+      operationId: createRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/recipes/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: レシピ ID
+        schema:
+          type: integer
+          format: int64
+    put:
+      tags: [recipes]
+      summary: レシピ更新
+      operationId: updateRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [recipes]
+      summary: レシピ削除
+      operationId: deleteRecipe
+      responses:
+        '204':
+          description: 削除成功(本文なし)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Authorization: Bearer <access_token>。
+        refresh トークンの Cookie 化は別途対応予定 (frontend/api ADR-0004)。
+
+  responses:
+    BadRequest:
+      description: リクエスト不正・バリデーション失敗
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: 未認証・トークン無効/期限切れ・クレデンシャル不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: 権限なし(他ユーザーのレシピ操作など)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: 対象が存在しない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: 既に存在する(ユーザー名・メール重複)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # 注: x-go-* / x-oapi-codegen-extra-tags は Go 生成のための拡張で、
+    # 他ツール(フロントの生成器)では無視される。生成型を現行の手書き DTO と
+    # 一致させ、ハンドラ/サービスを無改修のまま単一ソース化するために用いる (api ADR-0005)。
+    Error:
+      type: object
+      description: Echo の既定エラー形式 (api ADR-0003)
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: not found
+
+    TokenRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+        password:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    TokenResponse:
+      type: object
+      required: [access, refresh]
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refresh]
+      properties:
+        refresh:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    RefreshResponse:
+      type: object
+      required: [access]
+      properties:
+        access:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          x-oapi-codegen-extra-tags:
+            validate: required,max=50
+        email:
+          type: string
+          format: email
+          maxLength: 50
+          x-go-type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,email,max=50
+        password:
+          type: string
+          minLength: 8
+          x-oapi-codegen-extra-tags:
+            validate: required,min=8
+
+    UserInfoResponse:
+      type: object
+      required: [id, username, email]
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-go-name: ID
+          x-go-type: uint
+        username:
+          type: string
+        email:
+          type: string
+
+    UserListItem:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-go-name: ID
+          x-go-type: uint
+        username:
+          type: string
+
+    LabelResponse:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-go-name: ID
+          x-go-type: uint
+        name:
+          type: string
+
+    NameInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    LabelInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    SharedUserInput:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    CookingInput:
+      type: object
+      required: [ingredients, quantity, unit]
+      properties:
+        ingredients:
+          $ref: '#/components/schemas/NameInput'
+        quantity:
+          type: integer
+        unit:
+          type: string
+
+    SeasonInput:
+      type: object
+      required: [seasoning, quantity, unit]
+      properties:
+        seasoning:
+          $ref: '#/components/schemas/NameInput'
+        quantity:
+          type: integer
+        unit:
+          type: string
+
+    RecipeRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+        create_time:
+          type: integer
+          nullable: true
+          description: 調理時間(分)。任意。
+        create_for:
+          type: integer
+          description: 何人前。未指定時はサーバ側で 1 に正規化される。
+          x-go-type-skip-optional-pointer: true
+        procedure:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        archive_flg:
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        label:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelInput'
+          x-go-type-skip-optional-pointer: true
+        shared_user:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedUserInput'
+          x-go-type-skip-optional-pointer: true
+        cooking:
+          type: array
+          items:
+            $ref: '#/components/schemas/CookingInput'
+          x-go-type-skip-optional-pointer: true
+        season:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeasonInput'
+          x-go-type-skip-optional-pointer: true
+
+    NamedRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-go-name: ID
+          x-go-type: uint
+        name:
+          type: string
+
+    CookingResponse:
+      type: object
+      required: [ingredients, quantity, unit]
+      properties:
+        ingredients:
+          $ref: '#/components/schemas/NamedRef'
+        quantity:
+          type: integer
+        unit:
+          type: string
+
+    SeasonResponse:
+      type: object
+      required: [seasoning, quantity, unit]
+      properties:
+        seasoning:
+          $ref: '#/components/schemas/NamedRef'
+        quantity:
+          type: integer
+        unit:
+          type: string
+
+    RecipeResponse:
+      type: object
+      required:
+        - id
+        - created_at
+        - updated_at
+        - cooking
+        - season
+        - procedure
+        - owner
+        - shared_user
+        - title
+        - create_time
+        - create_for
+        - archive_flg
+        - label
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-go-name: ID
+          x-go-type: uint
+        created_at:
+          type: string
+          description: 'JST。形式: YYYY-MM-DD HH:mm'
+          example: '2026-06-15 09:30'
+        updated_at:
+          type: string
+          description: 'JST。形式: YYYY-MM-DD HH:mm'
+          example: '2026-06-15 09:30'
+        cooking:
+          type: array
+          items:
+            $ref: '#/components/schemas/CookingResponse'
+        season:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeasonResponse'
+        procedure:
+          type: string
+        owner:
+          $ref: '#/components/schemas/UserListItem'
+        shared_user:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserListItem'
+        title:
+          type: string
+        create_time:
+          type: integer
+          nullable: true
+          description: 調理時間(分)。任意。null 可。
+        create_for:
+          type: integer
+        archive_flg:
+          type: boolean
+        label:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelResponse'
+
+security:
+  - bearerAuth: []

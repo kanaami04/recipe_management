@@ -1,3 +1,19 @@
 [tools]
 node = "22.22.3"
 go = "1.25.11"
+
+[tasks.gen-api]
+description = "openapi.yaml から Go 型を生成 (api ADR-0005)"
+dir = "api/openapi"
+run = "go tool oapi-codegen -config oapi-codegen.config.yaml ../openapi.yaml"
+
+[tasks.test-api]
+description = "API の単体テストを実行(結合テストは Skip)"
+dir = "api"
+run = "go test ./..."
+
+[tasks.test-integration]
+description = "API の結合テストを実行(testcontainers / Docker 必須)。Mac/Windows 共通"
+dir = "api"
+env = { RUN_INTEGRATION = "1" }
+run = "go test ./..."

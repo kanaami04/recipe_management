@@ -1,0 +1,9 @@
+{
+  // 結合テスト(testcontainers / Docker 必須)を IDE のテスト実行でも動かす。
+  // OS 非依存で Mac / Windows どちらでも有効 (ADR-0002 のリポジトリ結合テスト)。
+  "go.testEnvVars": {
+    "RUN_INTEGRATION": "1"
+  },
+  // 結合テストはコンテナ起動を含むためタイムアウトを延ばす。
+  "go.testTimeout": "120s"
+}
