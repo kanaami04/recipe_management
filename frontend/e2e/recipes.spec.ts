@@ -22,6 +22,9 @@ async function mockApi(page: Page) {
   await page.route('**/api/token/', (route) =>
     route.fulfill({ status: 200, json: { access: 'fake-access' } }),
   )
+  await page.route('**/api/token/refresh/', (route) =>
+    route.fulfill({ status: 200, json: { access: 'fake-access' } }),
+  )
   await page.route('**/api/auth/register/', (route) =>
     route.fulfill({
       status: 201,
@@ -97,4 +100,16 @@ test('レシピを新規作成すると成功トーストが出る', async ({ pa
 
   // Assert
   await expect(page.getByText('レシピを作成しました')).toBeVisible()
+})
+
+test('認証済みで未定義パスへ行くとログインではなく /top へ戻る', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+
+  // Act: 存在しないパス(sidebar の label/archive 相当)へ遷移する
+  await page.goto('/top/archive')
+
+  // Assert: ログインではなく一覧へリダイレクトされる
+  await expect(page).toHaveURL(/\/top$/)
 })
