@@ -22,6 +22,12 @@ async function mockApi(page: Page) {
   await page.route('**/api/token/', (route) =>
     route.fulfill({ status: 200, json: { access: 'fake-access' } }),
   )
+  await page.route('**/api/auth/register/', (route) =>
+    route.fulfill({
+      status: 201,
+      json: { id: 2, username: 'hanako', email: 'hanako@example.com' },
+    }),
+  )
   await page.route('**/api/user_info/', (route) =>
     route.fulfill({ status: 200, json: { id: 1, username: 'taro', email: 'taro@example.com' } }),
   )
@@ -55,6 +61,22 @@ test('ログインするとレシピ一覧が表示される', async ({ page }) 
   await login(page)
 
   // Assert
+  await expect(page.getByText('カレー')).toBeVisible()
+})
+
+test('サインアップするとそのままログインして一覧へ遷移する', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+
+  // Act: サインアップ画面で登録 → 自動ログイン
+  await page.goto('/signup')
+  await page.fill('#username', 'hanako')
+  await page.fill('#email', 'hanako@example.com')
+  await page.fill('#password', 'password123')
+  await page.getByRole('button', { name: 'Sign Up' }).click()
+
+  // Assert
+  await expect(page).toHaveURL(/\/top$/)
   await expect(page.getByText('カレー')).toBeVisible()
 })
 
