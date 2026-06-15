@@ -1,4 +1,6 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -14,27 +16,35 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { login } from '@/shared/auth/authClient'
 
+import { loginFormSchema, type LoginFormValues } from './loginFormSchema'
 import { MessageAlertDialog } from './MessageAlertDialog.tsx'
 import { Button } from './ui/button.tsx'
 
 export function UserLoginFrom() {
   const navigate = useNavigate()
-  const [userName, setUserName] = useState('')
-  const [userPassword, setUserPassword] = useState('')
   const [isErrorOpen, setIsErrorOpen] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  // フォーム状態は RHF + zod で管理する (ADR-0006)。
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: { username: '', password: '' },
+    mode: 'onBlur',
+  })
 
+  const onSubmit = handleSubmit(async (values) => {
     try {
       // access はメモリ保持、refresh は httpOnly Cookie で発行される (ADR-0004)。
-      await login(userName, userPassword)
+      await login(values.username, values.password)
       navigate('/top')
     } catch (error) {
       console.error(error)
       setIsErrorOpen(true)
     }
-  }
+  })
 
   return (
     <>
@@ -46,45 +56,63 @@ export function UserLoginFrom() {
             <Button variant="link">Sign Up</Button>
           </CardAction>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <a
-                  href="#"
-                  className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                >
-                  Forgot your password?
-                </a>
+        <form onSubmit={onSubmit}>
+          <CardContent>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Controller
+                  control={control}
+                  name="username"
+                  render={({ field }) => (
+                    <Input
+                      id="username"
+                      type="text"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
+                {errors.username && (
+                  <p className="text-destructive text-sm">{errors.username.message}</p>
+                )}
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={userPassword}
-                onChange={(e) => setUserPassword(e.target.value)}
-                required
-              />
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                  <a
+                    href="#"
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+                <Controller
+                  control={control}
+                  name="password"
+                  render={({ field }) => (
+                    <Input
+                      id="password"
+                      type="password"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                />
+                {errors.password && (
+                  <p className="text-destructive text-sm">{errors.password.message}</p>
+                )}
+              </div>
             </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex-col gap-2">
-          <form className="w-full" onSubmit={handleLogin}>
+          </CardContent>
+          <CardFooter className="mt-6 flex-col gap-2">
             <Button type="submit" className="w-full">
               Login
             </Button>
-          </form>
-        </CardFooter>
+          </CardFooter>
+        </form>
       </Card>
 
       <MessageAlertDialog
