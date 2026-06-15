@@ -1,19 +1,16 @@
 package response
 
-import "recipe-backend/internal/domain"
+import (
+	"recipe-backend/internal/apigen"
+	"recipe-backend/internal/domain"
+)
 
-// UserInfoResponse は GET /api/user_info/ のレスポンス。
-type UserInfoResponse struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-}
-
-// UserListItem は GET /api/users/ の要素、および recipe の owner/shared_user で使う。
-type UserListItem struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-}
+// 構造体定義は openapi.yaml から生成する (api ADR-0005)。生成型を再エクスポートする。
+// UserListItem は recipe の owner/shared_user でも使う。
+type (
+	UserInfoResponse = apigen.UserInfoResponse
+	UserListItem     = apigen.UserListItem
+)
 
 func ToUserInfo(u *domain.ApplicationUser) UserInfoResponse {
 	return UserInfoResponse{ID: u.ID, Username: u.Username, Email: u.Email}

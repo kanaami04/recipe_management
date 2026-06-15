@@ -3,46 +3,18 @@ package response
 import (
 	"time"
 
+	"recipe-backend/internal/apigen"
 	"recipe-backend/internal/domain"
 )
 
-type NamedRef struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
-}
-
-type LabelResponse struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
-}
-
-type CookingResponse struct {
-	Ingredients NamedRef `json:"ingredients"`
-	Quantity    int      `json:"quantity"`
-	Unit        string   `json:"unit"`
-}
-
-type SeasonResponse struct {
-	Seasoning NamedRef `json:"seasoning"`
-	Quantity  int      `json:"quantity"`
-	Unit      string   `json:"unit"`
-}
-
-type RecipeResponse struct {
-	ID         uint              `json:"id"`
-	CreatedAt  string            `json:"created_at"`
-	UpdatedAt  string            `json:"updated_at"`
-	Cooking    []CookingResponse `json:"cooking"`
-	Season     []SeasonResponse  `json:"season"`
-	Procedure  string            `json:"procedure"`
-	Owner      UserListItem      `json:"owner"`
-	SharedUser []UserListItem    `json:"shared_user"`
-	Title      string            `json:"title"`
-	CreateTime *int              `json:"create_time"`
-	CreateFor  int               `json:"create_for"`
-	ArchiveFlg bool              `json:"archive_flg"`
-	Label      []LabelResponse   `json:"label"`
-}
+// 構造体定義は openapi.yaml から生成する (api ADR-0005)。生成型を再エクスポートする。
+type (
+	NamedRef        = apigen.NamedRef
+	LabelResponse   = apigen.LabelResponse
+	CookingResponse = apigen.CookingResponse
+	SeasonResponse  = apigen.SeasonResponse
+	RecipeResponse  = apigen.RecipeResponse
+)
 
 // jst は created_at/updated_at の整形に使うタイムゾーン。
 var jst = func() *time.Location {

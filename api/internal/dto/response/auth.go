@@ -1,12 +1,9 @@
 package response
 
-// TokenResponse は POST /api/token/ のレスポンス。
-type TokenResponse struct {
-	Access  string `json:"access"`
-	Refresh string `json:"refresh"`
-}
+import "recipe-backend/internal/apigen"
 
-// RefreshResponse は POST /api/token/refresh/ のレスポンス。
-type RefreshResponse struct {
-	Access string `json:"access"`
-}
+// 構造体定義は openapi.yaml から生成する (api ADR-0005)。生成型を再エクスポートする。
+type (
+	TokenResponse   = apigen.TokenResponse
+	RefreshResponse = apigen.RefreshResponse
+)

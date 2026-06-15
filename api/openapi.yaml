@@ -272,6 +272,9 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    # 注: x-go-* / x-oapi-codegen-extra-tags は Go 生成のための拡張で、
+    # 他ツール(フロントの生成器)では無視される。生成型を現行の手書き DTO と
+    # 一致させ、ハンドラ/サービスを無改修のまま単一ソース化するために用いる (api ADR-0005)。
     Error:
       type: object
       description: Echo の既定エラー形式 (api ADR-0003)
@@ -287,8 +290,12 @@ components:
       properties:
         username:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
         password:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
 
     TokenResponse:
       type: object
@@ -305,6 +312,8 @@ components:
       properties:
         refresh:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
 
     RefreshResponse:
       type: object
@@ -320,13 +329,20 @@ components:
         username:
           type: string
           maxLength: 50
+          x-oapi-codegen-extra-tags:
+            validate: required,max=50
         email:
           type: string
           format: email
           maxLength: 50
+          x-go-type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,email,max=50
         password:
           type: string
           minLength: 8
+          x-oapi-codegen-extra-tags:
+            validate: required,min=8
 
     UserInfoResponse:
       type: object
@@ -335,6 +351,8 @@ components:
         id:
           type: integer
           format: int64
+          x-go-name: ID
+          x-go-type: uint
         username:
           type: string
         email:
@@ -347,6 +365,8 @@ components:
         id:
           type: integer
           format: int64
+          x-go-name: ID
+          x-go-type: uint
         username:
           type: string
 
@@ -357,6 +377,8 @@ components:
         id:
           type: integer
           format: int64
+          x-go-name: ID
+          x-go-type: uint
         name:
           type: string
 
@@ -366,6 +388,8 @@ components:
       properties:
         name:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
 
     LabelInput:
       type: object
@@ -373,6 +397,8 @@ components:
       properties:
         name:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
 
     SharedUserInput:
       type: object
@@ -380,6 +406,8 @@ components:
       properties:
         username:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
 
     CookingInput:
       type: object
@@ -409,6 +437,8 @@ components:
       properties:
         title:
           type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
         create_time:
           type: integer
           nullable: true
@@ -416,26 +446,33 @@ components:
         create_for:
           type: integer
           description: 何人前。未指定時はサーバ側で 1 に正規化される。
+          x-go-type-skip-optional-pointer: true
         procedure:
           type: string
+          x-go-type-skip-optional-pointer: true
         archive_flg:
           type: boolean
+          x-go-type-skip-optional-pointer: true
         label:
           type: array
           items:
             $ref: '#/components/schemas/LabelInput'
+          x-go-type-skip-optional-pointer: true
         shared_user:
           type: array
           items:
             $ref: '#/components/schemas/SharedUserInput'
+          x-go-type-skip-optional-pointer: true
         cooking:
           type: array
           items:
             $ref: '#/components/schemas/CookingInput'
+          x-go-type-skip-optional-pointer: true
         season:
           type: array
           items:
             $ref: '#/components/schemas/SeasonInput'
+          x-go-type-skip-optional-pointer: true
 
     NamedRef:
       type: object
@@ -444,6 +481,8 @@ components:
         id:
           type: integer
           format: int64
+          x-go-name: ID
+          x-go-type: uint
         name:
           type: string
 
@@ -481,6 +520,7 @@ components:
         - owner
         - shared_user
         - title
+        - create_time
         - create_for
         - archive_flg
         - label
@@ -488,6 +528,8 @@ components:
         id:
           type: integer
           format: int64
+          x-go-name: ID
+          x-go-type: uint
         created_at:
           type: string
           description: 'JST。形式: YYYY-MM-DD HH:mm'
@@ -517,7 +559,7 @@ components:
         create_time:
           type: integer
           nullable: true
-          description: 調理時間(分)。任意。
+          description: 調理時間(分)。任意。null 可。
         create_for:
           type: integer
         archive_flg:
