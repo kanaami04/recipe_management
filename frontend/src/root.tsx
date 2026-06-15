@@ -1,10 +1,12 @@
 import './index.css'
 
+import { QueryClientProvider } from '@tanstack/react-query'
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
 import { Toaster } from 'sonner'
 
 import { UserProvider } from './hooks/UserContext'
 import { configureApiClient } from './shared/api/client'
+import { queryClient } from './shared/lib/queryClient'
 
 // 生成 API クライアントに baseURL・withCredentials・auth interceptor を適用する (ADR-0004/0007)。
 configureApiClient()
@@ -31,11 +33,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 // アプリのルート。Provider を集約する(QueryClientProvider は ADR-0003 段階で追加)。
 export default function App() {
   return (
-    <UserProvider>
-      <Outlet />
-      {/* 通知系トースト。alert() を置き換える (ADR-0009 #3) */}
-      <Toaster richColors position="top-center" />
-    </UserProvider>
+    <QueryClientProvider client={queryClient}>
+      <UserProvider>
+        <Outlet />
+        {/* 通知系トースト。alert() を置き換える (ADR-0009 #3) */}
+        <Toaster richColors position="top-center" />
+      </UserProvider>
+    </QueryClientProvider>
   )
 }
 

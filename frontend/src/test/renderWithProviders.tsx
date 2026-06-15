@@ -1,12 +1,20 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, type RenderOptions } from '@testing-library/react'
-import type { ReactElement, ReactNode } from 'react'
+import { type ReactElement, type ReactNode, useState } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 
 // アプリ全体の Provider をまとめて差し込むテストヘルパー (ADR-0008)。
-// 現状は Router のみ。TanStack Query の QueryClientProvider (ADR-0003) と
-// 認証 Context (ADR-0004) は、それらが導入される段階でここへ追加する。
+// QueryClient はテストごとに新規生成して状態を隔離する。
+// 認証 Context (ADR-0004) は必要になった段階でここへ追加する。
 function AllProviders({ children }: { children: ReactNode }) {
-  return <BrowserRouter>{children}</BrowserRouter>
+  const [client] = useState(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  )
+  return (
+    <QueryClientProvider client={client}>
+      <BrowserRouter>{children}</BrowserRouter>
+    </QueryClientProvider>
+  )
 }
 
 export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
