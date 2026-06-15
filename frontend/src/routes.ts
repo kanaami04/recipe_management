@@ -4,6 +4,7 @@ import { index, route, type RouteConfig } from '@react-router/dev/routes'
 // 既存 URL 構造(/ = ログイン、/top = 保護レイアウト + レシピ一覧)を維持する。
 export default [
   index('routes/login.tsx'),
+  route('signup', 'routes/signup.tsx'),
   route('top', 'routes/protected.tsx', [index('routes/recipes.tsx')]),
   route('*', 'routes/catchall.tsx'),
 ] satisfies RouteConfig

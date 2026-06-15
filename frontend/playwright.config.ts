@@ -11,14 +11,15 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  // dev サーバを起動して E2E を回す。既存サーバがあれば再利用する。
+  // 本番ビルド + preview を使う。dev の依存最適化リロードに起因する初回フレークを避ける。
+  // API はブラウザ側のルートモックで差し替えるため proxy は不要。
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run build && npm run preview -- --port 4173',
+    url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
