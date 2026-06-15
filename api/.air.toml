@@ -1,0 +1,24 @@
+# air (cosmtrek/air) 設定 — バックエンドのホットリロード用。
+# ビルド成果物は api/.gitignore 済みの bin/ に出すので、追加の .gitignore 変更は不要。
+# main.go は -env のデフォルト(.env が無ければ既定値)で動くため、起動引数は不要。
+
+root = "."
+tmp_dir = "bin"
+
+[build]
+  cmd = "go build -o ./bin/main ."
+  entrypoint = ["./bin/main"]
+  include_ext = ["go"]
+  # 自分のビルド出力と生成物・テストは監視対象から除外する
+  exclude_dir = ["bin", "openapi"]
+  exclude_regex = ["_test\\.go"]
+  # 連続保存時のビルド回数を抑える(ms)
+  delay = 1000
+  stop_on_error = true
+
+[misc]
+  # 終了時に bin/(tmp_dir)を残す。git 管理外なので放置で問題ない。
+  clean_on_exit = false
+
+[log]
+  time = true
