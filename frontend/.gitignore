@@ -16,6 +16,12 @@ dist-ssr
 .react-router/
 build/
 
+# Playwright E2E の出力
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

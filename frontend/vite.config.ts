@@ -30,10 +30,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     // テスト基盤 (ADR-0008): Vitest + Testing Library + MSW。
+    // E2E(e2e/ 配下の Playwright)は Vitest の対象外にする。
     test: {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       css: false,
+      include: ['src/**/*.{test,spec}.{ts,tsx}'],
     },
   }
 })
