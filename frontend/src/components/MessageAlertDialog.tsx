@@ -1,21 +1,21 @@
 import {
-	AlertDialog,
-	AlertDialogHeader,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogTitle,
-	AlertDialogAction,
-	AlertDialogFooter,
-} from "@/components/ui/alert-dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 type Alert = {
-  title: string;
+  title: string
   description: string
-  open: boolean;
-  onOpenChange: () => void;
+  open: boolean
+  onOpenChange: () => void
 }
 
-export function MessageAlertDialog({title, description, open, onOpenChange}: Alert) {
+export function MessageAlertDialog({ title, description, open, onOpenChange }: Alert) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -26,9 +26,7 @@ export function MessageAlertDialog({title, description, open, onOpenChange}: Ale
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={onOpenChange}>
-            OK
-          </AlertDialogAction>
+          <AlertDialogAction onClick={onOpenChange}>OK</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
