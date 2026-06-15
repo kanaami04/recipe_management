@@ -4,6 +4,10 @@ import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration }
 import { Toaster } from 'sonner'
 
 import { UserProvider } from './hooks/UserContext'
+import { configureApiClient } from './shared/api/client'
+
+// 生成 API クライアントに baseURL・withCredentials・auth interceptor を適用する (ADR-0004/0007)。
+configureApiClient()
 
 // HTML ドキュメントの骨格。framework mode が描画する (ADR-0002)。
 export function Layout({ children }: { children: React.ReactNode }) {

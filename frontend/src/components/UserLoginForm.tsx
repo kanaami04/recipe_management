@@ -12,9 +12,8 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useUser } from '@/hooks/UserContext.tsx'
+import { login } from '@/shared/auth/authClient'
 
-import { api } from '../lib/api.ts'
 import { MessageAlertDialog } from './MessageAlertDialog.tsx'
 import { Button } from './ui/button.tsx'
 
@@ -23,19 +22,14 @@ export function UserLoginFrom() {
   const [userName, setUserName] = useState('')
   const [userPassword, setUserPassword] = useState('')
   const [isErrorOpen, setIsErrorOpen] = useState(false)
-  const { setToken } = useUser()
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     try {
-      const response = await api.post('/api/token/', { username: userName, password: userPassword })
-      const { access, refresh } = response.data
-      localStorage.setItem('access', access)
-      localStorage.setItem('refresh', refresh)
-      setToken(access)
+      // access はメモリ保持、refresh は httpOnly Cookie で発行される (ADR-0004)。
+      await login(userName, userPassword)
       navigate('/top')
-      console.log('access')
     } catch (error) {
       console.error(error)
       setIsErrorOpen(true)

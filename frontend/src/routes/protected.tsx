@@ -1,19 +1,15 @@
-import { Navigate, Outlet } from 'react-router'
+import { Outlet } from 'react-router'
 
 import { AppSidebar } from '@/components/sidebar/AppSidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { useUser } from '@/hooks/UserContext'
+import { requireAuth } from '@/shared/auth/requireAuth'
 
-// 保護レイアウト。未ログインは "/" へリダイレクトする。
-// 現状は token を直接見て判定する(グローバル可変変数バグを解消)。
-// clientLoader による認証ガードへの集約は ADR-0004 のトークンストア導入時に行う。
+// 認証ガードを clientLoader に集約する (ADR-0002 / ADR-0004)。
+// access が無ければ Cookie の refresh で復帰を試み、失敗なら "/" へ。
+export const clientLoader = requireAuth
+
+// 保護レイアウト。認証は clientLoader で担保済み。
 export default function ProtectedLayout() {
-  const { token } = useUser()
-
-  if (!token) {
-    return <Navigate to="/" replace />
-  }
-
   return (
     <SidebarProvider
       style={

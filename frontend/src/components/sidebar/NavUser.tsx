@@ -17,18 +17,17 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useUser } from '@/hooks/UserContext'
+import { logout } from '@/shared/auth/authClient'
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  const { user, setToken } = useUser()
+  const { user } = useUser()
   const navigate = useNavigate()
 
-  const onClickLogout = () => {
-    localStorage.removeItem('access')
-    localStorage.removeItem('refresh')
+  const onClickLogout = async () => {
+    // サーバ側で refresh Cookie を失効し、メモリの access を消す (ADR-0004)。
+    await logout()
     navigate('/')
-    setToken(null)
-    console.log('no access')
   }
 
   const onClickLogIn = () => {

@@ -1,17 +1,20 @@
-import { createContext, useContext } from 'react'
-import { useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 import { useFetchLoginUser } from '@/hooks/useFetchData'
-import type { UserContextType } from '@/type/LoginUser.tsx'
-import type { Token } from '@/type/LoginUser.tsx'
+import { getAccessToken, setAccessToken, subscribeAccessToken } from '@/shared/auth/tokenStore'
+import type { Token, UserContextType } from '@/type/LoginUser'
 
 const UserContext = createContext<UserContextType | null>(null)
 
+// token はメモリストア(ADR-0004)を単一の源とし、Context は表示用にミラーする。
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token, setToken] = useState<Token>(localStorage.getItem('access'))
-  const { data: user, error } = useFetchLoginUser(token)
+  const [token, setTokenState] = useState<Token>(getAccessToken())
 
-  if (error) console.log(error)
+  useEffect(() => subscribeAccessToken(setTokenState), [])
+
+  const { data: user } = useFetchLoginUser(token)
+
+  const setToken = (next: Token) => setAccessToken(next)
 
   return (
     <UserContext.Provider value={{ user: user ?? null, token, setToken }}>
