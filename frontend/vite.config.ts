@@ -1,7 +1,8 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { defineConfig, loadEnv } from 'vite'
+import { loadEnv } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -23,6 +24,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
       },
+    },
+    // テスト基盤 (ADR-0008): Vitest + Testing Library + MSW。
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+      css: false,
     },
   }
 })
