@@ -30,7 +30,7 @@ func Load(envFile string) *Config {
 
 	return &Config{
 		Port:         getEnv("PORT", "8000"),
-		DatabaseURL:  getEnv("DATABASE_URL", "host=localhost user=recipe password=recipe dbname=recipe port=5432 sslmode=disable TimeZone=Asia/Tokyo"),
+		DatabaseURL:  getEnv("DATABASE_URL", "host=localhost user=recipe password=recipe dbname=recipe port=5433 sslmode=disable TimeZone=Asia/Tokyo"),
 		JWTSecret:    getEnv("JWT_SECRET", "dev-insecure-secret-change-me"),
 		CORSOrigin:   getEnv("CORS_ORIGIN", "http://localhost:5173"),
 		LogLevel:     getEnv("LOG_LEVEL", "info"),
