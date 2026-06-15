@@ -57,10 +57,10 @@ export function RecipeForm({
   })
 
   return (
-    <form onSubmit={submit}>
-      <div className="grid gap-4 h-140 overflow-auto">
-        <div className="flex gap-3">
-          <div className="flex-2 grid gap-3">
+    <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="grid gap-4 overflow-auto pr-1">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="grid flex-2 gap-3">
             <Label>title</Label>
             <Controller
               control={control}
@@ -81,7 +81,7 @@ export function RecipeForm({
             name="createFor"
             render={({ field }) => (
               <SelectInput
-                className="flex-1 grid gap-3"
+                className="grid flex-1 gap-3"
                 label="create_for"
                 value={field.value}
                 onChange={field.onChange}
@@ -95,7 +95,7 @@ export function RecipeForm({
             name="createTime"
             render={({ field }) => (
               <SelectInput
-                className="flex-1 w-20 grid gap-3"
+                className="grid flex-1 gap-3"
                 label="create_time"
                 value={field.value}
                 onChange={field.onChange}
@@ -145,14 +145,14 @@ export function RecipeForm({
             )}
           />
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           {labelData && (
             <Controller
               control={control}
               name="label"
               render={({ field }) => (
                 <MultiSelectInput
-                  className="flex-1 w-20 grid gap-2"
+                  className="grid flex-1 gap-2"
                   label="label"
                   value={field.value}
                   onChange={field.onChange}
@@ -167,7 +167,7 @@ export function RecipeForm({
               name="sharedUser"
               render={({ field }) => (
                 <MultiSelectInput
-                  className="flex-1 w-20 grid gap-2"
+                  className="grid flex-1 gap-2"
                   label="shared"
                   value={field.value}
                   onChange={field.onChange}
