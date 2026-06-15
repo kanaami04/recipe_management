@@ -20,7 +20,7 @@ import { loginFormSchema, type LoginFormValues } from './loginFormSchema'
 import { MessageAlertDialog } from './MessageAlertDialog.tsx'
 import { Button } from './ui/button.tsx'
 
-export function UserLoginFrom() {
+export function LoginForm() {
   const navigate = useNavigate()
   const [isErrorOpen, setIsErrorOpen] = useState(false)
 

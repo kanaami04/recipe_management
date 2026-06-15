@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { Material } from '@/type/RecipeDataType'
+
+// 材料(食材・調味料)1 行の入力値。フォーム内部の状態型。
+export type Material = { name: string; quantity: number; unit: string }
 
 type InputProps = {
   label: string

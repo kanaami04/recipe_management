@@ -1,6 +1,6 @@
 import { GalleryVerticalEnd } from 'lucide-react'
 
-import { UserLoginFrom } from '../components/UserLoginForm.tsx'
+import { LoginForm } from '../components/UserLoginForm.tsx'
 
 export function LoginPage() {
   return (
@@ -12,7 +12,7 @@ export function LoginPage() {
           </div>
           recipe.
         </a>
-        <UserLoginFrom />
+        <LoginForm />
       </div>
     </div>
   )
