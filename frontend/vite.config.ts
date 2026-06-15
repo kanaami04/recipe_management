@@ -21,6 +21,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      // 他プロジェクト(Vite 既定の 5173)と衝突しないよう専用ポートに固定する。
+      // strictPort で勝手にずらさせない(スマホ実機テストの URL を一定に保つ)。
+      port: 5273,
+      strictPort: true,
       // dev は /api を Go バックエンドへ転送し同一オリジン化する (ADR-0004 / ADR-0009)。
       proxy: {
         '/api': {
