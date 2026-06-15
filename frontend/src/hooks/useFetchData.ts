@@ -1,4 +1,3 @@
-import type { LoginUser } from '@/type/LoginUser'
 import type { Token } from '@/type/LoginUser'
 import type { RecipeDataType, RecipeLabel, SharedUser } from '@/type/RecipeDataType'
 
@@ -10,10 +9,6 @@ export const useFetchSharedUser = (token: Token) => {
 
 export const useFetchRecipeLabel = (token: Token) => {
   return useApiData<Array<RecipeLabel>>('api/label/', token)
-}
-
-export const useFetchLoginUser = (token: Token) => {
-  return useApiData<LoginUser>('api/user_info/', token)
 }
 
 export const useFetchRecipes = (token: Token) => {

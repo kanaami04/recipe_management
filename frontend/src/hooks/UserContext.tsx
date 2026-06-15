@@ -1,6 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import { useFetchLoginUser } from '@/hooks/useFetchData'
+import { getUserInfoOptions } from '@/shared/api/generated/@tanstack/react-query.gen'
 import { getAccessToken, setAccessToken, subscribeAccessToken } from '@/shared/auth/tokenStore'
 import type { Token, UserContextType } from '@/type/LoginUser'
 
@@ -12,7 +13,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => subscribeAccessToken(setTokenState), [])
 
-  const { data: user } = useFetchLoginUser(token)
+  // ログインユーザー情報は生成 Query フックで取得する (ADR-0003/0007)。
+  // token がある時だけ叩く。認証ヘッダは interceptor が付与する。
+  const { data: user } = useQuery({ ...getUserInfoOptions(), enabled: !!token })
 
   const setToken = (next: Token) => setAccessToken(next)
 
