@@ -7,7 +7,8 @@ services:
       POSTGRES_USER: recipe
       POSTGRES_PASSWORD: recipe
     ports:
-      - "5432:5432"
+      # ホスト側は 5433 に割り当て(他プロジェクトの 5432 と衝突させない)。コンテナ内は 5432 のまま。
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
