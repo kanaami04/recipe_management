@@ -72,6 +72,25 @@ describe('attachAuthInterceptors', () => {
     expect(res.status).toBe(200)
   })
 
+  it('リクエストに CSRF カスタムヘッダが付与されること。', async () => {
+    // Arrange
+    let received: string | null = null
+    server.use(
+      http.get('*/api/thing', ({ request }) => {
+        received = request.headers.get('X-Requested-With')
+        return HttpResponse.json({ ok: true })
+      }),
+    )
+    const instance = axios.create({ baseURL: '' })
+    attachAuthInterceptors(instance)
+
+    // Act
+    await instance.get('/api/thing')
+
+    // Assert
+    expect(received).toBe('XMLHttpRequest')
+  })
+
   it('同時多発の 401 でも refresh が 1 回だけ走ること(single-flight)。', async () => {
     // Arrange
     setAccessToken('old')
