@@ -36,4 +36,12 @@ export default tseslint.config([
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
+  {
+    // テストヘルパー・テストは dev の Fast Refresh グラフに乗らないため、
+    // 非コンポーネントの export(RTL 再エクスポート等)を許可する。
+    files: ['src/test/**', '**/*.test.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
