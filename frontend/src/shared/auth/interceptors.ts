@@ -1,6 +1,7 @@
 import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 
 import { refreshAccessToken } from './authClient'
+import { CSRF_HEADER, CSRF_HEADER_VALUE } from './csrf'
 import { clearAccessToken, getAccessToken } from './tokenStore'
 
 let refreshPromise: Promise<string> | null = null
@@ -27,6 +28,8 @@ export function attachAuthInterceptors(instance: AxiosInstance): void {
     if (token) {
       config.headers.set('Authorization', `Bearer ${token}`)
     }
+    // CSRF 対策のカスタムヘッダを全リクエストに付与する (ADR-0004 #3)。
+    config.headers.set(CSRF_HEADER, CSRF_HEADER_VALUE)
     return config
   })
 

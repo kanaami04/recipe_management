@@ -42,7 +42,7 @@ func New(cfg *config.Config, db *gorm.DB, logger *slog.Logger) *echo.Echo {
 			http.MethodGet, http.MethodPost, http.MethodPut,
 			http.MethodDelete, http.MethodOptions,
 		},
-		AllowHeaders: []string{echo.HeaderAuthorization, echo.HeaderContentType},
+		AllowHeaders: []string{echo.HeaderAuthorization, echo.HeaderContentType, appmw.CSRFHeaderName},
 		// refresh Cookie をクロスオリジンでも送受信するため credentials を許可する
 		// (api ADR-0004)。AllowOrigins はワイルドカード不可・特定オリジンのみ。
 		AllowCredentials: true,
