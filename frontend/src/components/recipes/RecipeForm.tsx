@@ -6,7 +6,13 @@ import { DialogClose, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { Material, RecipeDataType } from '@/type/RecipeDataType'
+import type {
+  LabelResponse,
+  RecipeRequest,
+  RecipeResponse,
+  UserListItem,
+} from '@/shared/api/generated/types.gen'
+import type { Material } from '@/type/RecipeDataType'
 
 import { MultiSelectInput } from './MultiSelectInput'
 import { RecipeInputForm } from './RecipeInputForm'
@@ -14,10 +20,10 @@ import { SelectInput } from './SelectInput'
 
 type Props = {
   mode: 'create' | 'edit'
-  initialData?: RecipeDataType
-  onSubmit: (payload: RecipeDataType) => Promise<void>
-  labelData?: { name: string }[]
-  sharedUserData?: { username: string }[]
+  initialData?: RecipeResponse
+  onSubmit: (payload: RecipeRequest) => Promise<void>
+  labelData?: LabelResponse[]
+  sharedUserData?: UserListItem[]
   onClickCancel?: () => void
 }
 
@@ -29,7 +35,6 @@ export function RecipeForm({
   sharedUserData,
   onClickCancel,
 }: Props) {
-  const id = initialData?.id ?? null
   const [title, setTitle] = useState(initialData?.title ?? '')
   const [createFor, setCreateFor] = useState<string>(String(initialData?.create_for ?? ''))
   const [time, setTime] = useState<string>(String(initialData?.create_time ?? ''))
@@ -61,17 +66,15 @@ export function RecipeForm({
   const handleCreatePayload: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
 
-    const payload = {
-      id: Number(id),
+    // フォームの状態を API 契約(RecipeRequest)へ変換する。id は URL 側で扱う。
+    const payload: RecipeRequest = {
       title,
-      create_time: Number(time),
+      create_time: time === '' ? null : Number(time),
       create_for: Number(createFor),
       procedure,
       archive_flg: isArchive,
-      label: label ? label.map((l) => ({ name: l })) : ([] as { name: string }[]),
-      shared_user: sharedUser
-        ? sharedUser.map((s) => ({ username: s }))
-        : ([] as { username: string }[]),
+      label: label.map((l) => ({ name: l })),
+      shared_user: sharedUser.map((s) => ({ username: s })),
       cooking: ingredients.map((item) => ({
         ingredients: { name: item.name },
         quantity: item.quantity,
@@ -84,7 +87,6 @@ export function RecipeForm({
       })),
     }
 
-    console.log('送信するJSON:', JSON.stringify(payload, null, 2))
     await onSubmit(payload)
   }
 
