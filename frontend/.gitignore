@@ -21,6 +21,8 @@ build/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+# ビジュアル確認用スクリーンショットの出力(成果物。コミットしない)
+/screenshots/
 
 # Editor directories and files
 .vscode/*
