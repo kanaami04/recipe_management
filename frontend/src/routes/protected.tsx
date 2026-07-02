@@ -4,7 +4,7 @@ import { requireAuth } from '@/shared/auth/requireAuth'
 import { AppSidebar } from '@/shared/components/sidebar/AppSidebar'
 import { SidebarInset, SidebarProvider } from '@/shared/ui/sidebar'
 
-// 認証ガードを clientLoader に集約する (ADR-0002 / ADR-0004)。
+// 認証ガードを clientLoader に集約する。
 // access が無ければ Cookie の refresh で復帰を試み、失敗なら "/" へ。
 export const clientLoader = requireAuth
 

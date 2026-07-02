@@ -34,7 +34,7 @@ func run() error {
 	// 例: go run main.go -env .env.local
 	envFile := flag.String("env", ".env", "path to env file")
 	// 例: DATABASE_URL=<session pooler の DSN> go run main.go -migrate
-	// マイグレーションだけ実行して終了する (adr/infra/0002)。本番 DB への DDL は
+	// マイグレーションだけ実行して終了する。本番 DB への DDL は
 	// transaction モードの pooler ではなく session モード(または direct)で行うこと。
 	migrateOnly := flag.Bool("migrate", false, "run database migration and exit")
 	flag.Parse()
@@ -64,7 +64,7 @@ func run() error {
 	}
 
 	// Lambda ではコールドスタート毎の DDL を避けるため AUTO_MIGRATE=false にし、
-	// スキーマ変更時に -migrate で別途実行する (adr/infra/0002)。
+	// スキーマ変更時に -migrate で別途実行する。
 	if cfg.AutoMigrate {
 		if err := database.Migrate(db); err != nil {
 			return fmt.Errorf("migrate: %w", err)

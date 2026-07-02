@@ -2,8 +2,8 @@ import { z } from 'zod'
 
 import type { RecipeRequest, RecipeResponse } from '@/shared/api/generated/types.gen'
 
-// フォーム用の zod スキーマ(手書き)。UI に素直な形にする (ADR-0006)。
-// API レスポンス用 zod は生成物を使い、住み分ける (ADR-0007)。
+// フォーム用の zod スキーマ(手書き)。UI に素直な形にする。
+// API レスポンス用 zod は生成物を使い、住み分ける。
 const materialSchema = z.object({
   name: z.string().min(1, '名前は必須です'),
   quantity: z.number().int().min(0),

@@ -5,7 +5,7 @@ import (
 	"recipe-backend/internal/domain"
 )
 
-// 構造体定義は openapi.yaml から生成する (api ADR-0005)。生成型を再エクスポートする。
+// 構造体定義は openapi.yaml から生成する。生成型を再エクスポートする。
 // UserListItem は recipe の owner/shared_user でも使う。
 type (
 	UserInfoResponse = apigen.UserInfoResponse

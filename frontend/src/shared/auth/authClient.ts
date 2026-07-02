@@ -3,7 +3,7 @@ import axios from 'axios'
 import { CSRF_HEADER, CSRF_HEADER_VALUE } from './csrf'
 import { clearAccessToken, setAccessToken } from './tokenStore'
 
-// 認証専用の axios インスタンス (frontend ADR-0004)。
+// 認証専用の axios インスタンス。
 // auth interceptor は付けない(refresh が 401 で再帰しないようにするため)。
 // refresh Cookie を送受信するため withCredentials。CSRF カスタムヘッダは固定付与する。
 const authAxios = axios.create({

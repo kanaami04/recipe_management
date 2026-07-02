@@ -1,4 +1,4 @@
-// Package openapi は API 契約(../openapi.yaml)からの型生成をまとめる (api ADR-0005)。
+// Package openapi は API 契約(../openapi.yaml)からの型生成をまとめる。
 // このパッケージ自体に実装はなく、生成のエントリポイントとしてのみ存在する。
 //
 // 再生成: `go generate ./...`(api ディレクトリで)または `mise run gen-api`。

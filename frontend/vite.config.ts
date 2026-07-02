@@ -10,7 +10,7 @@ import { defineConfig } from 'vitest/config'
 // @vitejs/plugin-react で JSX を変換する(reactRouter はテストランナーと相性が悪いため)。
 const isTest = !!process.env.VITEST
 
-// PWA 設定 (ADR-0010)。React Router v7 framework mode は index.html をプラグイン実行後に
+// PWA 設定。React Router v7 framework mode は index.html をプラグイン実行後に
 // 生成するため、公式インテグレーションが出るまで 3 点のワークアラウンドを併用する:
 // ① index.html を additionalManifestEntries で明示 precache
 // ② SW 登録は自動注入でなく手動(src/pwa.ts)
@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
       // strictPort で勝手にずらさせない(スマホ実機テストの URL を一定に保つ)。
       port: 5273,
       strictPort: true,
-      // dev は /api を Go バックエンドへ転送し同一オリジン化する (ADR-0004 / ADR-0009)。
+      // dev は /api を Go バックエンドへ転送し同一オリジン化する。
       proxy: {
         '/api': {
           target: env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000',
@@ -81,7 +81,7 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    // テスト基盤 (ADR-0008): Vitest + Testing Library + MSW。
+    // テスト基盤: Vitest + Testing Library + MSW。
     // E2E(e2e/ 配下の Playwright)は Vitest の対象外にする。
     test: {
       environment: 'jsdom',

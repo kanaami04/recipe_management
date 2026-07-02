@@ -30,7 +30,7 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const queryClient = useQueryClient()
 
-  // 削除は生成 mutation + 一覧 query の無効化に集約する (ADR-0003)。
+  // 削除は生成 mutation + 一覧 query の無効化に集約する。
   const deleteMutation = useMutation({
     ...deleteRecipeMutation(),
     onSuccess: () => {

@@ -1,4 +1,4 @@
-// access トークンのメモリ保持ストア (frontend ADR-0004)。
+// access トークンのメモリ保持ストア。
 //
 // localStorage に置かず変数で保持する(リロードで消え、refresh Cookie から再取得する)。
 // clientLoader は React の外側で動くため、Context ではなくこのモジュールを参照する。

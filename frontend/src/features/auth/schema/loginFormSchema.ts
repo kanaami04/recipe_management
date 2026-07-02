@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// ログインフォームの zod スキーマ(手書き、ADR-0006)。
+// ログインフォームの zod スキーマ(手書き)。
 export const loginFormSchema = z.object({
   email: z
     .string()

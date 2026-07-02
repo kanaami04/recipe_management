@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 
-// アプリ共通の QueryClient (frontend ADR-0003)。
+// アプリ共通の QueryClient。
 // サーバ状態のキャッシュ・再取得・無効化をここに集約する。
 export const queryClient = new QueryClient({
   defaultOptions: {

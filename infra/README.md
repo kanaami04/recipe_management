@@ -1,7 +1,6 @@
 # Recipe Management — Infra (AWS CDK)
 
 S3 + CloudFront + Lambda(Function URL) + Supabase Postgres の最小最安構成(月額ほぼ $0)。
-設計判断は [adr/infra/](../adr/infra/) を参照。
 
 ```
 ブラウザ (PWA)
@@ -33,7 +32,7 @@ CloudFront
    cd ../api
    DATABASE_URL='<session pooler の接続文字列>?sslmode=require' go run . -migrate
    ```
-   DDL は transaction pooler では実行しないこと (adr/infra/0002 #3)。
+   DDL は transaction pooler では実行しないこと。
 4. **CDK bootstrap**(AWS アカウントに一度だけ):
    ```bash
    npm ci && npx cdk bootstrap aws://<account-id>/ap-northeast-1
@@ -71,4 +70,4 @@ curl -s -o /dev/null -w '%{http_code}\n' "$FUNCTION_URL/api/label/"
 ## 運用メモ
 
 - Supabase 無料プランは **1 週間アクセスがないとプロジェクトが一時停止**され、
-  ダッシュボードから手動で復帰させる必要がある(毎週使う前提で受容。adr/infra/0002)。
+  ダッシュボードから手動で復帰させる必要がある(毎週使う前提で受容)。

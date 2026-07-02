@@ -23,7 +23,7 @@ type ConfirmDialogProps = {
   destructive?: boolean
 }
 
-// 確認系ダイアログ (ADR-0009 #3)。OK のみの通知は MessageAlertDialog を使う。
+// 確認系ダイアログ。OK のみの通知は MessageAlertDialog を使う。
 export function ConfirmDialog({
   title,
   description,

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// サインアップフォームの zod スキーマ(手書き、ADR-0006)。
+// サインアップフォームの zod スキーマ(手書き)。
 // バックエンドの RegisterRequest 検証(username max50 / email / password min8)に合わせる。
 export const signUpFormSchema = z.object({
   username: z.string().min(1, 'ユーザー名は必須です').max(50, '50文字以内で入力してください'),
