@@ -1,10 +1,11 @@
 # ADR (Architecture Decision Record)
 
 このプロジェクトの設計・運用上の意思決定を記録する。
-バックエンドとフロントエンドで分けて管理する。
+バックエンド・フロントエンド・インフラで分けて管理する。
 
 - [`api/`](api/) … バックエンド(Go)の ADR
 - [`frontend/`](frontend/) … フロントエンド(React)の ADR
+- [`infra/`](infra/) … インフラ(AWS / デプロイ)の ADR。両レイヤーにまたがる判断もここに置く
 
 ## 命名規則
 
@@ -44,4 +45,7 @@
 - [0008 テスト方針: Vitest + Testing Library + MSW](frontend/0008-testing-vitest-rtl-msw.md)
 - [0009 コーディング規約](frontend/0009-coding-conventions.md)
 
-- (まだなし)
+### インフラ (infra)
+
+- [0001 ホスティング: S3 + CloudFront + Lambda(Function URL) のサーバレス構成](infra/0001-aws-serverless-hosting.md)
+- [0002 データベース: Neon 無料 Postgres とマイグレーション運用](infra/0002-neon-postgres-and-migration.md)
