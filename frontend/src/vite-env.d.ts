@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
   /** API のベース URL。既定は空文字 = 相対 /api (ADR-0009 #1)。 */
