@@ -12,11 +12,11 @@ type (
 	UserListItem     = apigen.UserListItem
 )
 
-func ToUserInfo(u *domain.ApplicationUser) UserInfoResponse {
+func ToUserInfo(u *domain.User) UserInfoResponse {
 	return UserInfoResponse{ID: u.ID, Username: u.Username, Email: u.Email}
 }
 
-func ToUserList(users []domain.ApplicationUser) []UserListItem {
+func ToUserList(users []domain.User) []UserListItem {
 	out := make([]UserListItem, 0, len(users))
 	for i := range users {
 		out = append(out, UserListItem{ID: users[i].ID, Username: users[i].Username})

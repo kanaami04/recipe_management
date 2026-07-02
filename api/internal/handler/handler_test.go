@@ -27,7 +27,7 @@ func newTestEcho() *echo.Echo {
 type mockAuthService struct {
 	loginFn    func(ctx context.Context, username, password string) (string, string, error)
 	refreshFn  func(ctx context.Context, refresh string) (string, error)
-	registerFn func(ctx context.Context, username, email, password string) (*domain.ApplicationUser, error)
+	registerFn func(ctx context.Context, username, email, password string) (*domain.User, error)
 }
 
 func (m *mockAuthService) Login(ctx context.Context, u, p string) (string, string, error) {
@@ -36,7 +36,7 @@ func (m *mockAuthService) Login(ctx context.Context, u, p string) (string, strin
 func (m *mockAuthService) Refresh(ctx context.Context, r string) (string, error) {
 	return m.refreshFn(ctx, r)
 }
-func (m *mockAuthService) Register(ctx context.Context, u, e, p string) (*domain.ApplicationUser, error) {
+func (m *mockAuthService) Register(ctx context.Context, u, e, p string) (*domain.User, error) {
 	return m.registerFn(ctx, u, e, p)
 }
 
@@ -63,23 +63,23 @@ func (m *mockRecipeService) Delete(ctx context.Context, userID, recipeID uint) e
 // --- UserService のモック ---
 
 type mockUserService struct {
-	getByIDFn func(ctx context.Context, id uint) (*domain.ApplicationUser, error)
-	listFn    func(ctx context.Context) ([]domain.ApplicationUser, error)
+	getByIDFn func(ctx context.Context, id uint) (*domain.User, error)
+	listFn    func(ctx context.Context) ([]domain.User, error)
 }
 
-func (m *mockUserService) GetByID(ctx context.Context, id uint) (*domain.ApplicationUser, error) {
+func (m *mockUserService) GetByID(ctx context.Context, id uint) (*domain.User, error) {
 	return m.getByIDFn(ctx, id)
 }
-func (m *mockUserService) List(ctx context.Context) ([]domain.ApplicationUser, error) {
+func (m *mockUserService) List(ctx context.Context) ([]domain.User, error) {
 	return m.listFn(ctx)
 }
 
 // --- LabelService のモック ---
 
 type mockLabelService struct {
-	listFn func(ctx context.Context) ([]domain.RecipeLabel, error)
+	listFn func(ctx context.Context, userID uint) ([]string, error)
 }
 
-func (m *mockLabelService) List(ctx context.Context) ([]domain.RecipeLabel, error) {
-	return m.listFn(ctx)
+func (m *mockLabelService) List(ctx context.Context, userID uint) ([]string, error) {
+	return m.listFn(ctx, userID)
 }

@@ -62,15 +62,15 @@ func TestMain(m *testing.M) {
 // truncateAll は全テーブルをクリアする（各テストの冒頭で呼んで分離する）。
 func truncateAll(t *testing.T) {
 	t.Helper()
-	const stmt = `TRUNCATE recipes, recipe_labels, ingredients, seasoning, cooking, season,
-		recipes_label, recipes_shared_user, application_user RESTART IDENTITY CASCADE`
+	const stmt = `TRUNCATE recipes, recipe_labels, recipe_ingredients, recipe_seasonings,
+		recipe_shares, users RESTART IDENTITY CASCADE`
 	if err := testDB.Exec(stmt).Error; err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 }
 
 // seedUser はテスト用ユーザーを作成する。データ生成はファクトリに集約している。
-func seedUser(t *testing.T, username string) *domain.ApplicationUser {
+func seedUser(t *testing.T, username string) *domain.User {
 	t.Helper()
 	u := factory.NewUser(factory.WithUsername(username), factory.WithEmail(username+"@example.com"))
 	if err := testDB.Create(u).Error; err != nil {

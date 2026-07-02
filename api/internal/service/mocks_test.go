@@ -11,9 +11,6 @@ import (
 type mockRecipeRepo struct {
 	store      map[uint]*domain.Recipe
 	nextID     uint
-	labelSeq   uint
-	ingSeq     uint
-	seaSeq     uint
 	created    *domain.Recipe
 	updated    *domain.Recipe
 	deletedIDs []uint
@@ -56,49 +53,36 @@ func (m *mockRecipeRepo) Delete(_ context.Context, recipe *domain.Recipe) error 
 	m.deletedIDs = append(m.deletedIDs, recipe.ID)
 	return nil
 }
-func (m *mockRecipeRepo) GetOrCreateLabel(_ context.Context, name string) (*domain.RecipeLabel, error) {
-	m.labelSeq++
-	return &domain.RecipeLabel{ID: m.labelSeq, Name: name}, nil
-}
-func (m *mockRecipeRepo) GetOrCreateIngredient(_ context.Context, name string) (*domain.Ingredient, error) {
-	m.ingSeq++
-	return &domain.Ingredient{ID: m.ingSeq, Name: name}, nil
-}
-func (m *mockRecipeRepo) GetOrCreateSeasoning(_ context.Context, name string) (*domain.Seasoning, error) {
-	m.seaSeq++
-	return &domain.Seasoning{ID: m.seaSeq, Name: name}, nil
-}
-
 // --- UserRepository のモック ---
 
 type mockUserRepo struct {
-	byName  map[string]*domain.ApplicationUser
-	byEmail map[string]*domain.ApplicationUser
-	byID    map[uint]*domain.ApplicationUser
-	all     []domain.ApplicationUser
+	byName  map[string]*domain.User
+	byEmail map[string]*domain.User
+	byID    map[uint]*domain.User
+	all     []domain.User
 	nextID  uint
 }
 
-func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.ApplicationUser, error) {
+func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.User, error) {
 	return m.byName[username], nil
 }
-func (m *mockUserRepo) FindByEmail(_ context.Context, email string) (*domain.ApplicationUser, error) {
+func (m *mockUserRepo) FindByEmail(_ context.Context, email string) (*domain.User, error) {
 	return m.byEmail[email], nil
 }
-func (m *mockUserRepo) FindByID(_ context.Context, id uint) (*domain.ApplicationUser, error) {
+func (m *mockUserRepo) FindByID(_ context.Context, id uint) (*domain.User, error) {
 	return m.byID[id], nil
 }
-func (m *mockUserRepo) FindAll(_ context.Context) ([]domain.ApplicationUser, error) {
+func (m *mockUserRepo) FindAll(_ context.Context) ([]domain.User, error) {
 	return m.all, nil
 }
-func (m *mockUserRepo) Create(_ context.Context, user *domain.ApplicationUser) error {
+func (m *mockUserRepo) Create(_ context.Context, user *domain.User) error {
 	m.nextID++
 	user.ID = m.nextID
 	if m.byName == nil {
-		m.byName = map[string]*domain.ApplicationUser{}
+		m.byName = map[string]*domain.User{}
 	}
 	if m.byEmail == nil {
-		m.byEmail = map[string]*domain.ApplicationUser{}
+		m.byEmail = map[string]*domain.User{}
 	}
 	m.byName[user.Username] = user
 	m.byEmail[user.Email] = user
@@ -108,10 +92,10 @@ func (m *mockUserRepo) Create(_ context.Context, user *domain.ApplicationUser) e
 // --- LabelRepository のモック ---
 
 type mockLabelRepo struct {
-	labels []domain.RecipeLabel
-	err    error
+	names []string
+	err   error
 }
 
-func (m *mockLabelRepo) FindAll(_ context.Context) ([]domain.RecipeLabel, error) {
-	return m.labels, m.err
+func (m *mockLabelRepo) FindNamesForUser(_ context.Context, _ uint) ([]string, error) {
+	return m.names, m.err
 }

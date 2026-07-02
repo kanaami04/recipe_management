@@ -9,7 +9,7 @@ import (
 
 // 構造体定義は openapi.yaml から生成する (api ADR-0005)。生成型を再エクスポートする。
 type (
-	NamedRef        = apigen.NamedRef
+	NameResponse    = apigen.NameResponse
 	LabelResponse   = apigen.LabelResponse
 	CookingResponse = apigen.CookingResponse
 	SeasonResponse  = apigen.SeasonResponse
@@ -29,29 +29,29 @@ const dateLayout = "2006-01-02 15:04" // DRF の "%Y-%m-%d %H:%M" 相当
 
 // ToRecipeResponse は domain.Recipe を API 契約に合わせた DTO へ変換する。
 func ToRecipeResponse(r *domain.Recipe) RecipeResponse {
-	cooking := make([]CookingResponse, 0, len(r.Cooking))
-	for i := range r.Cooking {
-		c := &r.Cooking[i]
+	cooking := make([]CookingResponse, 0, len(r.Ingredients))
+	for i := range r.Ingredients {
+		ing := &r.Ingredients[i]
 		cooking = append(cooking, CookingResponse{
-			Ingredients: NamedRef{ID: c.Ingredient.ID, Name: c.Ingredient.Name},
-			Quantity:    c.Quantity,
-			Unit:        c.Unit,
+			Ingredients: NameResponse{Name: ing.Name},
+			Quantity:    ing.Quantity,
+			Unit:        ing.Unit,
 		})
 	}
 
-	season := make([]SeasonResponse, 0, len(r.Season))
-	for i := range r.Season {
-		s := &r.Season[i]
+	season := make([]SeasonResponse, 0, len(r.Seasonings))
+	for i := range r.Seasonings {
+		sea := &r.Seasonings[i]
 		season = append(season, SeasonResponse{
-			Seasoning: NamedRef{ID: s.Seasoning.ID, Name: s.Seasoning.Name},
-			Quantity:  s.Quantity,
-			Unit:      s.Unit,
+			Seasoning: NameResponse{Name: sea.Name},
+			Quantity:  sea.Quantity,
+			Unit:      sea.Unit,
 		})
 	}
 
 	labels := make([]LabelResponse, 0, len(r.Labels))
 	for i := range r.Labels {
-		labels = append(labels, LabelResponse{ID: r.Labels[i].ID, Name: r.Labels[i].Name})
+		labels = append(labels, LabelResponse{Name: r.Labels[i].Name})
 	}
 
 	shared := make([]UserListItem, 0, len(r.SharedUsers))
@@ -69,9 +69,9 @@ func ToRecipeResponse(r *domain.Recipe) RecipeResponse {
 		Owner:      UserListItem{ID: r.Owner.ID, Username: r.Owner.Username},
 		SharedUser: shared,
 		Title:      r.Title,
-		CreateTime: r.CreateTime,
-		CreateFor:  r.CreateFor,
-		ArchiveFlg: r.ArchiveFlg,
+		CreateTime: r.CookingTime,
+		CreateFor:  r.Servings,
+		ArchiveFlg: r.Archived,
 		Label:      labels,
 	}
 }

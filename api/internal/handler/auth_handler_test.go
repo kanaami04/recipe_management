@@ -27,7 +27,7 @@ func serveToken(loginFn func(context.Context, string, string) (string, string, e
 }
 
 // serveRegister は registerFn を差し替えた AuthHandler に POST /api/auth/register/ し、結果を返す。
-func serveRegister(registerFn func(context.Context, string, string, string) (*domain.ApplicationUser, error), body string) *httptest.ResponseRecorder {
+func serveRegister(registerFn func(context.Context, string, string, string) (*domain.User, error), body string) *httptest.ResponseRecorder {
 	e := newTestEcho()
 	h := NewAuthHandler(&mockAuthService{registerFn: registerFn}, false)
 	e.POST("/api/auth/register/", h.Register)
@@ -80,8 +80,8 @@ func okLogin(_ context.Context, _, _ string) (string, string, error) {
 }
 
 // okRegister は受け取った username/email でユーザーを返す registerFn。
-func okRegister(_ context.Context, u, em, _ string) (*domain.ApplicationUser, error) {
-	return &domain.ApplicationUser{ID: 1, Username: u, Email: em}, nil
+func okRegister(_ context.Context, u, em, _ string) (*domain.User, error) {
+	return &domain.User{ID: 1, Username: u, Email: em}, nil
 }
 
 // okRefresh は固定のアクセストークンを返す refreshFn。
@@ -188,7 +188,7 @@ func TestAuthHandler_Register_Success_ReturnsUser(t *testing.T) {
 // 既存ユーザーと重複する時、409 が返ること。
 func TestAuthHandler_Register_Conflict(t *testing.T) {
 	// Arrange & Act
-	rec := serveRegister(func(_ context.Context, _, _, _ string) (*domain.ApplicationUser, error) {
+	rec := serveRegister(func(_ context.Context, _, _, _ string) (*domain.User, error) {
 		return nil, service.ErrUserAlreadyExists
 	}, validRegisterBody)
 
@@ -199,7 +199,7 @@ func TestAuthHandler_Register_Conflict(t *testing.T) {
 // email 不正やパスワード不足の時、サービスを呼ばず 400 が返ること。
 func TestAuthHandler_Register_ValidationError(t *testing.T) {
 	// Arrange & Act
-	rec := serveRegister(func(_ context.Context, _, _, _ string) (*domain.ApplicationUser, error) {
+	rec := serveRegister(func(_ context.Context, _, _, _ string) (*domain.User, error) {
 		t.Fatal("validation fail 時に service を呼んではいけない")
 		return nil, nil
 	}, `{"username":"alice","email":"not-an-email","password":"short"}`)

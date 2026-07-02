@@ -15,7 +15,7 @@ import (
 )
 
 // serveUserInfo は getByIDFn を差し替えた UserHandler に、認証付きで GET /api/user_info/ し結果を返す。
-func serveUserInfo(t *testing.T, getByIDFn func(context.Context, uint) (*domain.ApplicationUser, error)) *httptest.ResponseRecorder {
+func serveUserInfo(t *testing.T, getByIDFn func(context.Context, uint) (*domain.User, error)) *httptest.ResponseRecorder {
 	t.Helper()
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
@@ -27,7 +27,7 @@ func serveUserInfo(t *testing.T, getByIDFn func(context.Context, uint) (*domain.
 }
 
 // serveUserList は listFn を差し替えた UserHandler に GET /api/users/ し結果を返す。
-func serveUserList(listFn func(context.Context) ([]domain.ApplicationUser, error)) *httptest.ResponseRecorder {
+func serveUserList(listFn func(context.Context) ([]domain.User, error)) *httptest.ResponseRecorder {
 	e := newTestEcho()
 	h := NewUserHandler(&mockUserService{listFn: listFn})
 	e.GET("/api/users/", h.List)
@@ -38,7 +38,7 @@ func serveUserList(listFn func(context.Context) ([]domain.ApplicationUser, error
 }
 
 // infoUser は testUserID の有効ユーザーを返す getByIDFn。
-func infoUser(_ context.Context, _ uint) (*domain.ApplicationUser, error) {
+func infoUser(_ context.Context, _ uint) (*domain.User, error) {
 	return factory.NewUser(factory.WithID(testUserID), factory.WithUsername("alice")), nil
 }
 
@@ -64,7 +64,7 @@ func TestUserHandler_Info_ReturnsUserInBody(t *testing.T) {
 func TestUserHandler_Info_ForwardsUserID(t *testing.T) {
 	// Arrange & Act
 	var gotID uint
-	serveUserInfo(t, func(_ context.Context, id uint) (*domain.ApplicationUser, error) {
+	serveUserInfo(t, func(_ context.Context, id uint) (*domain.User, error) {
 		gotID = id
 		return factory.NewUser(factory.WithID(testUserID)), nil
 	})
@@ -76,7 +76,7 @@ func TestUserHandler_Info_ForwardsUserID(t *testing.T) {
 // 該当ユーザーが存在しない時、404 が返ること。
 func TestUserHandler_Info_NotFound(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserInfo(t, func(_ context.Context, _ uint) (*domain.ApplicationUser, error) {
+	rec := serveUserInfo(t, func(_ context.Context, _ uint) (*domain.User, error) {
 		return nil, nil
 	})
 
@@ -87,7 +87,7 @@ func TestUserHandler_Info_NotFound(t *testing.T) {
 // サービスがエラーを返した時、500 が返ること。
 func TestUserHandler_Info_InternalError(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserInfo(t, func(_ context.Context, _ uint) (*domain.ApplicationUser, error) {
+	rec := serveUserInfo(t, func(_ context.Context, _ uint) (*domain.User, error) {
 		return nil, assert.AnError
 	})
 
@@ -98,8 +98,8 @@ func TestUserHandler_Info_InternalError(t *testing.T) {
 // ユーザー一覧を取得した時、200 が返ること。
 func TestUserHandler_List_Returns200(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserList(func(_ context.Context) ([]domain.ApplicationUser, error) {
-		return []domain.ApplicationUser{*factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))}, nil
+	rec := serveUserList(func(_ context.Context) ([]domain.User, error) {
+		return []domain.User{*factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))}, nil
 	})
 
 	// Assert
@@ -109,8 +109,8 @@ func TestUserHandler_List_Returns200(t *testing.T) {
 // ユーザー一覧を取得した時、レスポンスにユーザー名が含まれること。
 func TestUserHandler_List_ReturnsUsersInBody(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserList(func(_ context.Context) ([]domain.ApplicationUser, error) {
-		return []domain.ApplicationUser{*factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))}, nil
+	rec := serveUserList(func(_ context.Context) ([]domain.User, error) {
+		return []domain.User{*factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))}, nil
 	})
 
 	// Assert
@@ -120,7 +120,7 @@ func TestUserHandler_List_ReturnsUsersInBody(t *testing.T) {
 // サービスがエラーを返した時、500 が返ること。
 func TestUserHandler_List_InternalError(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserList(func(_ context.Context) ([]domain.ApplicationUser, error) {
+	rec := serveUserList(func(_ context.Context) ([]domain.User, error) {
 		return nil, assert.AnError
 	})
 

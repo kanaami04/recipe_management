@@ -83,7 +83,7 @@ func serveDelete(t *testing.T, deleteFn func(context.Context, uint, uint) error,
 // recipeList は肉じゃが1件を返す listFn。
 func recipeList(_ context.Context, _ uint) ([]domain.Recipe, error) {
 	return []domain.Recipe{
-		{ID: 1, Title: "肉じゃが", Owner: domain.ApplicationUser{ID: testUserID, Username: "alice"}},
+		{ID: 1, Title: "肉じゃが", Owner: domain.User{ID: testUserID, Username: "alice"}},
 	}, nil
 }
 
@@ -144,7 +144,7 @@ func TestRecipeHandler_List_Unauthorized(t *testing.T) {
 func TestRecipeHandler_Create_Returns201(t *testing.T) {
 	// Arrange & Act
 	rec := serveCreate(t, func(_ context.Context, _ uint, req request.RecipeRequest) (*domain.Recipe, error) {
-		return &domain.Recipe{ID: 9, Title: req.Title, Owner: domain.ApplicationUser{ID: testUserID, Username: "alice"}}, nil
+		return &domain.Recipe{ID: 9, Title: req.Title, Owner: domain.User{ID: testUserID, Username: "alice"}}, nil
 	}, `{"title":"カレー"}`)
 
 	// Assert

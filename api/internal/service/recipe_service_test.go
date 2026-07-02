@@ -34,12 +34,12 @@ func TestRecipeCreate_BuildsRecipe(t *testing.T) {
 	want := domain.Recipe{
 		ID:          1,
 		Title:       "カレー",
-		CreateFor:   1, // 未指定はデフォルト1
+		Servings:    1, // 未指定はデフォルト1
 		OwnerID:     42,
-		Labels:      []domain.RecipeLabel{{ID: 1, Name: "夕食"}},
-		SharedUsers: []domain.ApplicationUser{},
-		Cooking:     []domain.Cooking{{IngredientID: 1, Quantity: 2, Unit: "個"}},
-		Season:      []domain.Season{{SeasoningID: 1, Quantity: 1, Unit: "g"}},
+		Labels:      []domain.RecipeLabel{{Name: "夕食"}},
+		SharedUsers: []domain.User{},
+		Ingredients: []domain.RecipeIngredient{{Name: "玉ねぎ", Quantity: 2, Unit: "個"}},
+		Seasonings:  []domain.RecipeSeasoning{{Name: "塩", Quantity: 1, Unit: "g"}},
 	}
 	assert.Equal(t, want, *rr.created)
 }
@@ -110,12 +110,12 @@ func TestRecipeUpdate_SharedUserUpdatesRecipe(t *testing.T) {
 	want := domain.Recipe{
 		ID:          1,
 		Title:       "更新",
-		CreateFor:   1,
+		Servings:    1,
 		OwnerID:     100, // owner は変更されない
 		Labels:      []domain.RecipeLabel{},
-		SharedUsers: []domain.ApplicationUser{},
-		Cooking:     []domain.Cooking{},
-		Season:      []domain.Season{},
+		SharedUsers: []domain.User{},
+		Ingredients: []domain.RecipeIngredient{},
+		Seasonings:  []domain.RecipeSeasoning{},
 	}
 	assert.Equal(t, want, *rr.updated)
 }

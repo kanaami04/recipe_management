@@ -16,9 +16,9 @@ type CookingInput struct {
 
 // CookingResponse defines model for CookingResponse.
 type CookingResponse struct {
-	Ingredients NamedRef `json:"ingredients"`
-	Quantity    int      `json:"quantity"`
-	Unit        string   `json:"unit"`
+	Ingredients NameResponse `json:"ingredients"`
+	Quantity    int          `json:"quantity"`
+	Unit        string       `json:"unit"`
 }
 
 // Error Echo の既定エラー形式 (api ADR-0003)
@@ -33,7 +33,6 @@ type LabelInput struct {
 
 // LabelResponse defines model for LabelResponse.
 type LabelResponse struct {
-	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -42,9 +41,8 @@ type NameInput struct {
 	Name string `json:"name" validate:"required"`
 }
 
-// NamedRef defines model for NamedRef.
-type NamedRef struct {
-	ID   uint   `json:"id"`
+// NameResponse defines model for NameResponse.
+type NameResponse struct {
 	Name string `json:"name"`
 }
 
@@ -109,9 +107,9 @@ type SeasonInput struct {
 
 // SeasonResponse defines model for SeasonResponse.
 type SeasonResponse struct {
-	Quantity  int      `json:"quantity"`
-	Seasoning NamedRef `json:"seasoning"`
-	Unit      string   `json:"unit"`
+	Quantity  int          `json:"quantity"`
+	Seasoning NameResponse `json:"seasoning"`
+	Unit      string       `json:"unit"`
 }
 
 // SharedUserInput defines model for SharedUserInput.
