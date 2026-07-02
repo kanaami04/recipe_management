@@ -33,6 +33,8 @@
 - [0004 リフレッシュトークンの Cookie 化と CORS/CSRF 方針](api/0004-cookie-based-refresh-token.md)
 - [0005 OpenAPI を API 契約の単一ソースとする](api/0005-openapi-contract.md)
 - [0006 テーブル設計の見直し: マスタ+中間テーブル構成の廃止と命名の統一](api/0006-database-schema-redesign.md)
+- [0007 ログイン識別子を username から email に変更する](api/0007-login-with-email.md)
+- [0008 主キーを自動増分から UUIDv7 に変更する](api/0008-uuidv7-primary-keys.md)
 
 ### フロントエンド (frontend)
 

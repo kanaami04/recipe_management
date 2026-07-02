@@ -207,8 +207,8 @@ paths:
         required: true
         description: レシピ ID
         schema:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
     put:
       tags: [recipes]
       summary: レシピ更新
@@ -305,12 +305,14 @@ components:
 
     TokenRequest:
       type: object
-      required: [username, password]
+      required: [email, password]
       properties:
-        username:
+        email:
           type: string
+          format: email
+          x-go-type: string
           x-oapi-codegen-extra-tags:
-            validate: required
+            validate: required,email
         password:
           type: string
           x-oapi-codegen-extra-tags:
@@ -358,10 +360,10 @@ components:
       required: [id, username, email]
       properties:
         id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
           x-go-name: ID
-          x-go-type: uint
+          x-go-type: string
         username:
           type: string
         email:
@@ -372,10 +374,10 @@ components:
       required: [id, username]
       properties:
         id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
           x-go-name: ID
-          x-go-type: uint
+          x-go-type: string
         username:
           type: string
 
@@ -525,10 +527,10 @@ components:
         - label
       properties:
         id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
           x-go-name: ID
-          x-go-type: uint
+          x-go-type: string
         created_at:
           type: string
           description: 'JST。形式: YYYY-MM-DD HH:mm'

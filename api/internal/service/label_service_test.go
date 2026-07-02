@@ -15,7 +15,7 @@ func TestLabelList_ReturnsAll(t *testing.T) {
 	svc := NewLabelService(lr)
 
 	// Act
-	names, err := svc.List(context.Background(), 1)
+	names, err := svc.List(context.Background(), "u1")
 
 	// Assert: 取得順に全件返ること
 	require.NoError(t, err)
@@ -28,7 +28,7 @@ func TestLabelList_Empty(t *testing.T) {
 	svc := NewLabelService(&mockLabelRepo{})
 
 	// Act
-	names, err := svc.List(context.Background(), 1)
+	names, err := svc.List(context.Background(), "u1")
 
 	// Assert
 	require.NoError(t, err)

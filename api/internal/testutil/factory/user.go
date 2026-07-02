@@ -29,7 +29,7 @@ func NewUser(opts ...UserOption) *domain.User {
 }
 
 // WithID は ID を指定する。
-func WithID(id uint) UserOption {
+func WithID(id string) UserOption {
 	return func(u *domain.User) { u.ID = id }
 }
 

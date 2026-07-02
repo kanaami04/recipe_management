@@ -15,7 +15,7 @@ import (
 )
 
 // serveUserInfo は getByIDFn を差し替えた UserHandler に、認証付きで GET /api/user_info/ し結果を返す。
-func serveUserInfo(t *testing.T, getByIDFn func(context.Context, uint) (*domain.User, error)) *httptest.ResponseRecorder {
+func serveUserInfo(t *testing.T, getByIDFn func(context.Context, string) (*domain.User, error)) *httptest.ResponseRecorder {
 	t.Helper()
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
@@ -38,7 +38,7 @@ func serveUserList(listFn func(context.Context) ([]domain.User, error)) *httptes
 }
 
 // infoUser は testUserID の有効ユーザーを返す getByIDFn。
-func infoUser(_ context.Context, _ uint) (*domain.User, error) {
+func infoUser(_ context.Context, _ string) (*domain.User, error) {
 	return factory.NewUser(factory.WithID(testUserID), factory.WithUsername("alice")), nil
 }
 
@@ -63,8 +63,8 @@ func TestUserHandler_Info_ReturnsUserInBody(t *testing.T) {
 // ユーザー情報を取得した時、JWT のユーザーIDがサービスに渡されること。
 func TestUserHandler_Info_ForwardsUserID(t *testing.T) {
 	// Arrange & Act
-	var gotID uint
-	serveUserInfo(t, func(_ context.Context, id uint) (*domain.User, error) {
+	var gotID string
+	serveUserInfo(t, func(_ context.Context, id string) (*domain.User, error) {
 		gotID = id
 		return factory.NewUser(factory.WithID(testUserID)), nil
 	})
@@ -76,7 +76,7 @@ func TestUserHandler_Info_ForwardsUserID(t *testing.T) {
 // 該当ユーザーが存在しない時、404 が返ること。
 func TestUserHandler_Info_NotFound(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserInfo(t, func(_ context.Context, _ uint) (*domain.User, error) {
+	rec := serveUserInfo(t, func(_ context.Context, _ string) (*domain.User, error) {
 		return nil, nil
 	})
 
@@ -87,7 +87,7 @@ func TestUserHandler_Info_NotFound(t *testing.T) {
 // サービスがエラーを返した時、500 が返ること。
 func TestUserHandler_Info_InternalError(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserInfo(t, func(_ context.Context, _ uint) (*domain.User, error) {
+	rec := serveUserInfo(t, func(_ context.Context, _ string) (*domain.User, error) {
 		return nil, assert.AnError
 	})
 
@@ -99,7 +99,7 @@ func TestUserHandler_Info_InternalError(t *testing.T) {
 func TestUserHandler_List_Returns200(t *testing.T) {
 	// Arrange & Act
 	rec := serveUserList(func(_ context.Context) ([]domain.User, error) {
-		return []domain.User{*factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))}, nil
+		return []domain.User{*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice"))}, nil
 	})
 
 	// Assert
@@ -110,7 +110,7 @@ func TestUserHandler_List_Returns200(t *testing.T) {
 func TestUserHandler_List_ReturnsUsersInBody(t *testing.T) {
 	// Arrange & Act
 	rec := serveUserList(func(_ context.Context) ([]domain.User, error) {
-		return []domain.User{*factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))}, nil
+		return []domain.User{*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice"))}, nil
 	})
 
 	// Assert

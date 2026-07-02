@@ -81,7 +81,7 @@ func okLogin(_ context.Context, _, _ string) (string, string, error) {
 
 // okRegister は受け取った username/email でユーザーを返す registerFn。
 func okRegister(_ context.Context, u, em, _ string) (*domain.User, error) {
-	return &domain.User{ID: 1, Username: u, Email: em}, nil
+	return &domain.User{ID: "u1", Username: u, Email: em}, nil
 }
 
 // okRefresh は固定のアクセストークンを返す refreshFn。
@@ -90,7 +90,7 @@ func okRefresh(_ context.Context, _ string) (string, error) {
 }
 
 const (
-	validLoginBody    = `{"username":"alice","password":"pw"}`
+	validLoginBody    = `{"email":"alice@example.com","password":"pw"}`
 	validRegisterBody = `{"username":"alice","email":"alice@example.com","password":"password123"}`
 )
 
@@ -138,7 +138,7 @@ func TestAuthHandler_Token_InvalidCredentials(t *testing.T) {
 	// Arrange & Act
 	rec := serveToken(func(_ context.Context, _, _ string) (string, string, error) {
 		return "", "", service.ErrInvalidCredentials
-	}, `{"username":"alice","password":"bad"}`)
+	}, `{"email":"alice@example.com","password":"bad"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)

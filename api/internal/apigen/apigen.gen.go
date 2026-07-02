@@ -74,7 +74,7 @@ type RecipeResponse struct {
 
 	// CreatedAt JST。形式: YYYY-MM-DD HH:mm
 	CreatedAt  string           `json:"created_at"`
-	ID         uint             `json:"id"`
+	ID         string           `json:"id"`
 	Label      []LabelResponse  `json:"label"`
 	Owner      UserListItem     `json:"owner"`
 	Procedure  string           `json:"procedure"`
@@ -119,8 +119,8 @@ type SharedUserInput struct {
 
 // TokenRequest defines model for TokenRequest.
 type TokenRequest struct {
+	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
-	Username string `json:"username" validate:"required"`
 }
 
 // TokenResponse refresh は body に含めず Cookie で発行する (api ADR-0004)
@@ -131,13 +131,13 @@ type TokenResponse struct {
 // UserInfoResponse defines model for UserInfoResponse.
 type UserInfoResponse struct {
 	Email    string `json:"email"`
-	ID       uint   `json:"id"`
+	ID       string `json:"id"`
 	Username string `json:"username"`
 }
 
 // UserListItem defines model for UserListItem.
 type UserListItem struct {
-	ID       uint   `json:"id"`
+	ID       string `json:"id"`
 	Username string `json:"username"`
 }
 

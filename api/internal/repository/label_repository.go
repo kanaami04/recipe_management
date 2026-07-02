@@ -16,7 +16,7 @@ func NewLabelRepository(db *gorm.DB) domain.LabelRepository {
 	return &labelRepository{db: db}
 }
 
-func (r *labelRepository) FindNamesForUser(ctx context.Context, userID uint) ([]string, error) {
+func (r *labelRepository) FindNamesForUser(ctx context.Context, userID string) ([]string, error) {
 	var names []string
 	db := r.db.WithContext(ctx)
 	err := db.Model(&domain.RecipeLabel{}).

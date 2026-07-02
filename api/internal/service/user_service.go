@@ -7,7 +7,7 @@ import (
 )
 
 type UserService interface {
-	GetByID(ctx context.Context, id uint) (*domain.User, error)
+	GetByID(ctx context.Context, id string) (*domain.User, error)
 	List(ctx context.Context) ([]domain.User, error)
 }
 
@@ -19,7 +19,7 @@ func NewUserService(users domain.UserRepository) UserService {
 	return &userService{users: users}
 }
 
-func (s *userService) GetByID(ctx context.Context, id uint) (*domain.User, error) {
+func (s *userService) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	return s.users.FindByID(ctx, id)
 }
 

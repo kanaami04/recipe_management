@@ -2,13 +2,13 @@ import { expect, type Page, test } from '@playwright/test'
 
 // 一覧表示・作成レスポンスに使うレシピ(API 契約 RecipeResponse の形)。
 const recipe = {
-  id: 1,
+  id: 'r1',
   created_at: '2026-06-15 09:30',
   updated_at: '2026-06-15 09:30',
   cooking: [{ ingredients: { name: '玉ねぎ' }, quantity: 1, unit: '個' }],
   season: [],
   procedure: '煮る',
-  owner: { id: 1, username: 'taro' },
+  owner: { id: 'u-taro', username: 'taro' },
   shared_user: [],
   title: 'カレー',
   create_time: 30,
@@ -28,21 +28,24 @@ async function mockApi(page: Page) {
   await page.route('**/api/auth/register/', (route) =>
     route.fulfill({
       status: 201,
-      json: { id: 2, username: 'hanako', email: 'hanako@example.com' },
+      json: { id: 'u-hanako', username: 'hanako', email: 'hanako@example.com' },
     }),
   )
   await page.route('**/api/user_info/', (route) =>
-    route.fulfill({ status: 200, json: { id: 1, username: 'taro', email: 'taro@example.com' } }),
+    route.fulfill({
+      status: 200,
+      json: { id: 'u-taro', username: 'taro', email: 'taro@example.com' },
+    }),
   )
   await page.route('**/api/label/', (route) =>
     route.fulfill({ status: 200, json: [{ name: '夕食' }] }),
   )
   await page.route('**/api/users/', (route) =>
-    route.fulfill({ status: 200, json: [{ id: 1, username: 'taro' }] }),
+    route.fulfill({ status: 200, json: [{ id: 'u-taro', username: 'taro' }] }),
   )
   await page.route('**/api/recipes/', (route) => {
     if (route.request().method() === 'POST') {
-      return route.fulfill({ status: 201, json: { ...recipe, id: 2, title: '新レシピ' } })
+      return route.fulfill({ status: 201, json: { ...recipe, id: 'r2', title: '新レシピ' } })
     }
     return route.fulfill({ status: 200, json: [recipe] })
   })
@@ -50,7 +53,7 @@ async function mockApi(page: Page) {
 
 async function login(page: Page) {
   await page.goto('/')
-  await page.fill('#username', 'taro')
+  await page.fill('#email', 'taro@example.com')
   await page.fill('#password', 'password123')
   await page.getByRole('button', { name: 'ログイン' }).click()
   await expect(page).toHaveURL(/\/top$/)

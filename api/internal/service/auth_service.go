@@ -11,7 +11,7 @@ import (
 )
 
 type AuthService interface {
-	Login(ctx context.Context, username, password string) (access, refresh string, err error)
+	Login(ctx context.Context, email, password string) (access, refresh string, err error)
 	Refresh(ctx context.Context, refreshToken string) (access string, err error)
 	Register(ctx context.Context, username, email, password string) (*domain.User, error)
 }
@@ -25,8 +25,8 @@ func NewAuthService(users domain.UserRepository, jwt *jwtpkg.Manager) AuthServic
 	return &authService{users: users, jwt: jwt}
 }
 
-func (s *authService) Login(ctx context.Context, username, password string) (string, string, error) {
-	user, err := s.users.FindByUsername(ctx, username)
+func (s *authService) Login(ctx context.Context, email, password string) (string, string, error) {
+	user, err := s.users.FindByEmail(ctx, email)
 	if err != nil {
 		return "", "", err
 	}

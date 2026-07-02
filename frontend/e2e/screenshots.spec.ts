@@ -3,22 +3,22 @@ import { type Page, test } from '@playwright/test'
 // 一覧グリッドが分かるよう複数レシピをモックする(API 契約 RecipeResponse の形)。
 const titles = ['カレー', '肉じゃが', '味噌汁', '唐揚げ', '親子丼', 'オムライス']
 const recipes = titles.map((title, i) => ({
-  id: i + 1,
+  id: `018f1a2b-3c4d-7e5f-8a9b-00000000000${i + 1}`,
   created_at: '2026-06-15 09:30',
   updated_at: '2026-06-15 09:30',
   cooking: [
-    { ingredients: { id: 1, name: '玉ねぎ' }, quantity: 1, unit: '個' },
-    { ingredients: { id: 2, name: 'にんじん' }, quantity: 2, unit: '本' },
+    { ingredients: { name: '玉ねぎ' }, quantity: 1, unit: '個' },
+    { ingredients: { name: 'にんじん' }, quantity: 2, unit: '本' },
   ],
-  season: [{ seasoning: { id: 1, name: '醤油' }, quantity: 50, unit: 'ml' }],
+  season: [{ seasoning: { name: '醤油' }, quantity: 50, unit: 'ml' }],
   procedure: '材料を切って煮込む。',
-  owner: { id: 1, username: 'taro' },
+  owner: { id: 'u-taro', username: 'taro' },
   shared_user: [],
   title,
   create_time: 30,
   create_for: 2,
   archive_flg: false,
-  label: [{ id: 1, name: '夕食' }],
+  label: [{ name: '夕食' }],
 }))
 
 async function mockApi(page: Page) {
@@ -29,22 +29,23 @@ async function mockApi(page: Page) {
     route.fulfill({ status: 200, json: { access: 'fake-access' } }),
   )
   await page.route('**/api/user_info/', (route) =>
-    route.fulfill({ status: 200, json: { id: 1, username: 'taro', email: 'taro@example.com' } }),
+    route.fulfill({
+      status: 200,
+      json: { id: 'u-taro', username: 'taro', email: 'taro@example.com' },
+    }),
   )
   await page.route('**/api/label/', (route) =>
-    route.fulfill({ status: 200, json: [{ id: 1, name: '夕食' }] }),
+    route.fulfill({ status: 200, json: [{ name: '夕食' }] }),
   )
   await page.route('**/api/users/', (route) =>
-    route.fulfill({ status: 200, json: [{ id: 1, username: 'taro' }] }),
+    route.fulfill({ status: 200, json: [{ id: 'u-taro', username: 'taro' }] }),
   )
-  await page.route('**/api/recipes/', (route) =>
-    route.fulfill({ status: 200, json: recipes }),
-  )
+  await page.route('**/api/recipes/', (route) => route.fulfill({ status: 200, json: recipes }))
 }
 
 async function login(page: Page) {
   await page.goto('/')
-  await page.fill('#username', 'taro')
+  await page.fill('#email', 'taro@example.com')
   await page.fill('#password', 'password123')
   await page.getByRole('button', { name: 'ログイン' }).click()
   await page.waitForURL(/\/top$/)

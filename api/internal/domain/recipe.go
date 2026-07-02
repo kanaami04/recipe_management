@@ -5,15 +5,15 @@ import "time"
 // Recipe はレシピ本体。Owner は所有者、SharedUsers は共有先ユーザー。
 // 材料・調味料・ラベルはレシピに従属する子テーブル(ON DELETE CASCADE)。
 type Recipe struct {
-	ID          uint   `gorm:"primaryKey"`
+	ID          string `gorm:"type:uuid;primaryKey"`
 	Title       string `gorm:"size:50;not null"`
 	CookingTime *int   // 調理時間(分)。任意
 	Servings    int    `gorm:"not null;default:1"` // 何人前
 	Procedure   string `gorm:"type:text"`
 	Archived    bool   `gorm:"not null;default:false"`
 
-	OwnerID uint `gorm:"not null;index"`
-	Owner   User `gorm:"foreignKey:OwnerID"`
+	OwnerID string `gorm:"type:uuid;not null;index"`
+	Owner   User   `gorm:"foreignKey:OwnerID"`
 
 	Ingredients []RecipeIngredient `gorm:"constraint:OnDelete:CASCADE"`
 	Seasonings  []RecipeSeasoning  `gorm:"constraint:OnDelete:CASCADE"`

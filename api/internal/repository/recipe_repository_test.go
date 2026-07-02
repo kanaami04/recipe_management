@@ -13,7 +13,7 @@ import (
 )
 
 // mustFindRecipe は FindByID で取得し、エラー・nil をガードして実体を返す。
-func mustFindRecipe(t *testing.T, ctx context.Context, repo domain.RecipeRepository, id uint) *domain.Recipe {
+func mustFindRecipe(t *testing.T, ctx context.Context, repo domain.RecipeRepository, id string) *domain.Recipe {
 	t.Helper()
 	got, err := repo.FindByID(ctx, id)
 	require.NoError(t, err)
@@ -23,7 +23,7 @@ func mustFindRecipe(t *testing.T, ctx context.Context, repo domain.RecipeReposit
 
 // arrangeRecipeWithRelations は owner/共有先/ラベル/食材/調味料を持つレシピを1件作成し、
 // その ID を返す。Create 後の各関連の永続化を1テスト1観点で検証するための共通セットアップ。
-func arrangeRecipeWithRelations(t *testing.T) (context.Context, domain.RecipeRepository, uint) {
+func arrangeRecipeWithRelations(t *testing.T) (context.Context, domain.RecipeRepository, string) {
 	t.Helper()
 	testutil.RequireIntegration(t)
 	truncateAll(t)
@@ -65,7 +65,9 @@ func TestRecipeRepo_FindByID_LoadsLabels(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.RecipeLabel{{ID: 1, RecipeID: 1, Name: "和食"}}, got.Labels)
+	require.Len(t, got.Labels, 1)
+	assert.Equal(t, "和食", got.Labels[0].Name)
+	assert.Equal(t, got.ID, got.Labels[0].RecipeID)
 }
 
 // 関連付きレシピを作成した時、FindByID で共有先ユーザーが読み込まれること。
@@ -90,13 +92,11 @@ func TestRecipeRepo_FindByID_LoadsIngredients(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.RecipeIngredient{{
-		ID:       1,
-		RecipeID: 1,
-		Name:     "じゃがいも",
-		Quantity: 3,
-		Unit:     "個",
-	}}, got.Ingredients)
+	require.Len(t, got.Ingredients, 1)
+	assert.Equal(t, got.ID, got.Ingredients[0].RecipeID)
+	assert.Equal(t, "じゃがいも", got.Ingredients[0].Name)
+	assert.Equal(t, 3, got.Ingredients[0].Quantity)
+	assert.Equal(t, "個", got.Ingredients[0].Unit)
 }
 
 // 関連付きレシピを作成した時、FindByID で調味料が構造体ごと読み込まれること。
@@ -108,13 +108,11 @@ func TestRecipeRepo_FindByID_LoadsSeasonings(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.RecipeSeasoning{{
-		ID:       1,
-		RecipeID: 1,
-		Name:     "醤油",
-		Quantity: 2,
-		Unit:     "大さじ",
-	}}, got.Seasonings)
+	require.Len(t, got.Seasonings, 1)
+	assert.Equal(t, got.ID, got.Seasonings[0].RecipeID)
+	assert.Equal(t, "醤油", got.Seasonings[0].Name)
+	assert.Equal(t, 2, got.Seasonings[0].Quantity)
+	assert.Equal(t, "大さじ", got.Seasonings[0].Unit)
 }
 
 // arrangeSharedRecipe は owner が持ち friend に共有したレシピを1件作成し、
@@ -178,7 +176,7 @@ func TestRecipeRepo_FindAllForUser_StrangerDoesNotSee(t *testing.T) {
 
 // arrangeUpdatedRecipe は初版レシピを作成後、別の食材・別ラベルに差し替える Update を実行し、
 // その ID を返す。置き換えセマンティクスを1テスト1観点で検証するための共通セットアップ。
-func arrangeUpdatedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, uint) {
+func arrangeUpdatedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, string) {
 	t.Helper()
 	testutil.RequireIntegration(t)
 	truncateAll(t)
@@ -218,14 +216,11 @@ func TestRecipeRepo_Update_ReplacesIngredients(t *testing.T) {
 	// Act
 	got := mustFindRecipe(t, ctx, repo, id)
 
-	// Assert: 旧行(id1)は削除され、新規行(id2)に置き換わる。
-	assert.Equal(t, []domain.RecipeIngredient{{
-		ID:       2,
-		RecipeID: 1,
-		Name:     "人参",
-		Quantity: 2,
-		Unit:     "本",
-	}}, got.Ingredients)
+	// Assert: 旧行は削除され、新規行に置き換わる。
+	require.Len(t, got.Ingredients, 1)
+	assert.Equal(t, "人参", got.Ingredients[0].Name)
+	assert.Equal(t, 2, got.Ingredients[0].Quantity)
+	assert.Equal(t, "本", got.Ingredients[0].Unit)
 }
 
 // レシピを更新した時、ラベルが行ごと新しいものに置き換わること。
@@ -237,11 +232,12 @@ func TestRecipeRepo_Update_ReplacesLabels(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.RecipeLabel{{ID: 2, RecipeID: 1, Name: "夕食"}}, got.Labels)
+	require.Len(t, got.Labels, 1)
+	assert.Equal(t, "夕食", got.Labels[0].Name)
 }
 
 // arrangeDeletedRecipe は子テーブル(食材)と共有先を持つレシピを作成後 Delete を実行し、その ID を返す。
-func arrangeDeletedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, uint) {
+func arrangeDeletedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, string) {
 	t.Helper()
 	testutil.RequireIntegration(t)
 	truncateAll(t)

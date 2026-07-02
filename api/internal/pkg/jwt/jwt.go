@@ -24,7 +24,7 @@ func NewManager(secret string) *Manager {
 	return &Manager{secret: []byte(secret)}
 }
 
-func (m *Manager) generate(userID uint, tokenType string, ttl time.Duration) (string, error) {
+func (m *Manager) generate(userID string, tokenType string, ttl time.Duration) (string, error) {
 	now := time.Now()
 	claims := jwt.MapClaims{
 		"user_id":    userID,
@@ -36,16 +36,16 @@ func (m *Manager) generate(userID uint, tokenType string, ttl time.Duration) (st
 	return token.SignedString(m.secret)
 }
 
-func (m *Manager) GenerateAccess(userID uint) (string, error) {
+func (m *Manager) GenerateAccess(userID string) (string, error) {
 	return m.generate(userID, TypeAccess, accessTTL)
 }
 
-func (m *Manager) GenerateRefresh(userID uint) (string, error) {
+func (m *Manager) GenerateRefresh(userID string) (string, error) {
 	return m.generate(userID, TypeRefresh, refreshTTL)
 }
 
 // Parse はトークンを検証し、token_type が expectedType と一致すれば user_id を返す。
-func (m *Manager) Parse(tokenString, expectedType string) (uint, error) {
+func (m *Manager) Parse(tokenString, expectedType string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -53,19 +53,19 @@ func (m *Manager) Parse(tokenString, expectedType string) (uint, error) {
 		return m.secret, nil
 	})
 	if err != nil || !token.Valid {
-		return 0, errors.New("invalid token")
+		return "", errors.New("invalid token")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return 0, errors.New("invalid claims")
+		return "", errors.New("invalid claims")
 	}
 	if tt, _ := claims["token_type"].(string); tt != expectedType {
-		return 0, errors.New("invalid token type")
+		return "", errors.New("invalid token type")
 	}
-	uid, ok := claims["user_id"].(float64)
-	if !ok {
-		return 0, errors.New("invalid user_id")
+	uid, ok := claims["user_id"].(string)
+	if !ok || uid == "" {
+		return "", errors.New("invalid user_id")
 	}
-	return uint(uid), nil
+	return uid, nil
 }

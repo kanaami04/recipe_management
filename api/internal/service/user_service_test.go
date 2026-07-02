@@ -14,12 +14,12 @@ import (
 // 該当ユーザーがいる時、GetByID でそのユーザーが構造体ごと返ること。
 func TestUserGetByID_Found(t *testing.T) {
 	// Arrange
-	user := factory.NewUser(factory.WithID(7), factory.WithUsername("alice"))
-	ur := &mockUserRepo{byID: map[uint]*domain.User{7: user}}
+	user := factory.NewUser(factory.WithID("u7"), factory.WithUsername("alice"))
+	ur := &mockUserRepo{byID: map[string]*domain.User{"u7": user}}
 	svc := NewUserService(ur)
 
 	// Act
-	got, err := svc.GetByID(context.Background(), 7)
+	got, err := svc.GetByID(context.Background(), "u7")
 
 	// Assert
 	require.NoError(t, err)
@@ -29,11 +29,11 @@ func TestUserGetByID_Found(t *testing.T) {
 // 該当ユーザーがいない時、GetByID で nil が返ること。
 func TestUserGetByID_NotFound(t *testing.T) {
 	// Arrange
-	ur := &mockUserRepo{byID: map[uint]*domain.User{}}
+	ur := &mockUserRepo{byID: map[string]*domain.User{}}
 	svc := NewUserService(ur)
 
 	// Act
-	got, err := svc.GetByID(context.Background(), 999)
+	got, err := svc.GetByID(context.Background(), "u999")
 
 	// Assert
 	require.NoError(t, err)
@@ -44,8 +44,8 @@ func TestUserGetByID_NotFound(t *testing.T) {
 func TestUserList_ReturnsAll(t *testing.T) {
 	// Arrange
 	ur := &mockUserRepo{all: []domain.User{
-		*factory.NewUser(factory.WithID(1), factory.WithUsername("alice")),
-		*factory.NewUser(factory.WithID(2), factory.WithUsername("bob")),
+		*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice")),
+		*factory.NewUser(factory.WithID("u2"), factory.WithUsername("bob")),
 	}}
 	svc := NewUserService(ur)
 

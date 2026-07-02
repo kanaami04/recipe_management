@@ -41,33 +41,33 @@ func (m *mockAuthService) Register(ctx context.Context, u, e, p string) (*domain
 }
 
 type mockRecipeService struct {
-	listFn   func(ctx context.Context, userID uint) ([]domain.Recipe, error)
-	createFn func(ctx context.Context, userID uint, req request.RecipeRequest) (*domain.Recipe, error)
-	updateFn func(ctx context.Context, userID, recipeID uint, req request.RecipeRequest) (*domain.Recipe, error)
-	deleteFn func(ctx context.Context, userID, recipeID uint) error
+	listFn   func(ctx context.Context, userID string) ([]domain.Recipe, error)
+	createFn func(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error)
+	updateFn func(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error)
+	deleteFn func(ctx context.Context, userID, recipeID string) error
 }
 
-func (m *mockRecipeService) List(ctx context.Context, userID uint) ([]domain.Recipe, error) {
+func (m *mockRecipeService) List(ctx context.Context, userID string) ([]domain.Recipe, error) {
 	return m.listFn(ctx, userID)
 }
-func (m *mockRecipeService) Create(ctx context.Context, userID uint, req request.RecipeRequest) (*domain.Recipe, error) {
+func (m *mockRecipeService) Create(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error) {
 	return m.createFn(ctx, userID, req)
 }
-func (m *mockRecipeService) Update(ctx context.Context, userID, recipeID uint, req request.RecipeRequest) (*domain.Recipe, error) {
+func (m *mockRecipeService) Update(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error) {
 	return m.updateFn(ctx, userID, recipeID, req)
 }
-func (m *mockRecipeService) Delete(ctx context.Context, userID, recipeID uint) error {
+func (m *mockRecipeService) Delete(ctx context.Context, userID, recipeID string) error {
 	return m.deleteFn(ctx, userID, recipeID)
 }
 
 // --- UserService のモック ---
 
 type mockUserService struct {
-	getByIDFn func(ctx context.Context, id uint) (*domain.User, error)
+	getByIDFn func(ctx context.Context, id string) (*domain.User, error)
 	listFn    func(ctx context.Context) ([]domain.User, error)
 }
 
-func (m *mockUserService) GetByID(ctx context.Context, id uint) (*domain.User, error) {
+func (m *mockUserService) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	return m.getByIDFn(ctx, id)
 }
 func (m *mockUserService) List(ctx context.Context) ([]domain.User, error) {
@@ -77,9 +77,9 @@ func (m *mockUserService) List(ctx context.Context) ([]domain.User, error) {
 // --- LabelService のモック ---
 
 type mockLabelService struct {
-	listFn func(ctx context.Context, userID uint) ([]string, error)
+	listFn func(ctx context.Context, userID string) ([]string, error)
 }
 
-func (m *mockLabelService) List(ctx context.Context, userID uint) ([]string, error) {
+func (m *mockLabelService) List(ctx context.Context, userID string) ([]string, error) {
 	return m.listFn(ctx, userID)
 }

@@ -12,7 +12,7 @@ export type Error = {
 };
 
 export type TokenRequest = {
-    username: string;
+    email: string;
     password: string;
 };
 
@@ -34,13 +34,13 @@ export type RegisterRequest = {
 };
 
 export type UserInfoResponse = {
-    id: number;
+    id: string;
     username: string;
     email: string;
 };
 
 export type UserListItem = {
-    id: number;
+    id: string;
     username: string;
 };
 
@@ -107,7 +107,7 @@ export type SeasonResponse = {
 };
 
 export type RecipeResponse = {
-    id: number;
+    id: string;
     /**
      * JST。形式: YYYY-MM-DD HH:mm
      */
@@ -365,7 +365,7 @@ export type DeleteRecipeData = {
         /**
          * レシピ ID
          */
-        id: number;
+        id: string;
     };
     query?: never;
     url: '/api/recipes/{id}/';
@@ -403,7 +403,7 @@ export type UpdateRecipeData = {
         /**
          * レシピ ID
          */
-        id: number;
+        id: string;
     };
     query?: never;
     url: '/api/recipes/{id}/';

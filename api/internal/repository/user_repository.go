@@ -41,9 +41,9 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain
 	return &u, nil
 }
 
-func (r *userRepository) FindByID(ctx context.Context, id uint) (*domain.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
 	var u domain.User
-	err := r.db.WithContext(ctx).First(&u, id).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&u).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}

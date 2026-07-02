@@ -17,21 +17,21 @@ func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
 	created := time.Date(2026, 6, 14, 3, 0, 0, 0, time.UTC)
 	updated := time.Date(2026, 6, 14, 4, 30, 0, 0, time.UTC) // JST 13:30
 	r := &domain.Recipe{
-		ID:          1,
+		ID:          "r1",
 		Title:       "肉じゃが",
 		CookingTime: &cookingTime,
 		Servings:    2,
 		Procedure:   "煮る",
 		Archived:    false,
-		OwnerID:     10,
-		Owner:       domain.User{ID: 10, Username: "alice"},
-		Labels:      []domain.RecipeLabel{{ID: 1, RecipeID: 1, Name: "和食"}},
-		SharedUsers: []domain.User{{ID: 20, Username: "bob"}},
+		OwnerID:     "u10",
+		Owner:       domain.User{ID: "u10", Username: "alice"},
+		Labels:      []domain.RecipeLabel{{ID: "l1", RecipeID: "r1", Name: "和食"}},
+		SharedUsers: []domain.User{{ID: "u20", Username: "bob"}},
 		Ingredients: []domain.RecipeIngredient{
-			{ID: 5, RecipeID: 1, Name: "じゃがいも", Quantity: 3, Unit: "個"},
+			{ID: "i5", RecipeID: "r1", Name: "じゃがいも", Quantity: 3, Unit: "個"},
 		},
 		Seasonings: []domain.RecipeSeasoning{
-			{ID: 7, RecipeID: 1, Name: "醤油", Quantity: 2, Unit: "大さじ"},
+			{ID: "s7", RecipeID: "r1", Name: "醤油", Quantity: 2, Unit: "大さじ"},
 		},
 		CreatedAt: created,
 		UpdatedAt: updated,
@@ -42,14 +42,14 @@ func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
 
 	// Assert
 	want := RecipeResponse{
-		ID:         1,
+		ID:         "r1",
 		CreatedAt:  "2026-06-14 12:00",
 		UpdatedAt:  "2026-06-14 13:30",
 		Cooking:    []CookingResponse{{Ingredients: NameResponse{Name: "じゃがいも"}, Quantity: 3, Unit: "個"}},
 		Season:     []SeasonResponse{{Seasoning: NameResponse{Name: "醤油"}, Quantity: 2, Unit: "大さじ"}},
 		Procedure:  "煮る",
-		Owner:      UserListItem{ID: 10, Username: "alice"},
-		SharedUser: []UserListItem{{ID: 20, Username: "bob"}},
+		Owner:      UserListItem{ID: "u10", Username: "alice"},
+		SharedUser: []UserListItem{{ID: "u20", Username: "bob"}},
 		Title:      "肉じゃが",
 		CreateTime: &cookingTime,
 		CreateFor:  2,
@@ -62,7 +62,7 @@ func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
 // 関連が空のレシピを変換した時、各スライスが nil ではなく空スライス([])になること。
 func TestToRecipeResponse_EmptySlicesNotNil(t *testing.T) {
 	// Arrange
-	r := &domain.Recipe{ID: 1, Owner: domain.User{ID: 1}}
+	r := &domain.Recipe{ID: "r1", Owner: domain.User{ID: "u1"}}
 
 	// Act
 	got := ToRecipeResponse(r)
