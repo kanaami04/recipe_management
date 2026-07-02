@@ -36,6 +36,8 @@ func New(cfg *config.Config, db *gorm.DB, logger *slog.Logger) *echo.Echo {
 	e.Use(echomw.RequestID())         // X-Request-Id を発行
 	e.Use(appmw.RequestIDToContext()) // request_id を context へ伝播
 	e.Use(appmw.RequestLogger(logger))
+	// CloudFront 経由以外の直接アクセスを遮断する (adr/infra/0001)。dev は未設定で素通し。
+	e.Use(appmw.RequireOriginVerify(cfg.OriginVerifySecret))
 	e.Use(echomw.CORSWithConfig(echomw.CORSConfig{
 		AllowOrigins: []string{cfg.CORSOrigin},
 		AllowMethods: []string{
