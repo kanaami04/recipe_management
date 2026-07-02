@@ -13,6 +13,10 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
+    // 本番ビルドには Service Worker が含まれる (ADR-0010)。SW がリクエストを
+    // 横取りすると page.route のモックが不安定になるため、既定ではブロックする。
+    // SW 自体の検証(e2e/pwa.spec.ts)はテスト側で 'allow' に上書きする。
+    serviceWorkers: 'block',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   // 本番ビルド + preview を使う。dev の依存最適化リロードに起因する初回フレークを避ける。
