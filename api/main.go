@@ -33,6 +33,10 @@ func main() {
 func run() error {
 	// 例: go run main.go -env .env.local
 	envFile := flag.String("env", ".env", "path to env file")
+	// 例: DATABASE_URL=<direct DSN> go run main.go -migrate
+	// マイグレーションだけ実行して終了する (adr/infra/0002)。Neon への DDL は
+	// pooled ではなく direct 接続で行うこと。
+	migrateOnly := flag.Bool("migrate", false, "run database migration and exit")
 	flag.Parse()
 
 	cfg := config.Load(*envFile)
@@ -51,8 +55,20 @@ func run() error {
 	}
 	defer sqlDB.Close() // 終了時に DB プールを閉じる（サーバ停止の後に走る）
 
-	if err := database.Migrate(db); err != nil {
-		return fmt.Errorf("migrate: %w", err)
+	if *migrateOnly {
+		if err := database.Migrate(db); err != nil {
+			return fmt.Errorf("migrate: %w", err)
+		}
+		log.Info("migration completed")
+		return nil
+	}
+
+	// Lambda ではコールドスタート毎の DDL を避けるため AUTO_MIGRATE=false にし、
+	// スキーマ変更時に -migrate で別途実行する (adr/infra/0002)。
+	if cfg.AutoMigrate {
+		if err := database.Migrate(db); err != nil {
+			return fmt.Errorf("migrate: %w", err)
+		}
 	}
 
 	e := app.New(cfg, db, log)
