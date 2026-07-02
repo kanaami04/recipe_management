@@ -30,13 +30,13 @@ describe('生成された zod スキーマ', () => {
   it('create_time が null のレシピを渡した時、検証を通過すること。', () => {
     // Arrange
     const recipe = {
-      id: 1,
+      id: '018f1a2b-3c4d-7e5f-8a9b-0000000000a1',
       created_at: '2026-06-15 09:30',
       updated_at: '2026-06-15 09:30',
       cooking: [],
       season: [],
       procedure: '',
-      owner: { id: 1, username: 'taro' },
+      owner: { id: '018f1a2b-3c4d-7e5f-8a9b-0000000000b2', username: 'taro' },
       shared_user: [],
       title: 'カレー',
       create_time: null,

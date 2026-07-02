@@ -63,13 +63,13 @@ describe('toFormValues', () => {
   it('create_time が null のレスポンスの時、空文字に変換されること。', () => {
     // Arrange
     const recipe = {
-      id: 1,
+      id: 'r1',
       created_at: '2026-06-15 09:30',
       updated_at: '2026-06-15 09:30',
       cooking: [],
       season: [],
       procedure: '',
-      owner: { id: 1, username: 'taro' },
+      owner: { id: 'u-taro', username: 'taro' },
       shared_user: [],
       title: 'カレー',
       create_time: null,

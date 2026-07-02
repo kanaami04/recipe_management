@@ -26,16 +26,16 @@ func TestRecipeCreate_BuildsRecipe(t *testing.T) {
 	}
 
 	// Act
-	_, err := svc.Create(context.Background(), 42, req)
+	_, err := svc.Create(context.Background(), "u42", req)
 
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, rr.created)
 	want := domain.Recipe{
-		ID:          1,
+		ID:          rr.created.ID, // 採番された UUID をそのまま採用
 		Title:       "カレー",
 		Servings:    1, // 未指定はデフォルト1
-		OwnerID:     42,
+		OwnerID:     "u42",
 		Labels:      []domain.RecipeLabel{{Name: "夕食"}},
 		SharedUsers: []domain.User{},
 		Ingredients: []domain.RecipeIngredient{{Name: "玉ねぎ", Quantity: 2, Unit: "個"}},
@@ -55,7 +55,7 @@ func TestRecipeCreate_SharedUserNotFound(t *testing.T) {
 	}
 
 	// Act
-	_, err := svc.Create(context.Background(), 1, req)
+	_, err := svc.Create(context.Background(), "u1", req)
 
 	// Assert
 	assert.ErrorIs(t, err, ErrSharedUserNotFound)
@@ -65,11 +65,11 @@ func TestRecipeCreate_SharedUserNotFound(t *testing.T) {
 func TestRecipeList_ReturnsRecipes(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	rr.store[1] = factory.NewRecipe(factory.WithRecipeID(1), factory.WithOwnerID(5))
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
 	svc := NewRecipeService(rr, &mockUserRepo{})
 
 	// Act
-	recipes, err := svc.List(context.Background(), 5)
+	recipes, err := svc.List(context.Background(), "u5")
 
 	// Assert
 	require.NoError(t, err)
@@ -80,11 +80,11 @@ func TestRecipeList_ReturnsRecipes(t *testing.T) {
 func TestRecipeUpdate_ForbiddenForNonOwnerNonShared(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	rr.store[1] = factory.NewRecipe(factory.WithRecipeID(1), factory.WithOwnerID(100)) // 所有者は100
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u100")) // 所有者は u100
 	svc := NewRecipeService(rr, &mockUserRepo{})
 
 	// Act
-	_, err := svc.Update(context.Background(), 999, 1, request.RecipeRequest{Title: "x"}) // 別人999
+	_, err := svc.Update(context.Background(), "u999", "r1", request.RecipeRequest{Title: "x"}) // 別人 u999
 
 	// Assert
 	assert.ErrorIs(t, err, ErrForbidden)
@@ -94,24 +94,24 @@ func TestRecipeUpdate_ForbiddenForNonOwnerNonShared(t *testing.T) {
 func TestRecipeUpdate_SharedUserUpdatesRecipe(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	rr.store[1] = factory.NewRecipe(
-		factory.WithRecipeID(1),
-		factory.WithOwnerID(100),
-		factory.WithSharedUsers(*factory.NewUser(factory.WithID(7))),
+	rr.store["r1"] = factory.NewRecipe(
+		factory.WithRecipeID("r1"),
+		factory.WithOwnerID("u100"),
+		factory.WithSharedUsers(*factory.NewUser(factory.WithID("u7"))),
 	)
 	svc := NewRecipeService(rr, &mockUserRepo{})
 
 	// Act
-	_, err := svc.Update(context.Background(), 7, 1, request.RecipeRequest{Title: "更新"}) // 共有先7は許可
+	_, err := svc.Update(context.Background(), "u7", "r1", request.RecipeRequest{Title: "更新"}) // 共有先 u7 は許可
 
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, rr.updated)
 	want := domain.Recipe{
-		ID:          1,
+		ID:          "r1",
 		Title:       "更新",
 		Servings:    1,
-		OwnerID:     100, // owner は変更されない
+		OwnerID:     "u100", // owner は変更されない
 		Labels:      []domain.RecipeLabel{},
 		SharedUsers: []domain.User{},
 		Ingredients: []domain.RecipeIngredient{},
@@ -124,15 +124,15 @@ func TestRecipeUpdate_SharedUserUpdatesRecipe(t *testing.T) {
 func TestRecipeDelete_Success(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	rr.store[1] = factory.NewRecipe(factory.WithRecipeID(1), factory.WithOwnerID(5))
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
 	svc := NewRecipeService(rr, &mockUserRepo{})
 
 	// Act
-	err := svc.Delete(context.Background(), 5, 1)
+	err := svc.Delete(context.Background(), "u5", "r1")
 
 	// Assert
 	require.NoError(t, err)
-	assert.Contains(t, rr.deletedIDs, uint(1))
+	assert.Contains(t, rr.deletedIDs, "r1")
 }
 
 // 存在しないレシピを削除する時、ErrNotFound が返ること。
@@ -142,7 +142,7 @@ func TestRecipeDelete_NotFound(t *testing.T) {
 	svc := NewRecipeService(rr, &mockUserRepo{})
 
 	// Act
-	err := svc.Delete(context.Background(), 1, 12345)
+	err := svc.Delete(context.Background(), "u1", "no-such-recipe")
 
 	// Assert
 	assert.ErrorIs(t, err, ErrNotFound)

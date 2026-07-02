@@ -18,7 +18,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testUserID = uint(7)
+const (
+	testUserID   = "00000000-0000-0000-0000-000000000007"
+	testRecipeID = "00000000-0000-0000-0000-000000000005"
+)
 
 // authedRequest は testUserID 用のアクセストークンを付けたリクエストを作る。
 func authedRequest(t *testing.T, jm *jwtpkg.Manager, method, path, body string) *http.Request {
@@ -32,7 +35,7 @@ func authedRequest(t *testing.T, jm *jwtpkg.Manager, method, path, body string) 
 }
 
 // serveList は listFn を差し替えた RecipeHandler に、認証付きで GET /api/recipes/ し結果を返す。
-func serveList(t *testing.T, listFn func(context.Context, uint) ([]domain.Recipe, error)) *httptest.ResponseRecorder {
+func serveList(t *testing.T, listFn func(context.Context, string) ([]domain.Recipe, error)) *httptest.ResponseRecorder {
 	t.Helper()
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
@@ -44,7 +47,7 @@ func serveList(t *testing.T, listFn func(context.Context, uint) ([]domain.Recipe
 }
 
 // serveCreate は createFn を差し替えた RecipeHandler に、認証付きで POST /api/recipes/ し結果を返す。
-func serveCreate(t *testing.T, createFn func(context.Context, uint, request.RecipeRequest) (*domain.Recipe, error), body string) *httptest.ResponseRecorder {
+func serveCreate(t *testing.T, createFn func(context.Context, string, request.RecipeRequest) (*domain.Recipe, error), body string) *httptest.ResponseRecorder {
 	t.Helper()
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
@@ -57,7 +60,7 @@ func serveCreate(t *testing.T, createFn func(context.Context, uint, request.Reci
 
 // serveUpdate は updateFn を差し替えた RecipeHandler に、認証付きで PUT /api/recipes/:id/ し結果を返す。
 // idParam は URL に埋め込む :id 部分（不正値の検証にも使う）。
-func serveUpdate(t *testing.T, updateFn func(context.Context, uint, uint, request.RecipeRequest) (*domain.Recipe, error), idParam, body string) *httptest.ResponseRecorder {
+func serveUpdate(t *testing.T, updateFn func(context.Context, string, string, request.RecipeRequest) (*domain.Recipe, error), idParam, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
@@ -69,7 +72,7 @@ func serveUpdate(t *testing.T, updateFn func(context.Context, uint, uint, reques
 }
 
 // serveDelete は deleteFn を差し替えた RecipeHandler に、認証付きで DELETE /api/recipes/:id/ し結果を返す。
-func serveDelete(t *testing.T, deleteFn func(context.Context, uint, uint) error, idParam string) *httptest.ResponseRecorder {
+func serveDelete(t *testing.T, deleteFn func(context.Context, string, string) error, idParam string) *httptest.ResponseRecorder {
 	t.Helper()
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
@@ -81,9 +84,9 @@ func serveDelete(t *testing.T, deleteFn func(context.Context, uint, uint) error,
 }
 
 // recipeList は肉じゃが1件を返す listFn。
-func recipeList(_ context.Context, _ uint) ([]domain.Recipe, error) {
+func recipeList(_ context.Context, _ string) ([]domain.Recipe, error) {
 	return []domain.Recipe{
-		{ID: 1, Title: "肉じゃが", Owner: domain.User{ID: testUserID, Username: "alice"}},
+		{ID: "r1", Title: "肉じゃが", Owner: domain.User{ID: testUserID, Username: "alice"}},
 	}, nil
 }
 
@@ -108,8 +111,8 @@ func TestRecipeHandler_List_ReturnsRecipesInBody(t *testing.T) {
 // 一覧取得した時、JWT のユーザーIDがサービスに渡されること。
 func TestRecipeHandler_List_ForwardsUserID(t *testing.T) {
 	// Arrange & Act
-	var gotUserID uint
-	serveList(t, func(_ context.Context, userID uint) ([]domain.Recipe, error) {
+	var gotUserID string
+	serveList(t, func(_ context.Context, userID string) ([]domain.Recipe, error) {
 		gotUserID = userID
 		return nil, nil
 	})
@@ -124,7 +127,7 @@ func TestRecipeHandler_List_Unauthorized(t *testing.T) {
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
 	h := NewRecipeHandler(&mockRecipeService{
-		listFn: func(_ context.Context, _ uint) ([]domain.Recipe, error) {
+		listFn: func(_ context.Context, _ string) ([]domain.Recipe, error) {
 			t.Fatal("認証なしで service を呼んではいけない")
 			return nil, nil
 		},
@@ -143,8 +146,8 @@ func TestRecipeHandler_List_Unauthorized(t *testing.T) {
 // 認証済みで作成した時、201 が返ること。
 func TestRecipeHandler_Create_Returns201(t *testing.T) {
 	// Arrange & Act
-	rec := serveCreate(t, func(_ context.Context, _ uint, req request.RecipeRequest) (*domain.Recipe, error) {
-		return &domain.Recipe{ID: 9, Title: req.Title, Owner: domain.User{ID: testUserID, Username: "alice"}}, nil
+	rec := serveCreate(t, func(_ context.Context, _ string, req request.RecipeRequest) (*domain.Recipe, error) {
+		return &domain.Recipe{ID: "r9", Title: req.Title, Owner: domain.User{ID: testUserID, Username: "alice"}}, nil
 	}, `{"title":"カレー"}`)
 
 	// Assert
@@ -154,8 +157,8 @@ func TestRecipeHandler_Create_Returns201(t *testing.T) {
 // 作成した時、JWT のユーザーIDがサービスに渡されること。
 func TestRecipeHandler_Create_ForwardsUserID(t *testing.T) {
 	// Arrange & Act
-	var gotUserID uint
-	serveCreate(t, func(_ context.Context, userID uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	var gotUserID string
+	serveCreate(t, func(_ context.Context, userID string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		gotUserID = userID
 		return &domain.Recipe{}, nil
 	}, `{"title":"カレー"}`)
@@ -168,7 +171,7 @@ func TestRecipeHandler_Create_ForwardsUserID(t *testing.T) {
 func TestRecipeHandler_Create_ForwardsParsedRequest(t *testing.T) {
 	// Arrange & Act
 	var gotReq request.RecipeRequest
-	serveCreate(t, func(_ context.Context, _ uint, req request.RecipeRequest) (*domain.Recipe, error) {
+	serveCreate(t, func(_ context.Context, _ string, req request.RecipeRequest) (*domain.Recipe, error) {
 		gotReq = req
 		return &domain.Recipe{}, nil
 	}, `{"title":"カレー","create_for":2}`)
@@ -180,7 +183,7 @@ func TestRecipeHandler_Create_ForwardsParsedRequest(t *testing.T) {
 // 必須項目が欠けている時、サービスを呼ばず 400 が返ること。
 func TestRecipeHandler_Create_ValidationError(t *testing.T) {
 	// Arrange & Act
-	rec := serveCreate(t, func(_ context.Context, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	rec := serveCreate(t, func(_ context.Context, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		t.Fatal("validation fail 時に service を呼んではいけない")
 		return nil, nil
 	}, `{}`) // title 欠落
@@ -190,14 +193,14 @@ func TestRecipeHandler_Create_ValidationError(t *testing.T) {
 }
 
 // okUpdate は受け取ったタイトルで更新後レシピを返す updateFn。
-func okUpdate(_ context.Context, _, id uint, req request.RecipeRequest) (*domain.Recipe, error) {
+func okUpdate(_ context.Context, _, id string, req request.RecipeRequest) (*domain.Recipe, error) {
 	return &domain.Recipe{ID: id, Title: req.Title}, nil
 }
 
 // 認証済みで更新した時、200 が返ること。
 func TestRecipeHandler_Update_Returns200(t *testing.T) {
 	// Arrange & Act
-	rec := serveUpdate(t, okUpdate, "5", `{"title":"更新"}`)
+	rec := serveUpdate(t, okUpdate, testRecipeID, `{"title":"更新"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -206,11 +209,11 @@ func TestRecipeHandler_Update_Returns200(t *testing.T) {
 // 更新した時、JWT のユーザーIDがサービスに渡されること。
 func TestRecipeHandler_Update_ForwardsUserID(t *testing.T) {
 	// Arrange & Act
-	var gotUserID uint
-	serveUpdate(t, func(_ context.Context, userID, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	var gotUserID string
+	serveUpdate(t, func(_ context.Context, userID, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		gotUserID = userID
 		return &domain.Recipe{}, nil
-	}, "5", `{"title":"更新"}`)
+	}, testRecipeID, `{"title":"更新"}`)
 
 	// Assert
 	assert.Equal(t, testUserID, gotUserID)
@@ -219,22 +222,22 @@ func TestRecipeHandler_Update_ForwardsUserID(t *testing.T) {
 // 更新した時、URL の :id がサービスに渡されること。
 func TestRecipeHandler_Update_ForwardsRecipeID(t *testing.T) {
 	// Arrange & Act
-	var gotID uint
-	serveUpdate(t, func(_ context.Context, _, recipeID uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	var gotID string
+	serveUpdate(t, func(_ context.Context, _, recipeID string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		gotID = recipeID
 		return &domain.Recipe{}, nil
-	}, "5", `{"title":"更新"}`)
+	}, testRecipeID, `{"title":"更新"}`)
 
 	// Assert
-	assert.Equal(t, uint(5), gotID)
+	assert.Equal(t, testRecipeID, gotID)
 }
 
 // 対象レシピが存在しない時、404 が返ること。
 func TestRecipeHandler_Update_NotFound(t *testing.T) {
 	// Arrange & Act
-	rec := serveUpdate(t, func(_ context.Context, _, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	rec := serveUpdate(t, func(_ context.Context, _, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		return nil, service.ErrNotFound
-	}, "5", `{"title":"更新"}`)
+	}, testRecipeID, `{"title":"更新"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusNotFound, rec.Code)
@@ -243,9 +246,9 @@ func TestRecipeHandler_Update_NotFound(t *testing.T) {
 // 権限が無いユーザーが更新した時、403 が返ること。
 func TestRecipeHandler_Update_Forbidden(t *testing.T) {
 	// Arrange & Act
-	rec := serveUpdate(t, func(_ context.Context, _, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	rec := serveUpdate(t, func(_ context.Context, _, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		return nil, service.ErrForbidden
-	}, "5", `{"title":"更新"}`)
+	}, testRecipeID, `{"title":"更新"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusForbidden, rec.Code)
@@ -254,9 +257,9 @@ func TestRecipeHandler_Update_Forbidden(t *testing.T) {
 // 共有先ユーザーが存在しない時、400 が返ること。
 func TestRecipeHandler_Update_SharedUserNotFound(t *testing.T) {
 	// Arrange & Act
-	rec := serveUpdate(t, func(_ context.Context, _, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	rec := serveUpdate(t, func(_ context.Context, _, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		return nil, service.ErrSharedUserNotFound
-	}, "5", `{"title":"更新"}`)
+	}, testRecipeID, `{"title":"更新"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -265,9 +268,9 @@ func TestRecipeHandler_Update_SharedUserNotFound(t *testing.T) {
 // サービスが想定外のエラーを返した時、500 が返ること。
 func TestRecipeHandler_Update_InternalError(t *testing.T) {
 	// Arrange & Act
-	rec := serveUpdate(t, func(_ context.Context, _, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	rec := serveUpdate(t, func(_ context.Context, _, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		return nil, assert.AnError
-	}, "5", `{"title":"更新"}`)
+	}, testRecipeID, `{"title":"更新"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
@@ -276,7 +279,7 @@ func TestRecipeHandler_Update_InternalError(t *testing.T) {
 // :id が数値でない時、サービスを呼ばず 400 が返ること。
 func TestRecipeHandler_Update_InvalidID(t *testing.T) {
 	// Arrange & Act
-	rec := serveUpdate(t, func(_ context.Context, _, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	rec := serveUpdate(t, func(_ context.Context, _, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		t.Fatal("不正な id では service を呼んではいけない")
 		return nil, nil
 	}, "abc", `{"title":"更新"}`)
@@ -288,10 +291,10 @@ func TestRecipeHandler_Update_InvalidID(t *testing.T) {
 // 必須項目が欠けている時、サービスを呼ばず 400 が返ること。
 func TestRecipeHandler_Update_ValidationError(t *testing.T) {
 	// Arrange & Act
-	rec := serveUpdate(t, func(_ context.Context, _, _ uint, _ request.RecipeRequest) (*domain.Recipe, error) {
+	rec := serveUpdate(t, func(_ context.Context, _, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
 		t.Fatal("validation fail 時に service を呼んではいけない")
 		return nil, nil
-	}, "5", `{}`) // title 欠落
+	}, testRecipeID, `{}`) // title 欠落
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -300,9 +303,9 @@ func TestRecipeHandler_Update_ValidationError(t *testing.T) {
 // 認証済みで削除した時、204 が返ること。
 func TestRecipeHandler_Delete_Returns204(t *testing.T) {
 	// Arrange & Act
-	rec := serveDelete(t, func(_ context.Context, _, _ uint) error {
+	rec := serveDelete(t, func(_ context.Context, _, _ string) error {
 		return nil
-	}, "5")
+	}, testRecipeID)
 
 	// Assert
 	assert.Equal(t, http.StatusNoContent, rec.Code)
@@ -311,11 +314,11 @@ func TestRecipeHandler_Delete_Returns204(t *testing.T) {
 // 削除した時、JWT のユーザーIDがサービスに渡されること。
 func TestRecipeHandler_Delete_ForwardsUserID(t *testing.T) {
 	// Arrange & Act
-	var gotUserID uint
-	serveDelete(t, func(_ context.Context, userID, _ uint) error {
+	var gotUserID string
+	serveDelete(t, func(_ context.Context, userID, _ string) error {
 		gotUserID = userID
 		return nil
-	}, "5")
+	}, testRecipeID)
 
 	// Assert
 	assert.Equal(t, testUserID, gotUserID)
@@ -324,22 +327,22 @@ func TestRecipeHandler_Delete_ForwardsUserID(t *testing.T) {
 // 削除した時、URL の :id がサービスに渡されること。
 func TestRecipeHandler_Delete_ForwardsRecipeID(t *testing.T) {
 	// Arrange & Act
-	var gotID uint
-	serveDelete(t, func(_ context.Context, _, recipeID uint) error {
+	var gotID string
+	serveDelete(t, func(_ context.Context, _, recipeID string) error {
 		gotID = recipeID
 		return nil
-	}, "5")
+	}, testRecipeID)
 
 	// Assert
-	assert.Equal(t, uint(5), gotID)
+	assert.Equal(t, testRecipeID, gotID)
 }
 
 // 対象レシピが存在しない時、404 が返ること。
 func TestRecipeHandler_Delete_NotFound(t *testing.T) {
 	// Arrange & Act
-	rec := serveDelete(t, func(_ context.Context, _, _ uint) error {
+	rec := serveDelete(t, func(_ context.Context, _, _ string) error {
 		return service.ErrNotFound
-	}, "5")
+	}, testRecipeID)
 
 	// Assert
 	assert.Equal(t, http.StatusNotFound, rec.Code)
@@ -348,9 +351,9 @@ func TestRecipeHandler_Delete_NotFound(t *testing.T) {
 // 権限が無いユーザーが削除した時、403 が返ること。
 func TestRecipeHandler_Delete_Forbidden(t *testing.T) {
 	// Arrange & Act
-	rec := serveDelete(t, func(_ context.Context, _, _ uint) error {
+	rec := serveDelete(t, func(_ context.Context, _, _ string) error {
 		return service.ErrForbidden
-	}, "5")
+	}, testRecipeID)
 
 	// Assert
 	assert.Equal(t, http.StatusForbidden, rec.Code)
@@ -359,7 +362,7 @@ func TestRecipeHandler_Delete_Forbidden(t *testing.T) {
 // :id が数値でない時、サービスを呼ばず 400 が返ること。
 func TestRecipeHandler_Delete_InvalidID(t *testing.T) {
 	// Arrange & Act
-	rec := serveDelete(t, func(_ context.Context, _, _ uint) error {
+	rec := serveDelete(t, func(_ context.Context, _, _ string) error {
 		t.Fatal("不正な id では service を呼んではいけない")
 		return nil
 	}, "abc")

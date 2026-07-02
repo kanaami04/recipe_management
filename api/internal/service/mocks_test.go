@@ -4,30 +4,30 @@ import (
 	"context"
 
 	"recipe-backend/internal/domain"
+	"recipe-backend/internal/pkg/id"
 )
 
 // --- RecipeRepository のモック ---
 
 type mockRecipeRepo struct {
-	store      map[uint]*domain.Recipe
-	nextID     uint
+	store      map[string]*domain.Recipe
 	created    *domain.Recipe
 	updated    *domain.Recipe
-	deletedIDs []uint
+	deletedIDs []string
 }
 
 func newMockRecipeRepo() *mockRecipeRepo {
-	return &mockRecipeRepo{store: map[uint]*domain.Recipe{}, nextID: 1}
+	return &mockRecipeRepo{store: map[string]*domain.Recipe{}}
 }
 
-func (m *mockRecipeRepo) FindAllForUser(_ context.Context, userID uint) ([]domain.Recipe, error) {
+func (m *mockRecipeRepo) FindAllForUser(_ context.Context, userID string) ([]domain.Recipe, error) {
 	var out []domain.Recipe
 	for _, r := range m.store {
 		out = append(out, *r)
 	}
 	return out, nil
 }
-func (m *mockRecipeRepo) FindByID(_ context.Context, id uint) (*domain.Recipe, error) {
+func (m *mockRecipeRepo) FindByID(_ context.Context, id string) (*domain.Recipe, error) {
 	r, ok := m.store[id]
 	if !ok {
 		return nil, nil
@@ -35,8 +35,9 @@ func (m *mockRecipeRepo) FindByID(_ context.Context, id uint) (*domain.Recipe, e
 	return r, nil
 }
 func (m *mockRecipeRepo) Create(_ context.Context, recipe *domain.Recipe) error {
-	recipe.ID = m.nextID
-	m.nextID++
+	if recipe.ID == "" {
+		recipe.ID = id.New()
+	}
 	cp := *recipe
 	m.store[recipe.ID] = &cp
 	m.created = &cp
@@ -53,14 +54,14 @@ func (m *mockRecipeRepo) Delete(_ context.Context, recipe *domain.Recipe) error 
 	m.deletedIDs = append(m.deletedIDs, recipe.ID)
 	return nil
 }
+
 // --- UserRepository のモック ---
 
 type mockUserRepo struct {
 	byName  map[string]*domain.User
 	byEmail map[string]*domain.User
-	byID    map[uint]*domain.User
+	byID    map[string]*domain.User
 	all     []domain.User
-	nextID  uint
 }
 
 func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.User, error) {
@@ -69,15 +70,16 @@ func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*doma
 func (m *mockUserRepo) FindByEmail(_ context.Context, email string) (*domain.User, error) {
 	return m.byEmail[email], nil
 }
-func (m *mockUserRepo) FindByID(_ context.Context, id uint) (*domain.User, error) {
+func (m *mockUserRepo) FindByID(_ context.Context, id string) (*domain.User, error) {
 	return m.byID[id], nil
 }
 func (m *mockUserRepo) FindAll(_ context.Context) ([]domain.User, error) {
 	return m.all, nil
 }
 func (m *mockUserRepo) Create(_ context.Context, user *domain.User) error {
-	m.nextID++
-	user.ID = m.nextID
+	if user.ID == "" {
+		user.ID = id.New()
+	}
 	if m.byName == nil {
 		m.byName = map[string]*domain.User{}
 	}
@@ -96,6 +98,6 @@ type mockLabelRepo struct {
 	err   error
 }
 
-func (m *mockLabelRepo) FindNamesForUser(_ context.Context, _ uint) ([]string, error) {
+func (m *mockLabelRepo) FindNamesForUser(_ context.Context, _ string) ([]string, error) {
 	return m.names, m.err
 }

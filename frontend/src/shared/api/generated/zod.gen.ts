@@ -10,7 +10,7 @@ export const zError = z.object({
 });
 
 export const zTokenRequest = z.object({
-    username: z.string(),
+    email: z.email(),
     password: z.string()
 });
 
@@ -32,13 +32,13 @@ export const zRegisterRequest = z.object({
 });
 
 export const zUserInfoResponse = z.object({
-    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    id: z.uuid(),
     username: z.string(),
     email: z.string()
 });
 
 export const zUserListItem = z.object({
-    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    id: z.uuid(),
     username: z.string()
 });
 
@@ -99,7 +99,7 @@ export const zSeasonResponse = z.object({
 });
 
 export const zRecipeResponse = z.object({
-    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    id: z.uuid(),
     created_at: z.string(),
     updated_at: z.string(),
     cooking: z.array(zCookingResponse),
@@ -166,7 +166,7 @@ export const zCreateRecipeBody = zRecipeRequest;
 export const zCreateRecipeResponse = zRecipeResponse;
 
 export const zDeleteRecipePath = z.object({
-    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+    id: z.uuid()
 });
 
 /**
@@ -177,7 +177,7 @@ export const zDeleteRecipeResponse = z.void();
 export const zUpdateRecipeBody = zRecipeRequest;
 
 export const zUpdateRecipePath = z.object({
-    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+    id: z.uuid()
 });
 
 /**

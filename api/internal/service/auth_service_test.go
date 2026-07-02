@@ -13,8 +13,9 @@ import (
 )
 
 // newAuthService は mockUserRepo を組んだ AuthService を返すテストヘルパー。
-func newAuthService(users map[string]*domain.User) (AuthService, *jwtpkg.Manager) {
-	ur := &mockUserRepo{byName: users}
+// Login は email でユーザーを引くため、マップは email をキーにする。
+func newAuthService(usersByEmail map[string]*domain.User) (AuthService, *jwtpkg.Manager) {
+	ur := &mockUserRepo{byEmail: usersByEmail}
 	jm := jwtpkg.NewManager("test-secret")
 	return NewAuthService(ur, jm), jm
 }
@@ -22,9 +23,9 @@ func newAuthService(users map[string]*domain.User) (AuthService, *jwtpkg.Manager
 // loginAlice は有効ユーザー alice で正常ログインし、トークンと Manager を返す。
 func loginAlice(t *testing.T) (access, refresh string, jm *jwtpkg.Manager) {
 	t.Helper()
-	user := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"), factory.WithPlainPassword(t, "pw"))
-	svc, jm := newAuthService(map[string]*domain.User{user.Username: user})
-	access, refresh, err := svc.Login(context.Background(), "alice", "pw")
+	user := factory.NewUser(factory.WithID("u1"), factory.WithEmail("alice@example.com"), factory.WithPlainPassword(t, "pw"))
+	svc, jm := newAuthService(map[string]*domain.User{user.Email: user})
+	access, refresh, err := svc.Login(context.Background(), "alice@example.com", "pw")
 	require.NoError(t, err)
 	return access, refresh, jm
 }
@@ -55,17 +56,17 @@ func TestAuthLogin_AccessTokenEncodesUserID(t *testing.T) {
 	// Assert
 	uid, err := jm.Parse(access, jwtpkg.TypeAccess)
 	require.NoError(t, err)
-	assert.Equal(t, uint(1), uid)
+	assert.Equal(t, "u1", uid)
 }
 
 // パスワードが間違っている時、ErrInvalidCredentials が返ること。
 func TestAuthLogin_WrongPassword(t *testing.T) {
 	// Arrange
-	user := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"), factory.WithPlainPassword(t, "pw"))
-	svc, _ := newAuthService(map[string]*domain.User{user.Username: user})
+	user := factory.NewUser(factory.WithID("u1"), factory.WithEmail("alice@example.com"), factory.WithPlainPassword(t, "pw"))
+	svc, _ := newAuthService(map[string]*domain.User{user.Email: user})
 
 	// Act
-	_, _, err := svc.Login(context.Background(), "alice", "wrong")
+	_, _, err := svc.Login(context.Background(), "alice@example.com", "wrong")
 
 	// Assert
 	assert.ErrorIs(t, err, ErrInvalidCredentials)
@@ -77,7 +78,7 @@ func TestAuthLogin_NoSuchUser(t *testing.T) {
 	svc, _ := newAuthService(map[string]*domain.User{})
 
 	// Act
-	_, _, err := svc.Login(context.Background(), "ghost", "pw")
+	_, _, err := svc.Login(context.Background(), "ghost@example.com", "pw")
 
 	// Assert
 	assert.ErrorIs(t, err, ErrInvalidCredentials)
@@ -86,11 +87,11 @@ func TestAuthLogin_NoSuchUser(t *testing.T) {
 // 無効化されたユーザーでログインした時、ErrInvalidCredentials が返ること。
 func TestAuthLogin_InactiveUser(t *testing.T) {
 	// Arrange
-	user := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"), factory.WithPlainPassword(t, "pw"), factory.WithInactive())
-	svc, _ := newAuthService(map[string]*domain.User{user.Username: user})
+	user := factory.NewUser(factory.WithID("u1"), factory.WithEmail("alice@example.com"), factory.WithPlainPassword(t, "pw"), factory.WithInactive())
+	svc, _ := newAuthService(map[string]*domain.User{user.Email: user})
 
 	// Act
-	_, _, err := svc.Login(context.Background(), "alice", "pw")
+	_, _, err := svc.Login(context.Background(), "alice@example.com", "pw")
 
 	// Assert
 	assert.ErrorIs(t, err, ErrInvalidCredentials)
@@ -100,7 +101,7 @@ func TestAuthLogin_InactiveUser(t *testing.T) {
 func TestAuthRefresh_Valid(t *testing.T) {
 	// Arrange
 	svc, jm := newAuthService(map[string]*domain.User{})
-	refresh, _ := jm.GenerateRefresh(5)
+	refresh, _ := jm.GenerateRefresh("u5")
 
 	// Act
 	access, err := svc.Refresh(context.Background(), refresh)
@@ -109,14 +110,14 @@ func TestAuthRefresh_Valid(t *testing.T) {
 	require.NoError(t, err)
 	uid, err := jm.Parse(access, jwtpkg.TypeAccess)
 	require.NoError(t, err)
-	assert.Equal(t, uint(5), uid)
+	assert.Equal(t, "u5", uid)
 }
 
 // リフレッシュとしてアクセストークンを渡した時、ErrInvalidCredentials が返ること。
 func TestAuthRefresh_RejectsAccessToken(t *testing.T) {
 	// Arrange
 	svc, jm := newAuthService(map[string]*domain.User{})
-	access, _ := jm.GenerateAccess(5) // access を refresh として渡す → 失敗するはず
+	access, _ := jm.GenerateAccess("u5") // access を refresh として渡す → 失敗するはず
 
 	// Act
 	_, err := svc.Refresh(context.Background(), access)
@@ -178,7 +179,7 @@ func TestAuthRegister_PersistsUser(t *testing.T) {
 // username が既存と重複する時、ErrUserAlreadyExists が返ること。
 func TestAuthRegister_DuplicateUsername(t *testing.T) {
 	// Arrange
-	existing := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))
+	existing := factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice"))
 	ur := &mockUserRepo{byName: map[string]*domain.User{existing.Username: existing}}
 	svc := NewAuthService(ur, jwtpkg.NewManager("s"))
 
@@ -192,7 +193,7 @@ func TestAuthRegister_DuplicateUsername(t *testing.T) {
 // email が既存と重複する時、ErrUserAlreadyExists が返ること。
 func TestAuthRegister_DuplicateEmail(t *testing.T) {
 	// Arrange
-	existing := factory.NewUser(factory.WithID(1), factory.WithEmail("taken@example.com"))
+	existing := factory.NewUser(factory.WithID("u1"), factory.WithEmail("taken@example.com"))
 	ur := &mockUserRepo{byEmail: map[string]*domain.User{existing.Email: existing}}
 	svc := NewAuthService(ur, jwtpkg.NewManager("s"))
 

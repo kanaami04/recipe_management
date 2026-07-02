@@ -3,13 +3,13 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"recipe-backend/internal/dto/request"
 	"recipe-backend/internal/dto/response"
 	appmw "recipe-backend/internal/middleware"
 	"recipe-backend/internal/service"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -91,12 +91,12 @@ func bindRecipe(c echo.Context) (*request.RecipeRequest, error) {
 	return &req, nil
 }
 
-func parseID(c echo.Context) (uint, error) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
+func parseID(c echo.Context) (string, error) {
+	id := c.Param("id")
+	if _, err := uuid.Parse(id); err != nil {
+		return "", echo.NewHTTPError(http.StatusBadRequest, "invalid id")
 	}
-	return uint(id), nil
+	return id, nil
 }
 
 func mapServiceError(err error) error {

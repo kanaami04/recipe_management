@@ -9,10 +9,10 @@ import (
 )
 
 type RecipeService interface {
-	List(ctx context.Context, userID uint) ([]domain.Recipe, error)
-	Create(ctx context.Context, userID uint, req request.RecipeRequest) (*domain.Recipe, error)
-	Update(ctx context.Context, userID, recipeID uint, req request.RecipeRequest) (*domain.Recipe, error)
-	Delete(ctx context.Context, userID, recipeID uint) error
+	List(ctx context.Context, userID string) ([]domain.Recipe, error)
+	Create(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error)
+	Update(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error)
+	Delete(ctx context.Context, userID, recipeID string) error
 }
 
 type recipeService struct {
@@ -24,11 +24,11 @@ func NewRecipeService(recipes domain.RecipeRepository, users domain.UserReposito
 	return &recipeService{recipes: recipes, users: users}
 }
 
-func (s *recipeService) List(ctx context.Context, userID uint) ([]domain.Recipe, error) {
+func (s *recipeService) List(ctx context.Context, userID string) ([]domain.Recipe, error) {
 	return s.recipes.FindAllForUser(ctx, userID)
 }
 
-func (s *recipeService) Create(ctx context.Context, userID uint, req request.RecipeRequest) (*domain.Recipe, error) {
+func (s *recipeService) Create(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error) {
 	recipe := &domain.Recipe{
 		Title:       req.Title,
 		CookingTime: req.CreateTime,
@@ -46,7 +46,7 @@ func (s *recipeService) Create(ctx context.Context, userID uint, req request.Rec
 	return s.recipes.FindByID(ctx, recipe.ID)
 }
 
-func (s *recipeService) Update(ctx context.Context, userID, recipeID uint, req request.RecipeRequest) (*domain.Recipe, error) {
+func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error) {
 	existing, err := s.recipes.FindByID(ctx, recipeID)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *recipeService) Update(ctx context.Context, userID, recipeID uint, req r
 	return s.recipes.FindByID(ctx, recipeID)
 }
 
-func (s *recipeService) Delete(ctx context.Context, userID, recipeID uint) error {
+func (s *recipeService) Delete(ctx context.Context, userID, recipeID string) error {
 	existing, err := s.recipes.FindByID(ctx, recipeID)
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (s *recipeService) buildAssociations(ctx context.Context, req request.Recip
 }
 
 // canModify は owner もしくは共有先ユーザーであれば true（DRF の IsDisplay 相当）。
-func canModify(r *domain.Recipe, userID uint) bool {
+func canModify(r *domain.Recipe, userID string) bool {
 	if r.OwnerID == userID {
 		return true
 	}

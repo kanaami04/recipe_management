@@ -13,8 +13,8 @@ const authAxios = axios.create({
 })
 
 // ログイン。access をメモリへ保持する。refresh はサーバが httpOnly Cookie で発行する。
-export async function login(username: string, password: string): Promise<void> {
-  const res = await authAxios.post('/api/token/', { username, password })
+export async function login(email: string, password: string): Promise<void> {
+  const res = await authAxios.post('/api/token/', { email, password })
   setAccessToken(res.data.access)
 }
 

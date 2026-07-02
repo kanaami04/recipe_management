@@ -31,9 +31,9 @@ func JWT(manager *jwtpkg.Manager) echo.MiddlewareFunc {
 }
 
 // UserIDFromContext は JWT ミドルウェアが格納した user_id を取り出す。
-func UserIDFromContext(c echo.Context) uint {
-	if v, ok := c.Get(userIDKey).(uint); ok {
+func UserIDFromContext(c echo.Context) string {
+	if v, ok := c.Get(userIDKey).(string); ok {
 		return v
 	}
-	return 0
+	return ""
 }

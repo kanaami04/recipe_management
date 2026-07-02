@@ -2,6 +2,9 @@ package factory
 
 import "recipe-backend/internal/domain"
 
+// DefaultOwnerID は NewRecipe の既定の所有者 ID(値に意味はないダミー UUID)。
+const DefaultOwnerID = "00000000-0000-0000-0000-0000000000ff"
+
 // RecipeOption は NewRecipe の生成オプション。
 type RecipeOption func(*domain.Recipe)
 
@@ -11,7 +14,7 @@ func NewRecipe(opts ...RecipeOption) *domain.Recipe {
 	r := &domain.Recipe{
 		Title:    "テストレシピ",
 		Servings: 1,
-		OwnerID:  1,
+		OwnerID:  DefaultOwnerID,
 	}
 	for _, opt := range opts {
 		opt(r)
@@ -20,12 +23,12 @@ func NewRecipe(opts ...RecipeOption) *domain.Recipe {
 }
 
 // WithRecipeID は ID を指定する。
-func WithRecipeID(id uint) RecipeOption {
+func WithRecipeID(id string) RecipeOption {
 	return func(r *domain.Recipe) { r.ID = id }
 }
 
 // WithOwnerID は所有者 ID を指定する。
-func WithOwnerID(id uint) RecipeOption {
+func WithOwnerID(id string) RecipeOption {
 	return func(r *domain.Recipe) { r.OwnerID = id }
 }
 

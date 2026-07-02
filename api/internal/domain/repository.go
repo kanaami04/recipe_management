@@ -8,7 +8,7 @@ import "context"
 type UserRepository interface {
 	FindByUsername(ctx context.Context, username string) (*User, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
-	FindByID(ctx context.Context, id uint) (*User, error)
+	FindByID(ctx context.Context, id string) (*User, error)
 	FindAll(ctx context.Context) ([]User, error)
 	Create(ctx context.Context, user *User) error
 }
@@ -16,13 +16,13 @@ type UserRepository interface {
 type LabelRepository interface {
 	// FindNamesForUser は userID が閲覧できる(所有 or 共有された)レシピの
 	// ラベル名を重複なく昇順で返す。
-	FindNamesForUser(ctx context.Context, userID uint) ([]string, error)
+	FindNamesForUser(ctx context.Context, userID string) ([]string, error)
 }
 
 type RecipeRepository interface {
 	// FindAllForUser は owner == userID または共有先に userID を含むレシピを返す。
-	FindAllForUser(ctx context.Context, userID uint) ([]Recipe, error)
-	FindByID(ctx context.Context, id uint) (*Recipe, error)
+	FindAllForUser(ctx context.Context, userID string) ([]Recipe, error)
+	FindByID(ctx context.Context, id string) (*Recipe, error)
 	Create(ctx context.Context, recipe *Recipe) error
 	Update(ctx context.Context, recipe *Recipe) error
 	Delete(ctx context.Context, recipe *Recipe) error

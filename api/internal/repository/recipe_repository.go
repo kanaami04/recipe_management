@@ -28,13 +28,13 @@ func preloadAll(db *gorm.DB) *gorm.DB {
 }
 
 // sharedRecipeIDs は共有先に userID を含むレシピ ID のサブクエリを返す。
-func sharedRecipeIDs(db *gorm.DB, userID uint) *gorm.DB {
+func sharedRecipeIDs(db *gorm.DB, userID string) *gorm.DB {
 	return db.Table("recipe_shares").
 		Select("recipe_id").
 		Where("user_id = ?", userID)
 }
 
-func (r *recipeRepository) FindAllForUser(ctx context.Context, userID uint) ([]domain.Recipe, error) {
+func (r *recipeRepository) FindAllForUser(ctx context.Context, userID string) ([]domain.Recipe, error) {
 	var recipes []domain.Recipe
 	db := r.db.WithContext(ctx)
 	err := preloadAll(db).
@@ -45,9 +45,9 @@ func (r *recipeRepository) FindAllForUser(ctx context.Context, userID uint) ([]d
 	return recipes, err
 }
 
-func (r *recipeRepository) FindByID(ctx context.Context, id uint) (*domain.Recipe, error) {
+func (r *recipeRepository) FindByID(ctx context.Context, id string) (*domain.Recipe, error) {
 	var recipe domain.Recipe
-	err := preloadAll(r.db.WithContext(ctx)).First(&recipe, id).Error
+	err := preloadAll(r.db.WithContext(ctx)).Where("id = ?", id).First(&recipe).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -104,7 +104,7 @@ func replaceChildren(tx *gorm.DB, recipe *domain.Recipe) error {
 
 	if len(recipe.Ingredients) > 0 {
 		for i := range recipe.Ingredients {
-			recipe.Ingredients[i].ID = 0
+			recipe.Ingredients[i].ID = ""
 			recipe.Ingredients[i].RecipeID = recipe.ID
 		}
 		if err := tx.Create(&recipe.Ingredients).Error; err != nil {
@@ -113,7 +113,7 @@ func replaceChildren(tx *gorm.DB, recipe *domain.Recipe) error {
 	}
 	if len(recipe.Seasonings) > 0 {
 		for i := range recipe.Seasonings {
-			recipe.Seasonings[i].ID = 0
+			recipe.Seasonings[i].ID = ""
 			recipe.Seasonings[i].RecipeID = recipe.ID
 		}
 		if err := tx.Create(&recipe.Seasonings).Error; err != nil {
@@ -122,7 +122,7 @@ func replaceChildren(tx *gorm.DB, recipe *domain.Recipe) error {
 	}
 	if len(recipe.Labels) > 0 {
 		for i := range recipe.Labels {
-			recipe.Labels[i].ID = 0
+			recipe.Labels[i].ID = ""
 			recipe.Labels[i].RecipeID = recipe.ID
 		}
 		if err := tx.Create(&recipe.Labels).Error; err != nil {

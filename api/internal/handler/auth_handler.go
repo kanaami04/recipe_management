@@ -53,7 +53,7 @@ func (h *AuthHandler) Token(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	access, refresh, err := h.svc.Login(c.Request().Context(), req.Username, req.Password)
+	access, refresh, err := h.svc.Login(c.Request().Context(), req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			return echo.NewHTTPError(http.StatusUnauthorized, "no active account found with the given credentials")

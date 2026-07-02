@@ -30,14 +30,14 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
-    defaultValues: { username: '', password: '' },
+    defaultValues: { email: '', password: '' },
     mode: 'onBlur',
   })
 
   const onSubmit = handleSubmit(async (values) => {
     try {
       // access はメモリ保持、refresh は httpOnly Cookie で発行される (ADR-0004)。
-      await login(values.username, values.password)
+      await login(values.email, values.password)
       navigate('/top')
     } catch (error) {
       console.error(error)
@@ -50,7 +50,7 @@ export function LoginForm() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>アカウントにログイン</CardTitle>
-          <CardDescription>ユーザー名とパスワードを入力してください</CardDescription>
+          <CardDescription>メールアドレスとパスワードを入力してください</CardDescription>
           <CardAction>
             <Button variant="link" onClick={() => navigate('/signup')}>
               新規登録
@@ -61,23 +61,21 @@ export function LoginForm() {
           <CardContent>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="username">ユーザー名</Label>
+                <Label htmlFor="email">メールアドレス</Label>
                 <Controller
                   control={control}
-                  name="username"
+                  name="email"
                   render={({ field }) => (
                     <Input
-                      id="username"
-                      type="text"
+                      id="email"
+                      type="email"
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                     />
                   )}
                 />
-                {errors.username && (
-                  <p className="text-destructive text-sm">{errors.username.message}</p>
-                )}
+                {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">

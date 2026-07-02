@@ -13,20 +13,20 @@ func TestGenerateAndParseAccess(t *testing.T) {
 	m := NewManager("secret")
 
 	// Act
-	token, errGen := m.GenerateAccess(42)
+	token, errGen := m.GenerateAccess("user-42")
 	uid, errParse := m.Parse(token, TypeAccess)
 
 	// Assert
 	require.NoError(t, errGen)
 	require.NoError(t, errParse)
-	assert.Equal(t, uint(42), uid)
+	assert.Equal(t, "user-42", uid)
 }
 
 // access トークンを refresh として検証した時、エラーになること。
 func TestParse_AccessTokenAsRefresh(t *testing.T) {
 	// Arrange
 	m := NewManager("secret")
-	access, _ := m.GenerateAccess(1)
+	access, _ := m.GenerateAccess("u1")
 
 	// Act
 	_, err := m.Parse(access, TypeRefresh)
@@ -39,7 +39,7 @@ func TestParse_AccessTokenAsRefresh(t *testing.T) {
 func TestParse_RefreshTokenAsAccess(t *testing.T) {
 	// Arrange
 	m := NewManager("secret")
-	refresh, _ := m.GenerateRefresh(1)
+	refresh, _ := m.GenerateRefresh("u1")
 
 	// Act
 	_, err := m.Parse(refresh, TypeAccess)
@@ -53,7 +53,7 @@ func TestParse_WrongSecret(t *testing.T) {
 	// Arrange
 	signer := NewManager("secret-a")
 	verifier := NewManager("secret-b")
-	token, _ := signer.GenerateAccess(1)
+	token, _ := signer.GenerateAccess("u1")
 
 	// Act
 	_, err := verifier.Parse(token, TypeAccess)
