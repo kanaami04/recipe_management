@@ -11,3 +11,9 @@ project/
 
 # env
 .env
+
+# 依存・ビルド成果物(各パッケージの .gitignore に加え、ブランチ切り替え時に
+# サブディレクトリの .gitignore が消えても未追跡ノイズが出ないようルートでも無視する)
+node_modules/
+infra/cdk.out/
+infra/dist/
