@@ -35,7 +35,7 @@ export class RecipeStack extends Stack {
       environment: {
         PORT: '8080',
         // コールドスタート毎の DDL を避ける。マイグレーションはローカルから
-        // direct DSN で `go run . -migrate` (adr/infra/0002 #3)。
+        // session pooler の DSN で `go run . -migrate` (adr/infra/0002 #3)。
         AUTO_MIGRATE: 'false',
         COOKIE_SECURE: 'true',
         LOG_LEVEL: 'info',

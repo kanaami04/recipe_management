@@ -48,4 +48,4 @@
 ### インフラ (infra)
 
 - [0001 ホスティング: S3 + CloudFront + Lambda(Function URL) のサーバレス構成](infra/0001-aws-serverless-hosting.md)
-- [0002 データベース: Neon 無料 Postgres とマイグレーション運用](infra/0002-neon-postgres-and-migration.md)
+- [0002 データベース: Supabase 無料 Postgres とマイグレーション運用](infra/0002-supabase-postgres-and-migration.md)
