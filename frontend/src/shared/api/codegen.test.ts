@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { zRecipeResponse, zTokenResponse } from './generated/zod.gen'
 
-// 生成パイプライン(型・zod)の疎通確認 (frontend ADR-0007)。
+// 生成パイプライン(型・zod)の疎通確認。
 // 本格的な API モックテストは各 feature の実装段階で追加する。
 describe('生成された zod スキーマ', () => {
   it('正しい形のレスポンスを渡した時、検証を通過すること。', () => {
-    // Arrange(refresh は Cookie 化され body に含まれない, api ADR-0004)
+    // Arrange(refresh は Cookie 化され body に含まれない)
     const valid = { access: 'access-token' }
 
     // Act

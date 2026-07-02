@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeAll } from 'vitest'
 
 import { server } from './msw/server'
 
-// 宣言したハンドラ以外のリクエストはエラーにし、モック漏れを検知する (ADR-0008)。
+// 宣言したハンドラ以外のリクエストはエラーにし、モック漏れを検知する。
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 
 afterEach(() => {

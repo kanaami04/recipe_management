@@ -30,7 +30,7 @@ export function RecipesHeader() {
 
   const [isOpen, setIsOpen] = useState(false)
 
-  // 作成は生成 mutation + 一覧 query の無効化に集約する (ADR-0003)。
+  // 作成は生成 mutation + 一覧 query の無効化に集約する。
   const createMutation = useMutation({
     ...createRecipeMutation(),
     onSuccess: () => {

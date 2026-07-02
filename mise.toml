@@ -7,7 +7,7 @@ description = "実機テスト用に DB + バックエンド(air) + フロント
 run = "{{config_root}}/dev.sh"
 
 [tasks.gen-api]
-description = "openapi.yaml から Go 型を生成 (api ADR-0005)"
+description = "openapi.yaml から Go 型を生成"
 dir = "api/openapi"
 run = "go tool oapi-codegen -config oapi-codegen.config.yaml ../openapi.yaml"
 
@@ -23,7 +23,7 @@ env = { RUN_INTEGRATION = "1" }
 run = "go test ./..."
 
 [tasks.build-lambda]
-description = "Lambda 用 Go バイナリ(linux/arm64)を infra/dist/api/bootstrap へビルド (adr/infra/0001)"
+description = "Lambda 用 Go バイナリ(linux/arm64)を infra/dist/api/bootstrap へビルド"
 dir = "api"
 env = { CGO_ENABLED = "0", GOOS = "linux", GOARCH = "arm64" }
 run = "go build -ldflags='-s -w' -o ../infra/dist/api/bootstrap ."

@@ -34,7 +34,7 @@ export function SignUpForm() {
     mode: 'onBlur',
   })
 
-  // 登録は生成 mutation。成功したらそのままログインして /top へ (ADR-0003/0004)。
+  // 登録は生成 mutation。成功したらそのままログインして /top へ。
   const register = useMutation({
     ...registerMutation(),
     onSuccess: async (_data, variables) => {

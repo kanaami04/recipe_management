@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-// PWA の検証 (ADR-0010)。SW の登録を確認するため、このファイルだけ
+// PWA の検証。SW の登録を確認するため、このファイルだけ
 // playwright.config.ts の serviceWorkers: 'block' を上書きする。
 test.use({ serviceWorkers: 'allow' })
 

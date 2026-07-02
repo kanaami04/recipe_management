@@ -3,9 +3,9 @@ import { render, type RenderOptions } from '@testing-library/react'
 import { type ReactElement, type ReactNode, useState } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 
-// アプリ全体の Provider をまとめて差し込むテストヘルパー (ADR-0008)。
+// アプリ全体の Provider をまとめて差し込むテストヘルパー。
 // QueryClient はテストごとに新規生成して状態を隔離する。
-// 認証 Context (ADR-0004) は必要になった段階でここへ追加する。
+// 認証 Context は必要になった段階でここへ追加する。
 function AllProviders({ children }: { children: ReactNode }) {
   const [client] = useState(
     () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),

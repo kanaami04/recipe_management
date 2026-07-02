@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// refresh トークンを載せる Cookie の属性 (api ADR-0004)。
+// refresh トークンを載せる Cookie の属性。
 const (
 	refreshCookieName = "refresh_token"
 	// Path を refresh エンドポイントに絞り、他リクエストには送らない。
@@ -43,7 +43,7 @@ func (h *AuthHandler) refreshCookie(value string, maxAge int) *http.Cookie {
 	}
 }
 
-// Token は POST /api/token/。access を body、refresh を httpOnly Cookie で返す (api ADR-0004)。
+// Token は POST /api/token/。access を body、refresh を httpOnly Cookie で返す。
 func (h *AuthHandler) Token(c echo.Context) error {
 	var req request.TokenRequest
 	if err := c.Bind(&req); err != nil {
@@ -65,7 +65,7 @@ func (h *AuthHandler) Token(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.TokenResponse{Access: access})
 }
 
-// Refresh は POST /api/token/refresh/。refresh を Cookie から読み、新しい access を返す (api ADR-0004)。
+// Refresh は POST /api/token/refresh/。refresh を Cookie から読み、新しい access を返す。
 func (h *AuthHandler) Refresh(c echo.Context) error {
 	cookie, err := c.Cookie(refreshCookieName)
 	if err != nil || cookie.Value == "" {
@@ -79,7 +79,7 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.RefreshResponse{Access: access})
 }
 
-// Logout は POST /api/auth/logout/。refresh Cookie を失効させる (api ADR-0004)。
+// Logout は POST /api/auth/logout/。refresh Cookie を失効させる。
 func (h *AuthHandler) Logout(c echo.Context) error {
 	c.SetCookie(h.refreshCookie("", -1))
 	return c.NoContent(http.StatusNoContent)

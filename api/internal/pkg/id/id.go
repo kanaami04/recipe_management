@@ -1,4 +1,4 @@
-// Package id は全エンティティの主キーに使う ID を採番する (api ADR-0008)。
+// Package id は全エンティティの主キーに使う ID を採番する。
 package id
 
 import "github.com/google/uuid"

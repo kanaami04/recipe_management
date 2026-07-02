@@ -7,9 +7,9 @@ import * as s3 from 'aws-cdk-lib/aws-s3'
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment'
 import type { Construct } from 'constructs'
 
-// S3 + CloudFront + Lambda(Function URL) の最小最安構成 (adr/infra/0001)。
+// S3 + CloudFront + Lambda(Function URL) の最小最安構成。
 // フロントと API を CloudFront で同一オリジンに束ね、既存の Cookie/CSRF 設計
-// (adr/api/0004, adr/frontend/0004) を無改修で成立させる。
+// を無改修で成立させる。
 export class RecipeStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
@@ -17,7 +17,7 @@ export class RecipeStack extends Stack {
     // ---- Lambda (Go + Lambda Web Adapter) --------------------------------
     // Go バイナリは `bootstrap` の名前で infra/dist/api/ に事前ビルドする
     // (mise run build-lambda)。LWA レイヤーが Lambda イベントと HTTP を変換する
-    // ため、アプリは通常の常駐 HTTP サーバのまま動く (adr/infra/0001 #2)。
+    // ため、アプリは通常の常駐 HTTP サーバのまま動く。
     const api = new lambda.Function(this, 'Api', {
       runtime: lambda.Runtime.PROVIDED_AL2023,
       architecture: lambda.Architecture.ARM_64,
@@ -35,7 +35,7 @@ export class RecipeStack extends Stack {
       environment: {
         PORT: '8080',
         // コールドスタート毎の DDL を避ける。マイグレーションはローカルから
-        // session pooler の DSN で `go run . -migrate` (adr/infra/0002 #3)。
+        // session pooler の DSN で `go run . -migrate`。
         AUTO_MIGRATE: 'false',
         COOKIE_SECURE: 'true',
         LOG_LEVEL: 'info',
@@ -54,7 +54,7 @@ export class RecipeStack extends Stack {
     })
 
     // Function URL は認証なしで公開し、CloudFront 経由以外はアプリ層の
-    // X-Origin-Verify 検証で遮断する (adr/infra/0001 #3)。
+    // X-Origin-Verify 検証で遮断する。
     const apiUrl = api.addFunctionUrl({ authType: lambda.FunctionUrlAuthType.NONE })
 
     // ---- S3 (SPA 静的アセット) -------------------------------------------
@@ -113,7 +113,7 @@ export class RecipeStack extends Stack {
       prune: false,
     })
     // index.html / sw.js / manifest 等は no-cache(毎回再検証)。
-    // ここを長期キャッシュにすると SW の更新が永遠に届かなくなる (adr/infra/0001 #4)。
+    // ここを長期キャッシュにすると SW の更新が永遠に届かなくなる。
     const rootDeployment = new s3deploy.BucketDeployment(this, 'WebRoot', {
       sources: [s3deploy.Source.asset('../frontend/build/client', { exclude: ['assets/**'] })],
       destinationBucket: web,

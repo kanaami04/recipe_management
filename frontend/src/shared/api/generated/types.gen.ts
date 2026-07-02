@@ -5,7 +5,7 @@ export type ClientOptions = {
 };
 
 /**
- * Echo の既定エラー形式 (api ADR-0003)
+ * Echo の既定エラー形式
  */
 export type Error = {
     message: string;
@@ -17,7 +17,7 @@ export type TokenRequest = {
 };
 
 /**
- * refresh は body に含めず Cookie で発行する (api ADR-0004)
+ * refresh は body に含めず Cookie で発行する
  */
 export type TokenResponse = {
     access: string;

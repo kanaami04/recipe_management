@@ -5,7 +5,7 @@ import { RecipesHeader } from '@/features/recipes/components/RecipesHeader'
 import { listRecipesOptions } from '@/shared/api/generated/@tanstack/react-query.gen'
 
 export function RecipesPage() {
-  // サーバ状態は生成 Query フックで取得する (ADR-0003/0007)。認証は interceptor が付与する。
+  // サーバ状態は生成 Query フックで取得する。認証は interceptor が付与する。
   const { data: recipesData, isPending, isError } = useQuery(listRecipesOptions())
 
   return (

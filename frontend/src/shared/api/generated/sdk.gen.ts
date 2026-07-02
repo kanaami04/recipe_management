@@ -22,7 +22,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
  *
  * access を JSON body で返し、refresh は `HttpOnly; Secure; SameSite=Lax` Cookie
- * (Path=/api/token/refresh/)でセットする (api ADR-0004)。body に refresh は含めない。
+ * (Path=/api/token/refresh/)でセットする。body に refresh は含めない。
  *
  */
 export const login = <ThrowOnError extends boolean = false>(options: Options<LoginData, ThrowOnError>): RequestResult<LoginResponses, LoginErrors, ThrowOnError> => (options.client ?? client).post<LoginResponses, LoginErrors, ThrowOnError>({
@@ -38,7 +38,7 @@ export const login = <ThrowOnError extends boolean = false>(options: Options<Log
 /**
  * access トークンの再発行(refresh は Cookie から読む)
  *
- * refresh トークンは body ではなく Cookie から読む (api ADR-0004)。
+ * refresh トークンは body ではなく Cookie から読む。
  * Cookie が無い・失効・改竄の場合は 401。
  *
  */
@@ -51,7 +51,7 @@ export const refreshToken = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * ログアウト(refresh Cookie を失効させる)
  *
- * refresh Cookie を Max-Age=0 で上書きして失効させる (api ADR-0004)。
+ * refresh Cookie を Max-Age=0 で上書きして失効させる。
  */
 export const logout = <ThrowOnError extends boolean = false>(options?: Options<LogoutData, ThrowOnError>): RequestResult<LogoutResponses, unknown, ThrowOnError> => (options?.client ?? client).post<LogoutResponses, unknown, ThrowOnError>({ url: '/api/auth/logout/', ...options });
 

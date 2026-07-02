@@ -41,7 +41,7 @@ export function RecipeForm({
   sharedUserData,
   onClickCancel,
 }: Props) {
-  // フォーム状態は RHF + zod で一元管理する (ADR-0006)。検証は onBlur + onSubmit。
+  // フォーム状態は RHF + zod で一元管理する。検証は onBlur + onSubmit。
   const {
     control,
     handleSubmit,

@@ -15,14 +15,14 @@ type Config struct {
 	CORSOrigin  string
 	LogLevel    string // debug / info / warn / error
 	LogFormat   string // text / json
-	// CookieSecure は refresh Cookie に Secure 属性を付けるか (api ADR-0004)。
+	// CookieSecure は refresh Cookie に Secure 属性を付けるか。
 	// 本番(HTTPS)は true。dev は http の Vite proxy 経由のため false。
 	CookieSecure bool
-	// AutoMigrate は起動時に AutoMigrate を実行するか (adr/infra/0002)。
+	// AutoMigrate は起動時に AutoMigrate を実行するか。
 	// dev は true(現状維持)。Lambda はコールドスタート毎に走らせないため false。
 	AutoMigrate bool
 	// OriginVerifySecret は CloudFront が付与する X-Origin-Verify ヘッダの期待値
-	// (adr/infra/0001)。空なら検証しない(dev 向け)。
+	//。空なら検証しない(dev 向け)。
 	OriginVerifySecret string
 }
 

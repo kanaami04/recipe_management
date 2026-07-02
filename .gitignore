@@ -6,6 +6,11 @@
 .vscode/*
 !.vscode/settings.json
 
+# .claude はグローバル gitignore で無視されるため、共有したいフック・スキル・
+# settings.json を追跡する。個人ローカル設定(settings.local.json)は無視のまま。
+!.claude/
+.claude/settings.local.json
+
 # 個人用メモ
 project/
 

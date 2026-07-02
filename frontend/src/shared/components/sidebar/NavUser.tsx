@@ -19,7 +19,7 @@ export function NavUser() {
   const navigate = useNavigate()
 
   const onClickLogout = async () => {
-    // サーバ側で refresh Cookie を失効し、メモリの access を消す (ADR-0004)。
+    // サーバ側で refresh Cookie を失効し、メモリの access を消す。
     await logout()
     navigate('/')
   }

@@ -29,7 +29,7 @@ export function RecipeDetailEditDialog({ recipe, open, onOpenChange }: EditDialo
   const { data: sharedUserData } = useQuery(listUsersOptions())
   const { data: labelData } = useQuery(listLabelsOptions())
 
-  // 更新は生成 mutation + 一覧 query の無効化に集約する (ADR-0003)。
+  // 更新は生成 mutation + 一覧 query の無効化に集約する。
   const updateMutation = useMutation({
     ...updateRecipeMutation(),
     onSuccess: () => {

@@ -3,7 +3,7 @@
 import * as z from 'zod';
 
 /**
- * Echo の既定エラー形式 (api ADR-0003)
+ * Echo の既定エラー形式
  */
 export const zError = z.object({
     message: z.string()
@@ -15,7 +15,7 @@ export const zTokenRequest = z.object({
 });
 
 /**
- * refresh は body に含めず Cookie で発行する (api ADR-0004)
+ * refresh は body に含めず Cookie で発行する
  */
 export const zTokenResponse = z.object({
     access: z.string()

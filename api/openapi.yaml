@@ -5,7 +5,7 @@ info:
   description: |
     レシピ管理アプリの API 契約。
     本ファイルを契約の単一ソースとし、Go(oapi-codegen)と
-    TypeScript(フロント)双方の型を生成する (api ADR-0005 / frontend ADR-0007)。
+    TypeScript(フロント)双方の型を生成する。
 
 servers:
   - url: /
@@ -28,7 +28,7 @@ paths:
       summary: ログイン(access を body、refresh を httpOnly Cookie で発行)
       description: |
         access を JSON body で返し、refresh は `HttpOnly; Secure; SameSite=Lax` Cookie
-        (Path=/api/token/refresh/)でセットする (api ADR-0004)。body に refresh は含めない。
+        (Path=/api/token/refresh/)でセットする。body に refresh は含めない。
       operationId: login
       security: []
       requestBody:
@@ -59,7 +59,7 @@ paths:
       tags: [auth]
       summary: access トークンの再発行(refresh は Cookie から読む)
       description: |
-        refresh トークンは body ではなく Cookie から読む (api ADR-0004)。
+        refresh トークンは body ではなく Cookie から読む。
         Cookie が無い・失効・改竄の場合は 401。
       operationId: refreshToken
       security: []
@@ -77,7 +77,7 @@ paths:
     post:
       tags: [auth]
       summary: ログアウト(refresh Cookie を失効させる)
-      description: refresh Cookie を Max-Age=0 で上書きして失効させる (api ADR-0004)。
+      description: refresh Cookie を Max-Age=0 で上書きして失効させる。
       operationId: logout
       security: []
       responses:
@@ -256,7 +256,7 @@ components:
       bearerFormat: JWT
       description: |
         Authorization: Bearer <access_token>。
-        refresh トークンの Cookie 化は別途対応予定 (frontend/api ADR-0004)。
+        refresh トークンの Cookie 化は別途対応予定。
 
   responses:
     BadRequest:
@@ -293,10 +293,10 @@ components:
   schemas:
     # 注: x-go-* / x-oapi-codegen-extra-tags は Go 生成のための拡張で、
     # 他ツール(フロントの生成器)では無視される。生成型を現行の手書き DTO と
-    # 一致させ、ハンドラ/サービスを無改修のまま単一ソース化するために用いる (api ADR-0005)。
+    # 一致させ、ハンドラ/サービスを無改修のまま単一ソース化するために用いる。
     Error:
       type: object
-      description: Echo の既定エラー形式 (api ADR-0003)
+      description: Echo の既定エラー形式
       required: [message]
       properties:
         message:
@@ -320,7 +320,7 @@ components:
 
     TokenResponse:
       type: object
-      description: refresh は body に含めず Cookie で発行する (api ADR-0004)
+      description: refresh は body に含めず Cookie で発行する
       required: [access]
       properties:
         access:

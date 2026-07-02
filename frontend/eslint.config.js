@@ -20,17 +20,17 @@ export default tseslint.config([
       'simple-import-sort': simpleImportSort,
     },
     languageOptions: {
-      // tsconfig (ES2022) と揃える (ADR-0009 #7)
+      // tsconfig (ES2022) と揃える
       ecmaVersion: 2022,
       globals: globals.browser,
     },
     rules: {
-      // import / export 順を機械的に統一する (ADR-0009 #7)
+      // import / export 順を機械的に統一する
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      // console.log は禁止。warn/error と専用 logger のみ許容 (ADR-0009 #2)
+      // console.log は禁止。warn/error と専用 logger のみ許容
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      // alert/confirm/prompt は廃止しトースト・ダイアログへ (ADR-0009 #3)
+      // alert/confirm/prompt は廃止しトースト・ダイアログへ
       'no-alert': 'warn',
       // 定数 export (cva など) は fast-refresh の対象外として許可する
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],

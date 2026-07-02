@@ -21,7 +21,7 @@ type CookingResponse struct {
 	Unit        string       `json:"unit"`
 }
 
-// Error Echo の既定エラー形式 (api ADR-0003)
+// Error Echo の既定エラー形式
 type Error struct {
 	Message string `json:"message"`
 }
@@ -123,7 +123,7 @@ type TokenRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-// TokenResponse refresh は body に含めず Cookie で発行する (api ADR-0004)
+// TokenResponse refresh は body に含めず Cookie で発行する
 type TokenResponse struct {
 	Access string `json:"access"`
 }
@@ -141,19 +141,19 @@ type UserListItem struct {
 	Username string `json:"username"`
 }
 
-// BadRequest Echo の既定エラー形式 (api ADR-0003)
+// BadRequest Echo の既定エラー形式
 type BadRequest = Error
 
-// Conflict Echo の既定エラー形式 (api ADR-0003)
+// Conflict Echo の既定エラー形式
 type Conflict = Error
 
-// Forbidden Echo の既定エラー形式 (api ADR-0003)
+// Forbidden Echo の既定エラー形式
 type Forbidden = Error
 
-// NotFound Echo の既定エラー形式 (api ADR-0003)
+// NotFound Echo の既定エラー形式
 type NotFound = Error
 
-// Unauthorized Echo の既定エラー形式 (api ADR-0003)
+// Unauthorized Echo の既定エラー形式
 type Unauthorized = Error
 
 // bearerAuthContextKey is the context key for bearerAuth security scheme

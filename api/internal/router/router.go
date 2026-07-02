@@ -11,7 +11,7 @@ import (
 // Register は API のルートを定義する（ルーティングのみを担う）。
 // 配線・ミドルウェア適用は合成ルートの app パッケージが行う。
 func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
-	// CSRF 対策: 状態変更系にカスタムヘッダを必須化する (api ADR-0004 #3)。
+	// CSRF 対策: 状態変更系にカスタムヘッダを必須化する。
 	api := e.Group("/api", appmw.RequireCustomHeader())
 
 	// 認証不要

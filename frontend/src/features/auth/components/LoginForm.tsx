@@ -23,7 +23,7 @@ export function LoginForm() {
   const navigate = useNavigate()
   const [isErrorOpen, setIsErrorOpen] = useState(false)
 
-  // フォーム状態は RHF + zod で管理する (ADR-0006)。
+  // フォーム状態は RHF + zod で管理する。
   const {
     control,
     handleSubmit,
@@ -36,7 +36,7 @@ export function LoginForm() {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      // access はメモリ保持、refresh は httpOnly Cookie で発行される (ADR-0004)。
+      // access はメモリ保持、refresh は httpOnly Cookie で発行される。
       await login(values.email, values.password)
       navigate('/top')
     } catch (error) {

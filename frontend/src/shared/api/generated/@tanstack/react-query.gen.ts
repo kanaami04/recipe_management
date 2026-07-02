@@ -11,7 +11,7 @@ import type { CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteR
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
  *
  * access を JSON body で返し、refresh は `HttpOnly; Secure; SameSite=Lax` Cookie
- * (Path=/api/token/refresh/)でセットする (api ADR-0004)。body に refresh は含めない。
+ * (Path=/api/token/refresh/)でセットする。body に refresh は含めない。
  *
  */
 export const loginMutation = (options?: Partial<Options<LoginData>>): UseMutationOptions<LoginResponse, AxiosError<LoginError>, Options<LoginData>> => {
@@ -31,7 +31,7 @@ export const loginMutation = (options?: Partial<Options<LoginData>>): UseMutatio
 /**
  * access トークンの再発行(refresh は Cookie から読む)
  *
- * refresh トークンは body ではなく Cookie から読む (api ADR-0004)。
+ * refresh トークンは body ではなく Cookie から読む。
  * Cookie が無い・失効・改竄の場合は 401。
  *
  */
@@ -52,7 +52,7 @@ export const refreshTokenMutation = (options?: Partial<Options<RefreshTokenData>
 /**
  * ログアウト(refresh Cookie を失効させる)
  *
- * refresh Cookie を Max-Age=0 で上書きして失効させる (api ADR-0004)。
+ * refresh Cookie を Max-Age=0 で上書きして失効させる。
  */
 export const logoutMutation = (options?: Partial<Options<LogoutData>>): UseMutationOptions<LogoutResponse, AxiosError<DefaultError>, Options<LogoutData>> => {
     const mutationOptions: UseMutationOptions<LogoutResponse, AxiosError<DefaultError>, Options<LogoutData>> = {

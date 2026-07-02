@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// GORM の BeforeCreate フックで、未採番(空文字)のときだけ UUIDv7 を採番する (api ADR-0008)。
+// GORM の BeforeCreate フックで、未採番(空文字)のときだけ UUIDv7 を採番する。
 // ID を明示指定して作るケース(テスト等)ではその値を尊重する。
 //
 // domain が gorm / pkg/id に依存するのは、エンティティが既に gorm タグへ密結合している
