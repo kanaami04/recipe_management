@@ -33,9 +33,9 @@ func main() {
 func run() error {
 	// 例: go run main.go -env .env.local
 	envFile := flag.String("env", ".env", "path to env file")
-	// 例: DATABASE_URL=<direct DSN> go run main.go -migrate
-	// マイグレーションだけ実行して終了する (adr/infra/0002)。Neon への DDL は
-	// pooled ではなく direct 接続で行うこと。
+	// 例: DATABASE_URL=<session pooler の DSN> go run main.go -migrate
+	// マイグレーションだけ実行して終了する (adr/infra/0002)。本番 DB への DDL は
+	// transaction モードの pooler ではなく session モード(または direct)で行うこと。
 	migrateOnly := flag.Bool("migrate", false, "run database migration and exit")
 	flag.Parse()
 

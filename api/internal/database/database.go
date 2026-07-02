@@ -21,7 +21,7 @@ func Connect(dsn string, logger *slog.Logger) (*gorm.DB, error) {
 
 	// 接続プールの上限を控えめに固定する (adr/infra/0002)。
 	// Lambda は 1 インスタンス 1 リクエストの低並列で、無制限のままだと
-	// スケールアウト時に Neon の接続数を食い潰すため。ローカルでも支障はない。
+	// スケールアウト時に DB の接続数を食い潰すため。ローカルでも支障はない。
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
