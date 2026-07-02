@@ -43,7 +43,6 @@ export const zUserListItem = z.object({
 });
 
 export const zLabelResponse = z.object({
-    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     name: z.string()
 });
 
@@ -83,19 +82,18 @@ export const zRecipeRequest = z.object({
     season: z.array(zSeasonInput).optional()
 });
 
-export const zNamedRef = z.object({
-    id: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+export const zNameResponse = z.object({
     name: z.string()
 });
 
 export const zCookingResponse = z.object({
-    ingredients: zNamedRef,
+    ingredients: zNameResponse,
     quantity: z.int(),
     unit: z.string()
 });
 
 export const zSeasonResponse = z.object({
-    seasoning: zNamedRef,
+    seasoning: zNameResponse,
     quantity: z.int(),
     unit: z.string()
 });

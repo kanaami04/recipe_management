@@ -9,9 +9,9 @@ type RecipeOption func(*domain.Recipe)
 // デフォルトは「ID未設定・1人前・owner=1」。必要な属性だけオプションで上書きする。
 func NewRecipe(opts ...RecipeOption) *domain.Recipe {
 	r := &domain.Recipe{
-		Title:     "テストレシピ",
-		CreateFor: 1,
-		OwnerID:   1,
+		Title:    "テストレシピ",
+		Servings: 1,
+		OwnerID:  1,
 	}
 	for _, opt := range opts {
 		opt(r)
@@ -35,7 +35,7 @@ func WithTitle(title string) RecipeOption {
 }
 
 // WithSharedUsers は共有先ユーザーを指定する。
-func WithSharedUsers(users ...domain.ApplicationUser) RecipeOption {
+func WithSharedUsers(users ...domain.User) RecipeOption {
 	return func(r *domain.Recipe) { r.SharedUsers = users }
 }
 

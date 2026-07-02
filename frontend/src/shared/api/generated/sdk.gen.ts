@@ -89,7 +89,7 @@ export const listUsers = <ThrowOnError extends boolean = false>(options?: Option
 });
 
 /**
- * 全ラベル一覧
+ * 自分が閲覧できるレシピに付いたラベル一覧
  */
 export const listLabels = <ThrowOnError extends boolean = false>(options?: Options<ListLabelsData, ThrowOnError>): RequestResult<ListLabelsResponses, ListLabelsErrors, ThrowOnError> => (options?.client ?? client).get<ListLabelsResponses, ListLabelsErrors, ThrowOnError>({
     responseType: 'json',

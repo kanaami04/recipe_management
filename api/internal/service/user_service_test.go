@@ -15,7 +15,7 @@ import (
 func TestUserGetByID_Found(t *testing.T) {
 	// Arrange
 	user := factory.NewUser(factory.WithID(7), factory.WithUsername("alice"))
-	ur := &mockUserRepo{byID: map[uint]*domain.ApplicationUser{7: user}}
+	ur := &mockUserRepo{byID: map[uint]*domain.User{7: user}}
 	svc := NewUserService(ur)
 
 	// Act
@@ -29,7 +29,7 @@ func TestUserGetByID_Found(t *testing.T) {
 // 該当ユーザーがいない時、GetByID で nil が返ること。
 func TestUserGetByID_NotFound(t *testing.T) {
 	// Arrange
-	ur := &mockUserRepo{byID: map[uint]*domain.ApplicationUser{}}
+	ur := &mockUserRepo{byID: map[uint]*domain.User{}}
 	svc := NewUserService(ur)
 
 	// Act
@@ -43,7 +43,7 @@ func TestUserGetByID_NotFound(t *testing.T) {
 // ユーザーが登録されている時、List で全件が返ること。
 func TestUserList_ReturnsAll(t *testing.T) {
 	// Arrange
-	ur := &mockUserRepo{all: []domain.ApplicationUser{
+	ur := &mockUserRepo{all: []domain.User{
 		*factory.NewUser(factory.WithID(1), factory.WithUsername("alice")),
 		*factory.NewUser(factory.WithID(2), factory.WithUsername("bob")),
 	}}

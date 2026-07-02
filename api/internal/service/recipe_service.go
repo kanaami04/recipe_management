@@ -30,12 +30,12 @@ func (s *recipeService) List(ctx context.Context, userID uint) ([]domain.Recipe,
 
 func (s *recipeService) Create(ctx context.Context, userID uint, req request.RecipeRequest) (*domain.Recipe, error) {
 	recipe := &domain.Recipe{
-		Title:      req.Title,
-		CreateTime: req.CreateTime,
-		CreateFor:  normalizeCreateFor(req.CreateFor),
-		Procedure:  req.Procedure,
-		ArchiveFlg: req.ArchiveFlg,
-		OwnerID:    userID,
+		Title:       req.Title,
+		CookingTime: req.CreateTime,
+		Servings:    normalizeServings(req.CreateFor),
+		Procedure:   req.Procedure,
+		Archived:    req.ArchiveFlg,
+		OwnerID:     userID,
 	}
 	if err := s.buildAssociations(ctx, req, recipe); err != nil {
 		return nil, err
@@ -59,10 +59,10 @@ func (s *recipeService) Update(ctx context.Context, userID, recipeID uint, req r
 	}
 
 	existing.Title = req.Title
-	existing.CreateTime = req.CreateTime
-	existing.CreateFor = normalizeCreateFor(req.CreateFor)
+	existing.CookingTime = req.CreateTime
+	existing.Servings = normalizeServings(req.CreateFor)
 	existing.Procedure = req.Procedure
-	existing.ArchiveFlg = req.ArchiveFlg
+	existing.Archived = req.ArchiveFlg
 	// owner は変更しない
 	if err := s.buildAssociations(ctx, req, existing); err != nil {
 		return nil, err
@@ -88,19 +88,16 @@ func (s *recipeService) Delete(ctx context.Context, userID, recipeID uint) error
 }
 
 // buildAssociations はリクエストから label/shared_user/cooking/season を解決し recipe に詰める。
-// label/ingredient/seasoning は name で get-or-create、shared_user は username 検索（無ければエラー）。
+// label/ingredient/seasoning はレシピ従属の子レコードとして名前をそのまま持つ。
+// shared_user のみ username でユーザーを検索する（無ければエラー）。
 func (s *recipeService) buildAssociations(ctx context.Context, req request.RecipeRequest, recipe *domain.Recipe) error {
 	labels := make([]domain.RecipeLabel, 0, len(req.Label))
 	for _, l := range req.Label {
-		obj, err := s.recipes.GetOrCreateLabel(ctx, l.Name)
-		if err != nil {
-			return err
-		}
-		labels = append(labels, *obj)
+		labels = append(labels, domain.RecipeLabel{Name: l.Name})
 	}
 	recipe.Labels = labels
 
-	shared := make([]domain.ApplicationUser, 0, len(req.SharedUser))
+	shared := make([]domain.User, 0, len(req.SharedUser))
 	for _, su := range req.SharedUser {
 		u, err := s.users.FindByUsername(ctx, su.Username)
 		if err != nil {
@@ -113,33 +110,25 @@ func (s *recipeService) buildAssociations(ctx context.Context, req request.Recip
 	}
 	recipe.SharedUsers = shared
 
-	cooking := make([]domain.Cooking, 0, len(req.Cooking))
+	ingredients := make([]domain.RecipeIngredient, 0, len(req.Cooking))
 	for _, c := range req.Cooking {
-		ing, err := s.recipes.GetOrCreateIngredient(ctx, c.Ingredients.Name)
-		if err != nil {
-			return err
-		}
-		cooking = append(cooking, domain.Cooking{
-			IngredientID: ing.ID,
-			Quantity:     c.Quantity,
-			Unit:         c.Unit,
+		ingredients = append(ingredients, domain.RecipeIngredient{
+			Name:     c.Ingredients.Name,
+			Quantity: c.Quantity,
+			Unit:     c.Unit,
 		})
 	}
-	recipe.Cooking = cooking
+	recipe.Ingredients = ingredients
 
-	season := make([]domain.Season, 0, len(req.Season))
+	seasonings := make([]domain.RecipeSeasoning, 0, len(req.Season))
 	for _, se := range req.Season {
-		sea, err := s.recipes.GetOrCreateSeasoning(ctx, se.Seasoning.Name)
-		if err != nil {
-			return err
-		}
-		season = append(season, domain.Season{
-			SeasoningID: sea.ID,
-			Quantity:    se.Quantity,
-			Unit:        se.Unit,
+		seasonings = append(seasonings, domain.RecipeSeasoning{
+			Name:     se.Seasoning.Name,
+			Quantity: se.Quantity,
+			Unit:     se.Unit,
 		})
 	}
-	recipe.Season = season
+	recipe.Seasonings = seasonings
 	return nil
 }
 
@@ -156,8 +145,8 @@ func canModify(r *domain.Recipe, userID uint) bool {
 	return false
 }
 
-// normalizeCreateFor は未指定(0)のとき Django のデフォルト 1 に合わせる。
-func normalizeCreateFor(v int) int {
+// normalizeServings は未指定(0)のとき既定の 1 人前に揃える。
+func normalizeServings(v int) int {
 	if v == 0 {
 		return 1
 	}

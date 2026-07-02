@@ -13,7 +13,7 @@ import (
 type AuthService interface {
 	Login(ctx context.Context, username, password string) (access, refresh string, err error)
 	Refresh(ctx context.Context, refreshToken string) (access string, err error)
-	Register(ctx context.Context, username, email, password string) (*domain.ApplicationUser, error)
+	Register(ctx context.Context, username, email, password string) (*domain.User, error)
 }
 
 type authService struct {
@@ -33,7 +33,7 @@ func (s *authService) Login(ctx context.Context, username, password string) (str
 	if user == nil || !user.IsActive {
 		return "", "", ErrInvalidCredentials
 	}
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
 		return "", "", ErrInvalidCredentials
 	}
 
@@ -57,7 +57,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (string,
 }
 
 // Register は新規ユーザーを作成する。username/email の重複は ErrUserAlreadyExists。
-func (s *authService) Register(ctx context.Context, username, email, password string) (*domain.ApplicationUser, error) {
+func (s *authService) Register(ctx context.Context, username, email, password string) (*domain.User, error) {
 	if existing, err := s.users.FindByUsername(ctx, username); err != nil {
 		return nil, err
 	} else if existing != nil {
@@ -74,11 +74,11 @@ func (s *authService) Register(ctx context.Context, username, email, password st
 		return nil, err
 	}
 
-	user := &domain.ApplicationUser{
-		Username: username,
-		Email:    email,
-		Password: string(hash),
-		IsActive: true,
+	user := &domain.User{
+		Username:     username,
+		Email:        email,
+		PasswordHash: string(hash),
+		IsActive:     true,
 	}
 	if err := s.users.Create(ctx, user); err != nil {
 		return nil, err

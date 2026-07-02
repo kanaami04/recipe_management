@@ -6,14 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"recipe-backend/internal/domain"
-	"recipe-backend/internal/testutil/factory"
-
 	"github.com/stretchr/testify/assert"
 )
 
 // serveLabelList は listFn を差し替えた LabelHandler に GET /api/label/ し結果を返す。
-func serveLabelList(listFn func(context.Context) ([]domain.RecipeLabel, error)) *httptest.ResponseRecorder {
+func serveLabelList(listFn func(context.Context, uint) ([]string, error)) *httptest.ResponseRecorder {
 	e := newTestEcho()
 	h := NewLabelHandler(&mockLabelService{listFn: listFn})
 	e.GET("/api/label/", h.List)
@@ -26,8 +23,8 @@ func serveLabelList(listFn func(context.Context) ([]domain.RecipeLabel, error)) 
 // ラベル一覧を取得した時、200 が返ること。
 func TestLabelHandler_List_Returns200(t *testing.T) {
 	// Arrange & Act
-	rec := serveLabelList(func(_ context.Context) ([]domain.RecipeLabel, error) {
-		return []domain.RecipeLabel{factory.NewRecipeLabel("和食")}, nil
+	rec := serveLabelList(func(_ context.Context, _ uint) ([]string, error) {
+		return []string{"和食"}, nil
 	})
 
 	// Assert
@@ -37,8 +34,8 @@ func TestLabelHandler_List_Returns200(t *testing.T) {
 // ラベル一覧を取得した時、レスポンスにラベル名が含まれること。
 func TestLabelHandler_List_ReturnsLabelsInBody(t *testing.T) {
 	// Arrange & Act
-	rec := serveLabelList(func(_ context.Context) ([]domain.RecipeLabel, error) {
-		return []domain.RecipeLabel{factory.NewRecipeLabel("和食")}, nil
+	rec := serveLabelList(func(_ context.Context, _ uint) ([]string, error) {
+		return []string{"和食"}, nil
 	})
 
 	// Assert
@@ -48,7 +45,7 @@ func TestLabelHandler_List_ReturnsLabelsInBody(t *testing.T) {
 // サービスがエラーを返した時、500 が返ること。
 func TestLabelHandler_List_InternalError(t *testing.T) {
 	// Arrange & Act
-	rec := serveLabelList(func(_ context.Context) ([]domain.RecipeLabel, error) {
+	rec := serveLabelList(func(_ context.Context, _ uint) ([]string, error) {
 		return nil, assert.AnError
 	})
 

@@ -1,21 +1,13 @@
 package domain
 
-// Seasoning は調味料。
-type Seasoning struct {
-	ID   uint   `gorm:"primaryKey"`
-	Name string `gorm:"size:50;not null"`
+// RecipeSeasoning はレシピの調味料。レシピに従属し、(recipe, name) で一意。
+// 調味料マスタは持たず、名前をそのまま保持する(非正規化)。
+type RecipeSeasoning struct {
+	ID       uint   `gorm:"primaryKey"`
+	RecipeID uint   `gorm:"not null;uniqueIndex:uniq_recipe_seasoning_name"`
+	Name     string `gorm:"size:50;not null;uniqueIndex:uniq_recipe_seasoning_name"`
+	Quantity int    `gorm:"not null"`
+	Unit     string `gorm:"size:10;not null"`
 }
 
-func (Seasoning) TableName() string { return "seasoning" }
-
-// Season はレシピと調味料の中間テーブル。(recipe, seasoning) で一意。
-type Season struct {
-	ID          uint      `gorm:"primaryKey"`
-	RecipeID    uint      `gorm:"not null;uniqueIndex:uniq_recipe_seasoning"`
-	SeasoningID uint      `gorm:"not null;uniqueIndex:uniq_recipe_seasoning"`
-	Seasoning   Seasoning `gorm:"foreignKey:SeasoningID"`
-	Quantity    int       `gorm:"not null"`
-	Unit        string    `gorm:"size:10;not null"`
-}
-
-func (Season) TableName() string { return "season" }
+func (RecipeSeasoning) TableName() string { return "recipe_seasonings" }

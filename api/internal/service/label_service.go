@@ -7,7 +7,8 @@ import (
 )
 
 type LabelService interface {
-	List(ctx context.Context) ([]domain.RecipeLabel, error)
+	// List は userID が閲覧できるレシピに付いたラベル名を重複なく返す。
+	List(ctx context.Context, userID uint) ([]string, error)
 }
 
 type labelService struct {
@@ -18,6 +19,6 @@ func NewLabelService(labels domain.LabelRepository) LabelService {
 	return &labelService{labels: labels}
 }
 
-func (s *labelService) List(ctx context.Context) ([]domain.RecipeLabel, error) {
-	return s.labels.FindAll(ctx)
+func (s *labelService) List(ctx context.Context, userID uint) ([]string, error) {
+	return s.labels.FindNamesForUser(ctx, userID)
 }

@@ -31,18 +31,15 @@ func arrangeRecipeWithRelations(t *testing.T) (context.Context, domain.RecipeRep
 	repo := NewRecipeRepository(testDB)
 	owner := seedUser(t, "owner")
 	friend := seedUser(t, "friend")
-	label, _ := repo.GetOrCreateLabel(ctx, "和食")
-	ing, _ := repo.GetOrCreateIngredient(ctx, "じゃがいも")
-	sea, _ := repo.GetOrCreateSeasoning(ctx, "醤油")
 	r := factory.NewRecipe(
 		factory.WithTitle("肉じゃが"),
 		factory.WithOwnerID(owner.ID),
 		factory.WithSharedUsers(*friend),
 	)
-	r.CreateFor = 2
-	r.Labels = []domain.RecipeLabel{*label}
-	r.Cooking = []domain.Cooking{{IngredientID: ing.ID, Quantity: 3, Unit: "個"}}
-	r.Season = []domain.Season{{SeasoningID: sea.ID, Quantity: 2, Unit: "大さじ"}}
+	r.Servings = 2
+	r.Labels = []domain.RecipeLabel{{Name: "和食"}}
+	r.Ingredients = []domain.RecipeIngredient{{Name: "じゃがいも", Quantity: 3, Unit: "個"}}
+	r.Seasonings = []domain.RecipeSeasoning{{Name: "醤油", Quantity: 2, Unit: "大さじ"}}
 	require.NoError(t, repo.Create(ctx, r))
 	return ctx, repo, r.ID
 }
@@ -68,7 +65,7 @@ func TestRecipeRepo_FindByID_LoadsLabels(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.RecipeLabel{{ID: 1, Name: "和食"}}, got.Labels)
+	assert.Equal(t, []domain.RecipeLabel{{ID: 1, RecipeID: 1, Name: "和食"}}, got.Labels)
 }
 
 // 関連付きレシピを作成した時、FindByID で共有先ユーザーが読み込まれること。
@@ -84,8 +81,8 @@ func TestRecipeRepo_FindByID_LoadsSharedUsers(t *testing.T) {
 	assert.Equal(t, "friend", got.SharedUsers[0].Username)
 }
 
-// 関連付きレシピを作成した時、FindByID で食材(Cooking)が構造体ごと読み込まれること。
-func TestRecipeRepo_FindByID_LoadsCooking(t *testing.T) {
+// 関連付きレシピを作成した時、FindByID で食材が構造体ごと読み込まれること。
+func TestRecipeRepo_FindByID_LoadsIngredients(t *testing.T) {
 	// Arrange
 	ctx, repo, id := arrangeRecipeWithRelations(t)
 
@@ -93,18 +90,17 @@ func TestRecipeRepo_FindByID_LoadsCooking(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.Cooking{{
-		ID:           1,
-		RecipeID:     1,
-		IngredientID: 1,
-		Ingredient:   domain.Ingredient{ID: 1, Name: "じゃがいも"},
-		Quantity:     3,
-		Unit:         "個",
-	}}, got.Cooking)
+	assert.Equal(t, []domain.RecipeIngredient{{
+		ID:       1,
+		RecipeID: 1,
+		Name:     "じゃがいも",
+		Quantity: 3,
+		Unit:     "個",
+	}}, got.Ingredients)
 }
 
-// 関連付きレシピを作成した時、FindByID で調味料(Season)が構造体ごと読み込まれること。
-func TestRecipeRepo_FindByID_LoadsSeason(t *testing.T) {
+// 関連付きレシピを作成した時、FindByID で調味料が構造体ごと読み込まれること。
+func TestRecipeRepo_FindByID_LoadsSeasonings(t *testing.T) {
 	// Arrange
 	ctx, repo, id := arrangeRecipeWithRelations(t)
 
@@ -112,51 +108,18 @@ func TestRecipeRepo_FindByID_LoadsSeason(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.Season{{
-		ID:          1,
-		RecipeID:    1,
-		SeasoningID: 1,
-		Seasoning:   domain.Seasoning{ID: 1, Name: "醤油"},
-		Quantity:    2,
-		Unit:        "大さじ",
-	}}, got.Season)
-}
-
-// 同名のラベルを2回 GetOrCreate した時、既存行が再利用されること。
-func TestRecipeRepo_GetOrCreateLabel_ReusesByName(t *testing.T) {
-	// Arrange
-	testutil.RequireIntegration(t)
-	truncateAll(t)
-	ctx := context.Background()
-	repo := NewRecipeRepository(testDB)
-
-	// Act: 同じ name で2回 get-or-create する
-	a, _ := repo.GetOrCreateLabel(ctx, "和食")
-	b, _ := repo.GetOrCreateLabel(ctx, "和食")
-
-	// Assert: 同名は既存行を再利用すること
-	assert.Equal(t, a.ID, b.ID)
-}
-
-// 同名の食材を2回 GetOrCreate した時、既存行が再利用されること。
-func TestRecipeRepo_GetOrCreateIngredient_ReusesByName(t *testing.T) {
-	// Arrange
-	testutil.RequireIntegration(t)
-	truncateAll(t)
-	ctx := context.Background()
-	repo := NewRecipeRepository(testDB)
-
-	// Act: 同じ name で2回 get-or-create する
-	i1, _ := repo.GetOrCreateIngredient(ctx, "塩")
-	i2, _ := repo.GetOrCreateIngredient(ctx, "塩")
-
-	// Assert: 同名は既存行を再利用すること
-	assert.Equal(t, i1.ID, i2.ID)
+	assert.Equal(t, []domain.RecipeSeasoning{{
+		ID:       1,
+		RecipeID: 1,
+		Name:     "醤油",
+		Quantity: 2,
+		Unit:     "大さじ",
+	}}, got.Seasonings)
 }
 
 // arrangeSharedRecipe は owner が持ち friend に共有したレシピを1件作成し、
 // owner / friend / stranger の3ユーザーを返す。
-func arrangeSharedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, *domain.ApplicationUser, *domain.ApplicationUser, *domain.ApplicationUser) {
+func arrangeSharedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, *domain.User, *domain.User, *domain.User) {
 	t.Helper()
 	testutil.RequireIntegration(t)
 	truncateAll(t)
@@ -222,19 +185,15 @@ func arrangeUpdatedRecipe(t *testing.T) (context.Context, domain.RecipeRepositor
 	ctx := context.Background()
 	repo := NewRecipeRepository(testDB)
 	owner := seedUser(t, "owner")
-	ingA, _ := repo.GetOrCreateIngredient(ctx, "じゃがいも")
-	labelA, _ := repo.GetOrCreateLabel(ctx, "和食")
 	r := factory.NewRecipe(factory.WithTitle("初版"), factory.WithOwnerID(owner.ID))
-	r.Labels = []domain.RecipeLabel{*labelA}
-	r.Cooking = []domain.Cooking{{IngredientID: ingA.ID, Quantity: 1, Unit: "個"}}
+	r.Labels = []domain.RecipeLabel{{Name: "和食"}}
+	r.Ingredients = []domain.RecipeIngredient{{Name: "じゃがいも", Quantity: 1, Unit: "個"}}
 	require.NoError(t, repo.Create(ctx, r))
 
-	ingB, _ := repo.GetOrCreateIngredient(ctx, "人参")
-	labelB, _ := repo.GetOrCreateLabel(ctx, "夕食")
 	r.Title = "改訂版"
-	r.Labels = []domain.RecipeLabel{*labelB}
-	r.Cooking = []domain.Cooking{{IngredientID: ingB.ID, Quantity: 2, Unit: "本"}}
-	r.Season = nil
+	r.Labels = []domain.RecipeLabel{{Name: "夕食"}}
+	r.Ingredients = []domain.RecipeIngredient{{Name: "人参", Quantity: 2, Unit: "本"}}
+	r.Seasonings = nil
 	require.NoError(t, repo.Update(ctx, r))
 	return ctx, repo, r.ID
 }
@@ -251,26 +210,25 @@ func TestRecipeRepo_Update_ReplacesTitle(t *testing.T) {
 	assert.Equal(t, "改訂版", got.Title)
 }
 
-// レシピを更新した時、食材(Cooking)が構造体ごと新しいものに置き換わること。
-func TestRecipeRepo_Update_ReplacesCooking(t *testing.T) {
+// レシピを更新した時、食材が行ごと新しいものに置き換わること。
+func TestRecipeRepo_Update_ReplacesIngredients(t *testing.T) {
 	// Arrange
 	ctx, repo, id := arrangeUpdatedRecipe(t)
 
 	// Act
 	got := mustFindRecipe(t, ctx, repo, id)
 
-	// Assert: 旧 cooking(id1) は削除され、新規行(id2)に置き換わる。
-	assert.Equal(t, []domain.Cooking{{
-		ID:           2,
-		RecipeID:     1,
-		IngredientID: 2,
-		Ingredient:   domain.Ingredient{ID: 2, Name: "人参"},
-		Quantity:     2,
-		Unit:         "本",
-	}}, got.Cooking)
+	// Assert: 旧行(id1)は削除され、新規行(id2)に置き換わる。
+	assert.Equal(t, []domain.RecipeIngredient{{
+		ID:       2,
+		RecipeID: 1,
+		Name:     "人参",
+		Quantity: 2,
+		Unit:     "本",
+	}}, got.Ingredients)
 }
 
-// レシピを更新した時、ラベルが構造体ごと新しいものに置き換わること。
+// レシピを更新した時、ラベルが行ごと新しいものに置き換わること。
 func TestRecipeRepo_Update_ReplacesLabels(t *testing.T) {
 	// Arrange
 	ctx, repo, id := arrangeUpdatedRecipe(t)
@@ -279,10 +237,10 @@ func TestRecipeRepo_Update_ReplacesLabels(t *testing.T) {
 	got := mustFindRecipe(t, ctx, repo, id)
 
 	// Assert
-	assert.Equal(t, []domain.RecipeLabel{{ID: 2, Name: "夕食"}}, got.Labels)
+	assert.Equal(t, []domain.RecipeLabel{{ID: 2, RecipeID: 1, Name: "夕食"}}, got.Labels)
 }
 
-// arrangeDeletedRecipe は子テーブル(cooking)を持つレシピを作成後 Delete を実行し、その ID を返す。
+// arrangeDeletedRecipe は子テーブル(食材)と共有先を持つレシピを作成後 Delete を実行し、その ID を返す。
 func arrangeDeletedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, uint) {
 	t.Helper()
 	testutil.RequireIntegration(t)
@@ -290,9 +248,13 @@ func arrangeDeletedRecipe(t *testing.T) (context.Context, domain.RecipeRepositor
 	ctx := context.Background()
 	repo := NewRecipeRepository(testDB)
 	owner := seedUser(t, "owner")
-	ing, _ := repo.GetOrCreateIngredient(ctx, "卵")
-	r := factory.NewRecipe(factory.WithTitle("削除対象"), factory.WithOwnerID(owner.ID))
-	r.Cooking = []domain.Cooking{{IngredientID: ing.ID, Quantity: 2, Unit: "個"}}
+	friend := seedUser(t, "friend")
+	r := factory.NewRecipe(
+		factory.WithTitle("削除対象"),
+		factory.WithOwnerID(owner.ID),
+		factory.WithSharedUsers(*friend),
+	)
+	r.Ingredients = []domain.RecipeIngredient{{Name: "卵", Quantity: 2, Unit: "個"}}
 	require.NoError(t, repo.Create(ctx, r))
 	require.NoError(t, repo.Delete(ctx, r))
 	return ctx, repo, r.ID
@@ -311,15 +273,28 @@ func TestRecipeRepo_Delete_RemovesRecipe(t *testing.T) {
 	assert.Nil(t, got) // 本体が消えること
 }
 
-// レシピを削除した時、子テーブル(cooking)も消えること。
-func TestRecipeRepo_Delete_RemovesCookingRows(t *testing.T) {
+// レシピを削除した時、子テーブル(recipe_ingredients)も FK CASCADE で消えること。
+func TestRecipeRepo_Delete_CascadesIngredientRows(t *testing.T) {
 	// Arrange
 	_, _, id := arrangeDeletedRecipe(t)
 
 	// Act
-	var cookingCount int64
-	testDB.Model(&domain.Cooking{}).Where("recipe_id = ?", id).Count(&cookingCount)
+	var count int64
+	testDB.Model(&domain.RecipeIngredient{}).Where("recipe_id = ?", id).Count(&count)
 
 	// Assert
-	assert.Zero(t, cookingCount) // 子テーブル(cooking)も消えること
+	assert.Zero(t, count)
+}
+
+// レシピを削除した時、中間テーブル(recipe_shares)も FK CASCADE で消えること。
+func TestRecipeRepo_Delete_CascadesShareRows(t *testing.T) {
+	// Arrange
+	_, _, id := arrangeDeletedRecipe(t)
+
+	// Act
+	var count int64
+	testDB.Table("recipe_shares").Where("recipe_id = ?", id).Count(&count)
+
+	// Assert
+	assert.Zero(t, count)
 }

@@ -13,7 +13,7 @@ import (
 )
 
 // newAuthService は mockUserRepo を組んだ AuthService を返すテストヘルパー。
-func newAuthService(users map[string]*domain.ApplicationUser) (AuthService, *jwtpkg.Manager) {
+func newAuthService(users map[string]*domain.User) (AuthService, *jwtpkg.Manager) {
 	ur := &mockUserRepo{byName: users}
 	jm := jwtpkg.NewManager("test-secret")
 	return NewAuthService(ur, jm), jm
@@ -23,7 +23,7 @@ func newAuthService(users map[string]*domain.ApplicationUser) (AuthService, *jwt
 func loginAlice(t *testing.T) (access, refresh string, jm *jwtpkg.Manager) {
 	t.Helper()
 	user := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"), factory.WithPlainPassword(t, "pw"))
-	svc, jm := newAuthService(map[string]*domain.ApplicationUser{user.Username: user})
+	svc, jm := newAuthService(map[string]*domain.User{user.Username: user})
 	access, refresh, err := svc.Login(context.Background(), "alice", "pw")
 	require.NoError(t, err)
 	return access, refresh, jm
@@ -62,7 +62,7 @@ func TestAuthLogin_AccessTokenEncodesUserID(t *testing.T) {
 func TestAuthLogin_WrongPassword(t *testing.T) {
 	// Arrange
 	user := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"), factory.WithPlainPassword(t, "pw"))
-	svc, _ := newAuthService(map[string]*domain.ApplicationUser{user.Username: user})
+	svc, _ := newAuthService(map[string]*domain.User{user.Username: user})
 
 	// Act
 	_, _, err := svc.Login(context.Background(), "alice", "wrong")
@@ -74,7 +74,7 @@ func TestAuthLogin_WrongPassword(t *testing.T) {
 // ユーザーが存在しない時、ErrInvalidCredentials が返ること。
 func TestAuthLogin_NoSuchUser(t *testing.T) {
 	// Arrange
-	svc, _ := newAuthService(map[string]*domain.ApplicationUser{})
+	svc, _ := newAuthService(map[string]*domain.User{})
 
 	// Act
 	_, _, err := svc.Login(context.Background(), "ghost", "pw")
@@ -87,7 +87,7 @@ func TestAuthLogin_NoSuchUser(t *testing.T) {
 func TestAuthLogin_InactiveUser(t *testing.T) {
 	// Arrange
 	user := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"), factory.WithPlainPassword(t, "pw"), factory.WithInactive())
-	svc, _ := newAuthService(map[string]*domain.ApplicationUser{user.Username: user})
+	svc, _ := newAuthService(map[string]*domain.User{user.Username: user})
 
 	// Act
 	_, _, err := svc.Login(context.Background(), "alice", "pw")
@@ -99,7 +99,7 @@ func TestAuthLogin_InactiveUser(t *testing.T) {
 // 有効なリフレッシュトークンを渡した時、元の uid を保持したアクセストークンが返ること。
 func TestAuthRefresh_Valid(t *testing.T) {
 	// Arrange
-	svc, jm := newAuthService(map[string]*domain.ApplicationUser{})
+	svc, jm := newAuthService(map[string]*domain.User{})
 	refresh, _ := jm.GenerateRefresh(5)
 
 	// Act
@@ -115,7 +115,7 @@ func TestAuthRefresh_Valid(t *testing.T) {
 // リフレッシュとしてアクセストークンを渡した時、ErrInvalidCredentials が返ること。
 func TestAuthRefresh_RejectsAccessToken(t *testing.T) {
 	// Arrange
-	svc, jm := newAuthService(map[string]*domain.ApplicationUser{})
+	svc, jm := newAuthService(map[string]*domain.User{})
 	access, _ := jm.GenerateAccess(5) // access を refresh として渡す → 失敗するはず
 
 	// Act
@@ -128,7 +128,7 @@ func TestAuthRefresh_RejectsAccessToken(t *testing.T) {
 // 不正な文字列をリフレッシュトークンに渡した時、ErrInvalidCredentials が返ること。
 func TestAuthRefresh_Garbage(t *testing.T) {
 	// Arrange
-	svc, _ := newAuthService(map[string]*domain.ApplicationUser{})
+	svc, _ := newAuthService(map[string]*domain.User{})
 
 	// Act
 	_, err := svc.Refresh(context.Background(), "bad-token")
@@ -138,7 +138,7 @@ func TestAuthRefresh_Garbage(t *testing.T) {
 }
 
 // registerAlice は alice を新規登録し、返り値ユーザーと保存先モックを返す。
-func registerAlice(t *testing.T) (*domain.ApplicationUser, *mockUserRepo) {
+func registerAlice(t *testing.T) (*domain.User, *mockUserRepo) {
 	t.Helper()
 	ur := &mockUserRepo{}
 	svc := NewAuthService(ur, jwtpkg.NewManager("test-secret"))
@@ -162,7 +162,7 @@ func TestAuthRegister_HashesPassword(t *testing.T) {
 	user, _ := registerAlice(t)
 
 	// Assert
-	assert.NotEqual(t, "password123", user.Password) // 平文ではなくハッシュ化されていること
+	assert.NotEqual(t, "password123", user.PasswordHash) // 平文ではなくハッシュ化されていること
 }
 
 // 新規ユーザーを登録した時、ユーザーが永続化されること。
@@ -179,7 +179,7 @@ func TestAuthRegister_PersistsUser(t *testing.T) {
 func TestAuthRegister_DuplicateUsername(t *testing.T) {
 	// Arrange
 	existing := factory.NewUser(factory.WithID(1), factory.WithUsername("alice"))
-	ur := &mockUserRepo{byName: map[string]*domain.ApplicationUser{existing.Username: existing}}
+	ur := &mockUserRepo{byName: map[string]*domain.User{existing.Username: existing}}
 	svc := NewAuthService(ur, jwtpkg.NewManager("s"))
 
 	// Act
@@ -193,7 +193,7 @@ func TestAuthRegister_DuplicateUsername(t *testing.T) {
 func TestAuthRegister_DuplicateEmail(t *testing.T) {
 	// Arrange
 	existing := factory.NewUser(factory.WithID(1), factory.WithEmail("taken@example.com"))
-	ur := &mockUserRepo{byEmail: map[string]*domain.ApplicationUser{existing.Email: existing}}
+	ur := &mockUserRepo{byEmail: map[string]*domain.User{existing.Email: existing}}
 	svc := NewAuthService(ur, jwtpkg.NewManager("s"))
 
 	// Act

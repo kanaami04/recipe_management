@@ -45,7 +45,6 @@ export type UserListItem = {
 };
 
 export type LabelResponse = {
-    id: number;
     name: string;
 };
 
@@ -91,19 +90,18 @@ export type RecipeRequest = {
     season?: Array<SeasonInput>;
 };
 
-export type NamedRef = {
-    id: number;
+export type NameResponse = {
     name: string;
 };
 
 export type CookingResponse = {
-    ingredients: NamedRef;
+    ingredients: NameResponse;
     quantity: number;
     unit: string;
 };
 
 export type SeasonResponse = {
-    seasoning: NamedRef;
+    seasoning: NameResponse;
     quantity: number;
     unit: string;
 };

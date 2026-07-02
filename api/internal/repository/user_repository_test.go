@@ -14,7 +14,7 @@ import (
 
 // arrangeUserRepo は結合テストの前提を整え、alice を1人作成済みの repo を返す。
 // Create / Find 系の検証を「1テスト1観点」に分割するための共通セットアップ。
-func arrangeUserRepo(t *testing.T) (context.Context, domain.UserRepository, *domain.ApplicationUser) {
+func arrangeUserRepo(t *testing.T) (context.Context, domain.UserRepository, *domain.User) {
 	t.Helper()
 	testutil.RequireIntegration(t)
 	truncateAll(t)

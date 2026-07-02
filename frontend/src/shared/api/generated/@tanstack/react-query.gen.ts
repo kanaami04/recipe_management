@@ -157,7 +157,7 @@ export const listUsersOptions = (options?: Options<ListUsersData>) => queryOptio
 export const listLabelsQueryKey = (options?: Options<ListLabelsData>) => createQueryKey('listLabels', options);
 
 /**
- * 全ラベル一覧
+ * 自分が閲覧できるレシピに付いたラベル一覧
  */
 export const listLabelsOptions = (options?: Options<ListLabelsData>) => queryOptions<ListLabelsResponse, AxiosError<ListLabelsError>, ListLabelsResponse, ReturnType<typeof listLabelsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

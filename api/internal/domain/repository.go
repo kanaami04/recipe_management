@@ -6,15 +6,17 @@ import "context"
 // 第一引数の context はリクエスト由来の値（request_id 等）を下位層・GORM ログまで伝播させる。
 
 type UserRepository interface {
-	FindByUsername(ctx context.Context, username string) (*ApplicationUser, error)
-	FindByEmail(ctx context.Context, email string) (*ApplicationUser, error)
-	FindByID(ctx context.Context, id uint) (*ApplicationUser, error)
-	FindAll(ctx context.Context) ([]ApplicationUser, error)
-	Create(ctx context.Context, user *ApplicationUser) error
+	FindByUsername(ctx context.Context, username string) (*User, error)
+	FindByEmail(ctx context.Context, email string) (*User, error)
+	FindByID(ctx context.Context, id uint) (*User, error)
+	FindAll(ctx context.Context) ([]User, error)
+	Create(ctx context.Context, user *User) error
 }
 
 type LabelRepository interface {
-	FindAll(ctx context.Context) ([]RecipeLabel, error)
+	// FindNamesForUser は userID が閲覧できる(所有 or 共有された)レシピの
+	// ラベル名を重複なく昇順で返す。
+	FindNamesForUser(ctx context.Context, userID uint) ([]string, error)
 }
 
 type RecipeRepository interface {
@@ -24,9 +26,4 @@ type RecipeRepository interface {
 	Create(ctx context.Context, recipe *Recipe) error
 	Update(ctx context.Context, recipe *Recipe) error
 	Delete(ctx context.Context, recipe *Recipe) error
-
-	// name による get-or-create（既存があれば再利用、無ければ作成）。
-	GetOrCreateLabel(ctx context.Context, name string) (*RecipeLabel, error)
-	GetOrCreateIngredient(ctx context.Context, name string) (*Ingredient, error)
-	GetOrCreateSeasoning(ctx context.Context, name string) (*Seasoning, error)
 }

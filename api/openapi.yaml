@@ -148,7 +148,7 @@ paths:
   /api/label/:
     get:
       tags: [labels]
-      summary: 全ラベル一覧
+      summary: 自分が閲覧できるレシピに付いたラベル一覧
       operationId: listLabels
       responses:
         '200':
@@ -381,13 +381,8 @@ components:
 
     LabelResponse:
       type: object
-      required: [id, name]
+      required: [name]
       properties:
-        id:
-          type: integer
-          format: int64
-          x-go-name: ID
-          x-go-type: uint
         name:
           type: string
 
@@ -483,15 +478,10 @@ components:
             $ref: '#/components/schemas/SeasonInput'
           x-go-type-skip-optional-pointer: true
 
-    NamedRef:
+    NameResponse:
       type: object
-      required: [id, name]
+      required: [name]
       properties:
-        id:
-          type: integer
-          format: int64
-          x-go-name: ID
-          x-go-type: uint
         name:
           type: string
 
@@ -500,7 +490,7 @@ components:
       required: [ingredients, quantity, unit]
       properties:
         ingredients:
-          $ref: '#/components/schemas/NamedRef'
+          $ref: '#/components/schemas/NameResponse'
         quantity:
           type: integer
         unit:
@@ -511,7 +501,7 @@ components:
       required: [seasoning, quantity, unit]
       properties:
         seasoning:
-          $ref: '#/components/schemas/NamedRef'
+          $ref: '#/components/schemas/NameResponse'
         quantity:
           type: integer
         unit:

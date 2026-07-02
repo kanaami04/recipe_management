@@ -35,14 +35,13 @@ func Connect(dsn string, logger *slog.Logger) (*gorm.DB, error) {
 
 // Migrate は全エンティティの AutoMigrate を実行する。
 // FK 解決のため、参照される側を先に並べる。
+// 中間テーブル recipe_shares は Recipe の many2many 定義から自動生成される。
 func Migrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&domain.ApplicationUser{},
-		&domain.RecipeLabel{},
-		&domain.Ingredient{},
-		&domain.Seasoning{},
+		&domain.User{},
 		&domain.Recipe{},
-		&domain.Cooking{},
-		&domain.Season{},
+		&domain.RecipeIngredient{},
+		&domain.RecipeSeasoning{},
+		&domain.RecipeLabel{},
 	)
 }

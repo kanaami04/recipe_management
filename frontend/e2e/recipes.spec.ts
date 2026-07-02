@@ -5,7 +5,7 @@ const recipe = {
   id: 1,
   created_at: '2026-06-15 09:30',
   updated_at: '2026-06-15 09:30',
-  cooking: [{ ingredients: { id: 1, name: '玉ねぎ' }, quantity: 1, unit: '個' }],
+  cooking: [{ ingredients: { name: '玉ねぎ' }, quantity: 1, unit: '個' }],
   season: [],
   procedure: '煮る',
   owner: { id: 1, username: 'taro' },
@@ -14,7 +14,7 @@ const recipe = {
   create_time: 30,
   create_for: 2,
   archive_flg: false,
-  label: [{ id: 1, name: '夕食' }],
+  label: [{ name: '夕食' }],
 }
 
 // API をブラウザ側のルートモックで差し替える(バックエンド/DB 不要)。
@@ -35,7 +35,7 @@ async function mockApi(page: Page) {
     route.fulfill({ status: 200, json: { id: 1, username: 'taro', email: 'taro@example.com' } }),
   )
   await page.route('**/api/label/', (route) =>
-    route.fulfill({ status: 200, json: [{ id: 1, name: '夕食' }] }),
+    route.fulfill({ status: 200, json: [{ name: '夕食' }] }),
   )
   await page.route('**/api/users/', (route) =>
     route.fulfill({ status: 200, json: [{ id: 1, username: 'taro' }] }),
