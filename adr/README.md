@@ -43,5 +43,4 @@
 - [0007 API 型とバックエンド同期: OpenAPI を契約の単一ソースとする](frontend/0007-api-type-sync-openapi.md)
 - [0008 テスト方針: Vitest + Testing Library + MSW](frontend/0008-testing-vitest-rtl-msw.md)
 - [0009 コーディング規約](frontend/0009-coding-conventions.md)
-
-- (まだなし)
+- [0010 PWA 対応: インストール可能 + 静的アセット precache](frontend/0010-pwa-installable-precache.md)
