@@ -22,6 +22,11 @@ dir = "api"
 env = { RUN_INTEGRATION = "1" }
 run = "go test ./..."
 
+[tasks.migrate]
+description = "本番 DB マイグレーション。api/.env.migrate(Session pooler の DATABASE_URL、gitignore 済み)を読む"
+dir = "api"
+run = "go run . -migrate -env .env.migrate"
+
 [tasks.build-lambda]
 description = "Lambda 用 Go バイナリ(linux/arm64)を infra/dist/api/bootstrap へビルド"
 dir = "api"
