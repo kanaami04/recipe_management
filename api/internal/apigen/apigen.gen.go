@@ -10,14 +10,14 @@ const (
 // CookingInput defines model for CookingInput.
 type CookingInput struct {
 	Ingredients NameInput `json:"ingredients"`
-	Quantity    int       `json:"quantity"`
+	Quantity    float64   `json:"quantity"`
 	Unit        string    `json:"unit"`
 }
 
 // CookingResponse defines model for CookingResponse.
 type CookingResponse struct {
 	Ingredients NameResponse `json:"ingredients"`
-	Quantity    int          `json:"quantity"`
+	Quantity    float64      `json:"quantity"`
 	Unit        string       `json:"unit"`
 }
 
@@ -100,14 +100,14 @@ type RegisterRequest struct {
 
 // SeasonInput defines model for SeasonInput.
 type SeasonInput struct {
-	Quantity  int       `json:"quantity"`
+	Quantity  float64   `json:"quantity"`
 	Seasoning NameInput `json:"seasoning"`
 	Unit      string    `json:"unit"`
 }
 
 // SeasonResponse defines model for SeasonResponse.
 type SeasonResponse struct {
-	Quantity  int          `json:"quantity"`
+	Quantity  float64      `json:"quantity"`
 	Seasoning NameResponse `json:"seasoning"`
 	Unit      string       `json:"unit"`
 }

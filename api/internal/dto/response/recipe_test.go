@@ -31,7 +31,7 @@ func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
 			{ID: "i5", RecipeID: "r1", Name: "じゃがいも", Quantity: 3, Unit: "個"},
 		},
 		Seasonings: []domain.RecipeSeasoning{
-			{ID: "s7", RecipeID: "r1", Name: "醤油", Quantity: 2, Unit: "大さじ"},
+			{ID: "s7", RecipeID: "r1", Name: "醤油", Quantity: 0.5, Unit: "大さじ"}, // 小数(大さじ1/2)が保たれること
 		},
 		CreatedAt: created,
 		UpdatedAt: updated,
@@ -46,7 +46,7 @@ func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
 		CreatedAt:  "2026-06-14 12:00",
 		UpdatedAt:  "2026-06-14 13:30",
 		Cooking:    []CookingResponse{{Ingredients: NameResponse{Name: "じゃがいも"}, Quantity: 3, Unit: "個"}},
-		Season:     []SeasonResponse{{Seasoning: NameResponse{Name: "醤油"}, Quantity: 2, Unit: "大さじ"}},
+		Season:     []SeasonResponse{{Seasoning: NameResponse{Name: "醤油"}, Quantity: 0.5, Unit: "大さじ"}},
 		Procedure:  "煮る",
 		Owner:      UserListItem{ID: "u10", Username: "alice"},
 		SharedUser: []UserListItem{{ID: "u20", Username: "bob"}},

@@ -6,8 +6,8 @@ import type { RecipeRequest, RecipeResponse } from '@/shared/api/generated/types
 // API レスポンス用 zod は生成物を使い、住み分ける。
 const materialSchema = z.object({
   name: z.string().min(1, '名前は必須です'),
-  quantity: z.number().int().min(0),
-  unit: z.string(),
+  quantity: z.number().min(0),
+  unit: z.string().min(1, '単位を選択してください'),
 })
 
 export const recipeFormSchema = z.object({

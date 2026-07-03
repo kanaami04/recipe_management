@@ -96,9 +96,12 @@ test('レシピを新規作成すると成功トーストが出る', async ({ pa
   await page.getByPlaceholder('タイトル').fill('新レシピ')
   await page.getByRole('combobox').first().click() // 人数
   await page.getByRole('option', { name: '2', exact: true }).click()
-  // 食材・調味料それぞれ初期1行の name を埋める(material 名は必須のため)。
+  // 食材・調味料それぞれ初期1行の name と単位を埋める(名前・単位は必須のため)。
+  // 単位を選ぶと数量はその単位の既定値に入る。個は食材行、大さじは調味料行にのみ現れ一意。
   await page.getByPlaceholder('名前').nth(0).fill('じゃがいも')
+  await page.getByRole('button', { name: '個', exact: true }).click()
   await page.getByPlaceholder('名前').nth(1).fill('塩')
+  await page.getByRole('button', { name: '大さじ', exact: true }).click()
   await page.getByRole('button', { name: '作成' }).click()
 
   // Assert

@@ -60,13 +60,13 @@ export const zSharedUserInput = z.object({
 
 export const zCookingInput = z.object({
     ingredients: zNameInput,
-    quantity: z.int(),
+    quantity: z.number(),
     unit: z.string()
 });
 
 export const zSeasonInput = z.object({
     seasoning: zNameInput,
-    quantity: z.int(),
+    quantity: z.number(),
     unit: z.string()
 });
 
@@ -88,13 +88,13 @@ export const zNameResponse = z.object({
 
 export const zCookingResponse = z.object({
     ingredients: zNameResponse,
-    quantity: z.int(),
+    quantity: z.number(),
     unit: z.string()
 });
 
 export const zSeasonResponse = z.object({
     seasoning: zNameResponse,
-    quantity: z.int(),
+    quantity: z.number(),
     unit: z.string()
 });
 

@@ -422,7 +422,8 @@ components:
         ingredients:
           $ref: '#/components/schemas/NameInput'
         quantity:
-          type: integer
+          type: number
+          format: double
         unit:
           type: string
 
@@ -433,7 +434,8 @@ components:
         seasoning:
           $ref: '#/components/schemas/NameInput'
         quantity:
-          type: integer
+          type: number
+          format: double
         unit:
           type: string
 
@@ -494,7 +496,8 @@ components:
         ingredients:
           $ref: '#/components/schemas/NameResponse'
         quantity:
-          type: integer
+          type: number
+          format: double
         unit:
           type: string
 
@@ -505,7 +508,8 @@ components:
         seasoning:
           $ref: '#/components/schemas/NameResponse'
         quantity:
-          type: integer
+          type: number
+          format: double
         unit:
           type: string
 
