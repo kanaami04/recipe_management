@@ -143,7 +143,9 @@ export function RecipeForm({
           )}
         />
         {errors.ingredients && (
-          <p className="text-destructive text-sm">{errors.ingredients.message}</p>
+          <p className="text-destructive text-sm">
+            {errors.ingredients.message ?? '食材の名前と単位を入力してください'}
+          </p>
         )}
         <Separator />
         <Controller
@@ -160,6 +162,11 @@ export function RecipeForm({
             />
           )}
         />
+        {errors.seasoning && (
+          <p className="text-destructive text-sm">
+            {errors.seasoning.message ?? '調味料の名前と単位を入力してください'}
+          </p>
+        )}
         <Separator />
         <Controller
           control={control}
