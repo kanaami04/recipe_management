@@ -20,10 +20,14 @@ type LabelRepository interface {
 }
 
 type RecipeRepository interface {
-	// FindAllForUser は owner == userID または共有先に userID を含むレシピを返す。
+	// FindAllForUser は owner == userID または共有先に userID を含むレシピを、
+	// そのユーザーの表示順(recipe_orders.position 昇順、未設定は末尾)で返す。
 	FindAllForUser(ctx context.Context, userID string) ([]Recipe, error)
 	FindByID(ctx context.Context, id string) (*Recipe, error)
 	Create(ctx context.Context, recipe *Recipe) error
 	Update(ctx context.Context, recipe *Recipe) error
 	Delete(ctx context.Context, recipe *Recipe) error
+	// Reorder は userID の表示順を recipeIDs の並び(先頭 = position 0)で保存する。
+	// 他ユーザーの順序には影響しない。
+	Reorder(ctx context.Context, userID string, recipeIDs []string) error
 }

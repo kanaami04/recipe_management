@@ -370,3 +370,86 @@ func TestRecipeHandler_Delete_InvalidID(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
+
+// serveReorder は reorderFn を差し替えた RecipeHandler に、認証付きで PUT /api/recipes/reorder/ し結果を返す。
+func serveReorder(t *testing.T, reorderFn func(context.Context, string, []string) error, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	jm := jwtpkg.NewManager("secret")
+	e := newTestEcho()
+	h := NewRecipeHandler(&mockRecipeService{reorderFn: reorderFn})
+	e.PUT("/api/recipes/reorder/", h.Reorder, appmw.JWT(jm))
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, authedRequest(t, jm, http.MethodPut, "/api/recipes/reorder/", body))
+	return rec
+}
+
+// 認証済みで並び替えした時、204 が返ること。
+func TestRecipeHandler_Reorder_Returns204(t *testing.T) {
+	// Arrange & Act
+	rec := serveReorder(t, func(_ context.Context, _ string, _ []string) error {
+		return nil
+	}, `{"recipe_ids":["`+testRecipeID+`"]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// 並び替えした時、JWT のユーザーIDがサービスに渡されること。
+func TestRecipeHandler_Reorder_ForwardsUserID(t *testing.T) {
+	// Arrange & Act
+	var gotUserID string
+	serveReorder(t, func(_ context.Context, userID string, _ []string) error {
+		gotUserID = userID
+		return nil
+	}, `{"recipe_ids":["`+testRecipeID+`"]}`)
+
+	// Assert
+	assert.Equal(t, testUserID, gotUserID)
+}
+
+// 並び替えした時、リクエストの並び順がサービスに渡されること。
+func TestRecipeHandler_Reorder_ForwardsOrder(t *testing.T) {
+	// Arrange & Act
+	var gotIDs []string
+	serveReorder(t, func(_ context.Context, _ string, recipeIDs []string) error {
+		gotIDs = recipeIDs
+		return nil
+	}, `{"recipe_ids":["`+testRecipeID+`","`+testUserID+`"]}`)
+
+	// Assert
+	assert.Equal(t, []string{testRecipeID, testUserID}, gotIDs)
+}
+
+// recipe_ids が UUID でない時、サービスを呼ばず 400 が返ること。
+func TestRecipeHandler_Reorder_ValidationError(t *testing.T) {
+	// Arrange & Act
+	rec := serveReorder(t, func(_ context.Context, _ string, _ []string) error {
+		t.Fatal("validation fail 時に service を呼んではいけない")
+		return nil
+	}, `{"recipe_ids":["not-a-uuid"]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// 閲覧できないレシピを含む並び替えでサービスが ErrForbidden を返した時、403 が返ること。
+func TestRecipeHandler_Reorder_Forbidden(t *testing.T) {
+	// Arrange & Act
+	rec := serveReorder(t, func(_ context.Context, _ string, _ []string) error {
+		return service.ErrForbidden
+	}, `{"recipe_ids":["`+testRecipeID+`"]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+// サービスが想定外のエラーを返した時、500 が返ること。
+func TestRecipeHandler_Reorder_InternalError(t *testing.T) {
+	// Arrange & Act
+	rec := serveReorder(t, func(_ context.Context, _ string, _ []string) error {
+		return assert.AnError
+	}, `{"recipe_ids":["`+testRecipeID+`"]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}

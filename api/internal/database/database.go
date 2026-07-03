@@ -43,5 +43,6 @@ func Migrate(db *gorm.DB) error {
 		&domain.RecipeIngredient{},
 		&domain.RecipeSeasoning{},
 		&domain.RecipeLabel{},
+		&domain.RecipeOrder{},
 	)
 }

@@ -90,6 +90,13 @@ export type RecipeRequest = {
     season?: Array<SeasonInput>;
 };
 
+/**
+ * 表示したい順にレシピ ID を並べた配列(先頭 = 一番上)
+ */
+export type ReorderRequest = {
+    recipe_ids: Array<string>;
+};
+
 export type NameResponse = {
     name: string;
 };
@@ -358,6 +365,39 @@ export type CreateRecipeResponses = {
 };
 
 export type CreateRecipeResponse = CreateRecipeResponses[keyof CreateRecipeResponses];
+
+export type ReorderRecipesData = {
+    body: ReorderRequest;
+    path?: never;
+    query?: never;
+    url: '/api/recipes/reorder/';
+};
+
+export type ReorderRecipesErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+};
+
+export type ReorderRecipesError = ReorderRecipesErrors[keyof ReorderRecipesErrors];
+
+export type ReorderRecipesResponses = {
+    /**
+     * 更新成功(本文なし)
+     */
+    204: void;
+};
+
+export type ReorderRecipesResponse = ReorderRecipesResponses[keyof ReorderRecipesResponses];
 
 export type DeleteRecipeData = {
     body?: never;

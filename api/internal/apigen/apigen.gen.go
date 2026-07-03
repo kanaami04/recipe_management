@@ -98,6 +98,11 @@ type RegisterRequest struct {
 	Username string `json:"username" validate:"required,max=50"`
 }
 
+// ReorderRequest 表示したい順にレシピ ID を並べた配列(先頭 = 一番上)
+type ReorderRequest struct {
+	RecipeIds []string `json:"recipe_ids" validate:"required,dive,uuid"`
+}
+
 // SeasonInput defines model for SeasonInput.
 type SeasonInput struct {
 	Quantity  float64   `json:"quantity"`
@@ -164,6 +169,9 @@ type RegisterJSONRequestBody = RegisterRequest
 
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = RecipeRequest
+
+// ReorderRecipesJSONRequestBody defines body for ReorderRecipes for application/json ContentType.
+type ReorderRecipesJSONRequestBody = ReorderRequest
 
 // UpdateRecipeJSONRequestBody defines body for UpdateRecipe for application/json ContentType.
 type UpdateRecipeJSONRequestBody = RecipeRequest

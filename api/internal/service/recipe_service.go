@@ -13,6 +13,7 @@ type RecipeService interface {
 	Create(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error)
 	Update(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error)
 	Delete(ctx context.Context, userID, recipeID string) error
+	Reorder(ctx context.Context, userID string, recipeIDs []string) error
 }
 
 type recipeService struct {
@@ -85,6 +86,35 @@ func (s *recipeService) Delete(ctx context.Context, userID, recipeID string) err
 		return ErrForbidden
 	}
 	return s.recipes.Delete(ctx, existing)
+}
+
+// Reorder は userID の一覧表示順を recipeIDs の並びで保存する。
+// 指定 ID は全て「そのユーザーが閲覧できる(所有 or 共有された)レシピ」でなければ
+// ならない。見えないレシピの順序を書こうとした場合は ErrForbidden。
+func (s *recipeService) Reorder(ctx context.Context, userID string, recipeIDs []string) error {
+	visible, err := s.recipes.FindAllForUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+	allowed := make(map[string]struct{}, len(visible))
+	for i := range visible {
+		allowed[visible[i].ID] = struct{}{}
+	}
+	// 閲覧不可を弾きつつ重複を除く(最初の出現順を維持)。重複を残すと
+	// upsert が同一 (user, recipe) を二重に対象にして DB エラーになる。
+	seen := make(map[string]struct{}, len(recipeIDs))
+	deduped := make([]string, 0, len(recipeIDs))
+	for _, rid := range recipeIDs {
+		if _, ok := allowed[rid]; !ok {
+			return ErrForbidden
+		}
+		if _, dup := seen[rid]; dup {
+			continue
+		}
+		seen[rid] = struct{}{}
+		deduped = append(deduped, rid)
+	}
+	return s.recipes.Reorder(ctx, userID, deduped)
 }
 
 // buildAssociations はリクエストから label/shared_user/cooking/season を解決し recipe に詰める。
