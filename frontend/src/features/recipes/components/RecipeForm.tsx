@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Carrot, Clock, Droplet, Users } from 'lucide-react'
 import { Controller, useForm } from 'react-hook-form'
 
 import {
@@ -19,6 +20,7 @@ import { Checkbox } from '@/shared/ui/checkbox'
 import { DialogClose, DialogFooter } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
+import { Separator } from '@/shared/ui/separator'
 
 import { MultiSelectInput } from './MultiSelectInput'
 import { RecipeInputForm } from './RecipeInputForm'
@@ -88,7 +90,12 @@ export function RecipeForm({
               render={({ field }) => (
                 <SelectInput
                   className="grid flex-1 gap-3"
-                  label="人数"
+                  label={
+                    <>
+                      <Users className="size-4" />
+                      人数
+                    </>
+                  }
                   value={field.value}
                   onChange={field.onChange}
                   placeholder="選択"
@@ -102,7 +109,12 @@ export function RecipeForm({
               render={({ field }) => (
                 <SelectInput
                   className="grid flex-1 gap-3"
-                  label="調理時間(分)"
+                  label={
+                    <>
+                      <Clock className="size-4" />
+                      調理時間(分)
+                    </>
+                  }
                   value={field.value}
                   onChange={field.onChange}
                   placeholder="選択"
@@ -115,12 +127,14 @@ export function RecipeForm({
             />
           </div>
         </div>
+        <Separator />
         <Controller
           control={control}
           name="ingredients"
           render={({ field }) => (
             <RecipeInputForm
               label="食材"
+              icon={<Carrot className="size-4" />}
               value={field.value}
               onChange={field.onChange}
               units={INGREDIENT_UNITS}
@@ -131,12 +145,14 @@ export function RecipeForm({
         {errors.ingredients && (
           <p className="text-destructive text-sm">{errors.ingredients.message}</p>
         )}
+        <Separator />
         <Controller
           control={control}
           name="seasoning"
           render={({ field }) => (
             <RecipeInputForm
               label="調味料"
+              icon={<Droplet className="size-4" />}
               value={field.value}
               onChange={field.onChange}
               units={SEASONING_UNITS}
@@ -144,11 +160,13 @@ export function RecipeForm({
             />
           )}
         />
+        <Separator />
         <Controller
           control={control}
           name="procedure"
           render={({ field }) => <RecipeStepsInput value={field.value} onChange={field.onChange} />}
         />
+        <Separator />
         <div className="flex flex-col gap-3 sm:flex-row">
           {labelData && (
             <Controller
