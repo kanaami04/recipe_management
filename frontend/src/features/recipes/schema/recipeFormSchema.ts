@@ -5,10 +5,38 @@ import type { RecipeRequest, RecipeResponse } from '@/shared/api/generated/types
 // フォーム用の zod スキーマ(手書き)。UI に素直な形にする。
 // API レスポンス用 zod は生成物を使い、住み分ける。
 const materialSchema = z.object({
-  name: z.string().min(1, '名前は必須です'),
+  name: z.string(),
   quantity: z.number().min(0),
-  unit: z.string().min(1, '単位を選択してください'),
+  unit: z.string(),
 })
+
+type Material = z.infer<typeof materialSchema>
+
+// 名前・単位ともに未入力の行は「未使用」とみなす。初期表示される空行や、
+// 追加したまま埋めなかった行は、検証・送信の対象から外す。
+const isEmptyRow = (m: Material): boolean => m.name === '' && m.unit === ''
+const isCompleteRow = (m: Material): boolean => m.name !== '' && m.unit !== ''
+
+// 未使用でない行(名前か単位を入力した行)は、名前・単位ともに必須。
+const validateRows = (rows: Material[], ctx: z.RefinementCtx) => {
+  rows.forEach((row, index) => {
+    if (isEmptyRow(row)) return
+    if (row.name === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, 'name'],
+        message: '名前は必須です',
+      })
+    }
+    if (row.unit === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, 'unit'],
+        message: '単位を選択してください',
+      })
+    }
+  })
+}
 
 export const recipeFormSchema = z.object({
   title: z.string().min(1, 'タイトルは必須です'),
@@ -18,8 +46,12 @@ export const recipeFormSchema = z.object({
   archiveFlg: z.boolean(),
   label: z.array(z.string()),
   sharedUser: z.array(z.string()),
-  ingredients: z.array(materialSchema).min(1, '食材は1つ以上必要です'),
-  seasoning: z.array(materialSchema),
+  // 食材は完全に入力された行が最低 1 つ必須。調味料は任意(空行は無視)。
+  ingredients: z
+    .array(materialSchema)
+    .superRefine(validateRows)
+    .refine((rows) => rows.some(isCompleteRow), { message: '食材は1つ以上必要です' }),
+  seasoning: z.array(materialSchema).superRefine(validateRows),
 })
 
 export type RecipeFormValues = z.infer<typeof recipeFormSchema>
@@ -57,15 +89,20 @@ export function toRecipeRequest(values: RecipeFormValues): RecipeRequest {
     archive_flg: values.archiveFlg,
     label: values.label.map((name) => ({ name })),
     shared_user: values.sharedUser.map((username) => ({ username })),
-    cooking: values.ingredients.map((m) => ({
-      ingredients: { name: m.name },
-      quantity: m.quantity,
-      unit: m.unit,
-    })),
-    season: values.seasoning.map((m) => ({
-      seasoning: { name: m.name },
-      quantity: m.quantity,
-      unit: m.unit,
-    })),
+    // 未使用の空行は送らない(検証で除外済みだが、送信でも念のため除く)。
+    cooking: values.ingredients
+      .filter((m) => !isEmptyRow(m))
+      .map((m) => ({
+        ingredients: { name: m.name },
+        quantity: m.quantity,
+        unit: m.unit,
+      })),
+    season: values.seasoning
+      .filter((m) => !isEmptyRow(m))
+      .map((m) => ({
+        seasoning: { name: m.name },
+        quantity: m.quantity,
+        unit: m.unit,
+      })),
   }
 }

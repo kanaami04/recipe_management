@@ -38,6 +38,39 @@ describe('recipeFormSchema', () => {
     // Assert
     expect(result.success).toBe(false)
   })
+
+  it('調味料が空行だけの時、未使用として無視され検証を通過すること。', () => {
+    // Act
+    const result = recipeFormSchema.safeParse({
+      ...validValues,
+      seasoning: [{ name: '', quantity: 0, unit: '' }],
+    })
+
+    // Assert
+    expect(result.success).toBe(true)
+  })
+
+  it('食材が空行だけの時、完全な行が無く検証に失敗すること。', () => {
+    // Act
+    const result = recipeFormSchema.safeParse({
+      ...validValues,
+      ingredients: [{ name: '', quantity: 0, unit: '' }],
+    })
+
+    // Assert
+    expect(result.success).toBe(false)
+  })
+
+  it('食材の名前だけ入力し単位未選択の時、検証に失敗すること。', () => {
+    // Act
+    const result = recipeFormSchema.safeParse({
+      ...validValues,
+      ingredients: [{ name: '玉ねぎ', quantity: 0, unit: '' }],
+    })
+
+    // Assert
+    expect(result.success).toBe(false)
+  })
 })
 
 describe('toRecipeRequest', () => {
@@ -56,6 +89,17 @@ describe('toRecipeRequest', () => {
     // Assert
     expect(req.create_for).toBe(2)
     expect(req.cooking).toEqual([{ ingredients: { name: '玉ねぎ' }, quantity: 1, unit: '個' }])
+  })
+
+  it('未使用の空行を含む時、送信データから除外されること。', () => {
+    // Act
+    const req = toRecipeRequest({
+      ...validValues,
+      seasoning: [{ name: '', quantity: 0, unit: '' }],
+    })
+
+    // Assert
+    expect(req.season).toEqual([])
   })
 })
 

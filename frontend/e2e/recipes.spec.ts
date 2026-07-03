@@ -108,6 +108,40 @@ test('レシピを新規作成すると成功トーストが出る', async ({ pa
   await expect(page.getByText('レシピを作成しました')).toBeVisible()
 })
 
+test('調味料を入力しなくてもレシピを作成できる', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+
+  // Act: 食材だけ埋めて作成する(調味料の初期空行は触らない)
+  await page.getByRole('button', { name: 'レシピを追加' }).click()
+  await page.getByPlaceholder('タイトル').fill('調味料なしレシピ')
+  await page.getByRole('combobox').first().click() // 人数
+  await page.getByRole('option', { name: '2', exact: true }).click()
+  await page.getByPlaceholder('名前').first().fill('じゃがいも')
+  await page.getByRole('button', { name: '個', exact: true }).click()
+  await page.getByRole('button', { name: '作成' }).click()
+
+  // Assert: 空の調味料行に阻まれず作成できる
+  await expect(page.getByText('レシピを作成しました')).toBeVisible()
+})
+
+test('食材を入力せず作成すると警告が出て作成されない', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+
+  // Act: タイトル・人数だけ入れて作成を押す
+  await page.getByRole('button', { name: 'レシピを追加' }).click()
+  await page.getByPlaceholder('タイトル').fill('食材なしレシピ')
+  await page.getByRole('combobox').first().click() // 人数
+  await page.getByRole('option', { name: '2', exact: true }).click()
+  await page.getByRole('button', { name: '作成' }).click()
+
+  // Assert: 必須警告が表示される
+  await expect(page.getByText('食材は1つ以上必要です')).toBeVisible()
+})
+
 test('認証済みで未定義パスへ行くとログインではなく /top へ戻る', async ({ page }) => {
   // Arrange
   await mockApi(page)
