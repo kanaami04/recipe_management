@@ -181,9 +181,10 @@ test('レシピを編集して更新すると詳細に反映される', async ({
   await mockApi(page)
   await login(page)
 
-  // Act: 一覧のカードを開き、編集でタイトルを変えて更新する
+  // Act: 一覧のカードを開き、⋮ メニューから編集してタイトルを変えて更新する
   await page.getByText('カレー').click()
-  await page.getByRole('button', { name: '編集' }).click()
+  await page.getByRole('button', { name: '操作メニュー' }).click()
+  await page.getByRole('menuitem', { name: '編集' }).click()
   const title = page.getByPlaceholder('タイトル')
   await title.fill('ビーフカレー')
   await page.getByRole('button', { name: '更新' }).click()
@@ -198,9 +199,10 @@ test('レシピを削除すると一覧から消える', async ({ page }) => {
   await mockApi(page)
   await login(page)
 
-  // Act: 詳細を開き、削除 → 確認ダイアログで削除を確定する
+  // Act: 詳細を開き、⋮ メニューから削除 → 確認ダイアログで削除を確定する
   await page.getByText('カレー').click()
-  await page.getByRole('button', { name: '削除' }).click()
+  await page.getByRole('button', { name: '操作メニュー' }).click()
+  await page.getByRole('menuitem', { name: '削除' }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: '削除' }).click()
 
   // Assert: 成功トーストが出て、一覧からカレーが消える
