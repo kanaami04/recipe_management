@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
+import { cn } from '@/shared/lib/utils'
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -10,18 +11,11 @@ import {
 
 export function NavMain() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
 
-  const onClickCreateRecipe = () => {
-    navigate('/top')
-  }
-
-  const onClickCreateLabel = () => {
-    navigate('/top/createLabel')
-  }
-
-  const onClickArchive = () => {
-    navigate('/top/archive')
-  }
+  // 現在のパスに応じてアクティブなナビを塗る。
+  const activeClass =
+    'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground'
 
   return (
     <SidebarGroup>
@@ -31,8 +25,8 @@ export function NavMain() {
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
               tooltip="レシピ一覧"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-              onClick={onClickCreateRecipe}
+              className={cn('min-w-8 duration-200 ease-linear', pathname === '/top' && activeClass)}
+              onClick={() => navigate('/top')}
             >
               <span>レシピ</span>
             </SidebarMenuButton>
@@ -41,8 +35,8 @@ export function NavMain() {
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
               tooltip="ラベル一覧"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-              onClick={onClickCreateLabel}
+              className="min-w-8 duration-200 ease-linear"
+              onClick={() => navigate('/top/createLabel')}
             >
               <span>ラベル</span>
             </SidebarMenuButton>
@@ -51,7 +45,11 @@ export function NavMain() {
         <SidebarMenu>
           {/* アーカイブ一覧画面へ遷移するボタン */}
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onClickArchive}>
+            <SidebarMenuButton
+              tooltip="アーカイブ一覧"
+              className={cn(pathname === '/top/archive' && activeClass)}
+              onClick={() => navigate('/top/archive')}
+            >
               <span>アーカイブ</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

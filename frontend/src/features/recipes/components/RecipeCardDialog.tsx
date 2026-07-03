@@ -1,12 +1,14 @@
 import { DialogDescription } from '@radix-ui/react-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { toFormValues, toRecipeRequest } from '@/features/recipes/schema/recipeFormSchema'
 import {
   deleteRecipeMutation,
   listRecipesQueryKey,
+  updateRecipeMutation,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { RecipeResponse } from '@/shared/api/generated/types.gen'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
@@ -45,6 +47,25 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
     deleteMutation.mutate({ path: { id: recipe.id } })
   }
 
+  // アーカイブ切り替えは既存の更新 API を再利用する(archive_flg だけ反転)。
+  const archiveMutation = useMutation({
+    ...updateRecipeMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: listRecipesQueryKey() })
+      toast.success(recipe.archive_flg ? 'アーカイブを解除しました' : 'レシピをアーカイブしました')
+      setIsOpen(false)
+    },
+    onError: () => toast.error('アーカイブの更新に失敗しました'),
+  })
+
+  const handleToggleArchive = () => {
+    const body = toRecipeRequest(toFormValues(recipe))
+    archiveMutation.mutate({
+      path: { id: recipe.id },
+      body: { ...body, archive_flg: !recipe.archive_flg },
+    })
+  }
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -58,8 +79,10 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
             <DialogTitle>{recipe.title}</DialogTitle>
             <DialogDescription>レシピの詳細</DialogDescription>
           </DialogHeader>
-          {/* 編集・削除は右上の ⋮ メニューに集約する。閉じるは DialogContent 既定の×。 */}
-          <DropdownMenu>
+          {/* 編集・削除・アーカイブは右上の ⋮ メニューに集約する。閉じるは DialogContent 既定の×。
+              modal={false}: メニュー選択で詳細ダイアログを閉じる操作(アーカイブ)時に、
+              Radix の body pointer-events ロックが残るのを避ける。 */}
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
@@ -75,6 +98,10 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
               <DropdownMenuItem onClick={() => setIsEditing(true)}>
                 <Pencil />
                 編集
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={archiveMutation.isPending} onClick={handleToggleArchive}>
+                {recipe.archive_flg ? <ArchiveRestore /> : <Archive />}
+                {recipe.archive_flg ? 'アーカイブを解除' : 'アーカイブする'}
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"

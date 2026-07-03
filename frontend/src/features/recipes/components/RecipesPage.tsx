@@ -22,8 +22,11 @@ import type { RecipeResponse } from '@/shared/api/generated/types.gen'
 
 export function RecipesPage() {
   // サーバ状態は生成 Query フックで取得する。認証は interceptor が付与する。
-  const { data: recipesData, isPending, isError } = useQuery(listRecipesOptions())
+  const { data: allRecipes, isPending, isError } = useQuery(listRecipesOptions())
   const queryClient = useQueryClient()
+
+  // メイン一覧はアーカイブ済みを除く(アーカイブは /top/archive で表示)。
+  const recipesData = (allRecipes ?? []).filter((r) => !r.archive_flg)
 
   // 楽観更新の定石: onMutate で進行中の再取得を止めてから並びを先に反映し、
   // 失敗時はスナップショットへ戻す。成否に関わらず onSettled でサーバと再同期する。
@@ -35,9 +38,12 @@ export function RecipesPage() {
       const previous = queryClient.getQueryData<RecipeResponse[]>(key)
       if (previous) {
         const byId = new Map(previous.map((r) => [r.id, r]))
-        const next = vars.body.recipe_ids
+        const reordered = vars.body.recipe_ids
           .map((id) => byId.get(id))
           .filter((r): r is RecipeResponse => r != null)
+        // 並び替え対象(非アーカイブ)を新順に、それ以外(アーカイブ等)はそのまま残す。
+        const idSet = new Set(vars.body.recipe_ids)
+        const next = [...reordered, ...previous.filter((r) => !idSet.has(r.id))]
         queryClient.setQueryData<RecipeResponse[]>(key, next)
       }
       return { previous }
