@@ -19,10 +19,10 @@ import { Checkbox } from '@/shared/ui/checkbox'
 import { DialogClose, DialogFooter } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
-import { Textarea } from '@/shared/ui/textarea'
 
 import { MultiSelectInput } from './MultiSelectInput'
 import { RecipeInputForm } from './RecipeInputForm'
+import { RecipeStepsInput } from './RecipeStepsInput'
 import { SelectInput } from './SelectInput'
 
 type Props = {
@@ -42,7 +42,9 @@ export function RecipeForm({
   sharedUserData,
   onClickCancel,
 }: Props) {
-  // フォーム状態は RHF + zod で一元管理する。検証は onBlur + onSubmit。
+  // フォーム状態は RHF + zod で一元管理する。
+  // 検証は「作成/更新」ボタン押下時(onSubmit)に行い、必須項目の警告もそこで出す。
+  // 一度送信した後は onChange で再検証され、入力を直すと警告が即座に消える(RHF 既定)。
   const {
     control,
     handleSubmit,
@@ -50,7 +52,7 @@ export function RecipeForm({
   } = useForm<RecipeFormValues>({
     resolver: zodResolver(recipeFormSchema),
     defaultValues: toFormValues(initialData),
-    mode: 'onBlur',
+    mode: 'onSubmit',
   })
 
   const submit = handleSubmit(async (values) => {
@@ -142,16 +144,11 @@ export function RecipeForm({
             />
           )}
         />
-        <div className="grid gap-3">
-          <Label>作り方</Label>
-          <Controller
-            control={control}
-            name="procedure"
-            render={({ field }) => (
-              <Textarea placeholder="作り方を入力" value={field.value} onChange={field.onChange} />
-            )}
-          />
-        </div>
+        <Controller
+          control={control}
+          name="procedure"
+          render={({ field }) => <RecipeStepsInput value={field.value} onChange={field.onChange} />}
+        />
         <div className="flex flex-col gap-3 sm:flex-row">
           {labelData && (
             <Controller

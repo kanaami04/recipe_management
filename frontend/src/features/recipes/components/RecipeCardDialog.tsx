@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { splitSteps } from '@/features/recipes/steps'
 import {
   deleteRecipeMutation,
   listRecipesQueryKey,
@@ -82,7 +83,13 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
                   </p>
                 ))}
                 <Label>作り方</Label>
-                <p className="whitespace-pre-line">{recipe.procedure}</p>
+                <ol className="list-decimal pl-5">
+                  {splitSteps(recipe.procedure)
+                    .filter((step) => step.trim() !== '')
+                    .map((step, index) => (
+                      <li key={index}>{step}</li>
+                    ))}
+                </ol>
               </div>
               <div>
                 {recipe.label.map((label) => (
