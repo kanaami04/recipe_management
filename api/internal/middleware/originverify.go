@@ -12,7 +12,7 @@ import (
 const OriginVerifyHeaderName = "X-Origin-Verify"
 
 // RequireOriginVerify は X-Origin-Verify ヘッダが期待値と一致することを必須にする
-//。Lambda Function URL は認証なし(AuthType: NONE)で公開されるため、
+// 。Lambda Function URL は認証なし(AuthType: NONE)で公開されるため、
 // CloudFront を経由しない直接アクセスをアプリ層で遮断する。
 // secret が空の場合は検証しない(ローカル開発向け)。
 func RequireOriginVerify(secret string) echo.MiddlewareFunc {

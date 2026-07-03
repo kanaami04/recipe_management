@@ -95,7 +95,7 @@ func TestRecipeRepo_FindByID_LoadsIngredients(t *testing.T) {
 	require.Len(t, got.Ingredients, 1)
 	assert.Equal(t, got.ID, got.Ingredients[0].RecipeID)
 	assert.Equal(t, "じゃがいも", got.Ingredients[0].Name)
-	assert.Equal(t, 3, got.Ingredients[0].Quantity)
+	assert.Equal(t, 3.0, got.Ingredients[0].Quantity)
 	assert.Equal(t, "個", got.Ingredients[0].Unit)
 }
 
@@ -111,7 +111,7 @@ func TestRecipeRepo_FindByID_LoadsSeasonings(t *testing.T) {
 	require.Len(t, got.Seasonings, 1)
 	assert.Equal(t, got.ID, got.Seasonings[0].RecipeID)
 	assert.Equal(t, "醤油", got.Seasonings[0].Name)
-	assert.Equal(t, 2, got.Seasonings[0].Quantity)
+	assert.Equal(t, 2.0, got.Seasonings[0].Quantity)
 	assert.Equal(t, "大さじ", got.Seasonings[0].Unit)
 }
 
@@ -219,7 +219,7 @@ func TestRecipeRepo_Update_ReplacesIngredients(t *testing.T) {
 	// Assert: 旧行は削除され、新規行に置き換わる。
 	require.Len(t, got.Ingredients, 1)
 	assert.Equal(t, "人参", got.Ingredients[0].Name)
-	assert.Equal(t, 2, got.Ingredients[0].Quantity)
+	assert.Equal(t, 2.0, got.Ingredients[0].Quantity)
 	assert.Equal(t, "本", got.Ingredients[0].Unit)
 }
 

@@ -7,6 +7,7 @@ import {
   toFormValues,
   toRecipeRequest,
 } from '@/features/recipes/schema/recipeFormSchema'
+import { INGREDIENT_UNITS, SEASONING_UNITS } from '@/features/recipes/units'
 import type {
   LabelResponse,
   RecipeRequest,
@@ -76,37 +77,41 @@ export function RecipeForm({
             />
             {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
           </div>
-          <Controller
-            control={control}
-            name="createFor"
-            render={({ field }) => (
-              <SelectInput
-                className="grid flex-1 gap-3"
-                label="人数"
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="選択"
-                options={[...Array(10)].map((_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))}
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="createTime"
-            render={({ field }) => (
-              <SelectInput
-                className="grid flex-1 gap-3"
-                label="調理時間(分)"
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="選択"
-                options={[...Array(30)].map((_, i) => {
-                  const val = (i + 1) * 5
-                  return { label: `${val}`, value: `${val}` }
-                })}
-              />
-            )}
-          />
+          {/* スマホでは人数と調理時間を横並びにする。sm 以上では contents で解除し、
+              タイトルと合わせて 3 つ横一列に戻す。 */}
+          <div className="flex gap-3 sm:contents">
+            <Controller
+              control={control}
+              name="createFor"
+              render={({ field }) => (
+                <SelectInput
+                  className="grid flex-1 gap-3"
+                  label="人数"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="選択"
+                  options={[...Array(10)].map((_, i) => ({ label: `${i + 1}`, value: `${i + 1}` }))}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="createTime"
+              render={({ field }) => (
+                <SelectInput
+                  className="grid flex-1 gap-3"
+                  label="調理時間(分)"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="選択"
+                  options={[...Array(30)].map((_, i) => {
+                    const val = (i + 1) * 5
+                    return { label: `${val}`, value: `${val}` }
+                  })}
+                />
+              )}
+            />
+          </div>
         </div>
         <Controller
           control={control}
@@ -116,6 +121,7 @@ export function RecipeForm({
               label="食材"
               value={field.value}
               onChange={field.onChange}
+              units={INGREDIENT_UNITS}
               minRows={1}
             />
           )}
@@ -131,6 +137,7 @@ export function RecipeForm({
               label="調味料"
               value={field.value}
               onChange={field.onChange}
+              units={SEASONING_UNITS}
               minRows={0}
             />
           )}
