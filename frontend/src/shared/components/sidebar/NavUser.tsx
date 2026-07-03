@@ -22,6 +22,12 @@ export function NavUser() {
     // サーバ側で refresh Cookie を失効し、メモリの access を消す。
     await logout()
     navigate('/')
+    // Radix の DropdownMenu を開いたまま遷移でアンマウントすると、開いた時に
+    // 掛けた body の pointer-events:none が復元されず、遷移先のログイン画面が
+    // 操作不能になる。遷移後に明示的に解除する。
+    requestAnimationFrame(() => {
+      document.body.style.pointerEvents = ''
+    })
   }
 
   const onClickLogIn = () => {

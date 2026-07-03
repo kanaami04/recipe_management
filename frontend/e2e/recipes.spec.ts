@@ -43,6 +43,7 @@ async function mockApi(page: Page) {
   await page.route('**/api/users/', (route) =>
     route.fulfill({ status: 200, json: [{ id: 'u-taro', username: 'taro' }] }),
   )
+  await page.route('**/api/auth/logout/', (route) => route.fulfill({ status: 204, body: '' }))
   // レシピはミュータブルなリストで持ち、作成/更新/削除を一覧に反映する。
   const recipes = [{ ...recipe }]
 
@@ -205,6 +206,25 @@ test('レシピを削除すると一覧から消える', async ({ page }) => {
   // Assert: 成功トーストが出て、一覧からカレーが消える
   await expect(page.getByText('レシピを削除しました')).toBeVisible()
   await expect(page.getByText('カレー')).toHaveCount(0)
+})
+
+test('スマホでログアウトした後もログイン画面を操作できる', async ({ page }) => {
+  // Arrange: モバイル幅(サイドバーが Sheet になる)でログインする
+  await page.setViewportSize({ width: 375, height: 800 })
+  await mockApi(page)
+  await login(page)
+
+  // Act: サイドバー → ユーザーメニュー → ログアウト
+  await page.getByRole('button', { name: 'Toggle Sidebar' }).click()
+  await page.getByText('taro', { exact: true }).click()
+  await page.getByRole('menuitem', { name: 'ログアウト' }).click()
+  await page.waitForURL('**/')
+
+  // Assert: body の pointer-events ロックが残らず、実際にクリックで操作できる
+  // (fill はヒットテストを行わないため、ロック検出には click が必要)
+  await page.locator('#email').click()
+  await page.locator('#email').fill('again@example.com')
+  await expect(page.locator('#email')).toHaveValue('again@example.com')
 })
 
 test('認証済みで未定義パスへ行くとログインではなく /top へ戻る', async ({ page }) => {
