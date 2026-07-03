@@ -43,11 +43,45 @@ async function mockApi(page: Page) {
   await page.route('**/api/users/', (route) =>
     route.fulfill({ status: 200, json: [{ id: 'u-taro', username: 'taro' }] }),
   )
+  await page.route('**/api/auth/logout/', (route) => route.fulfill({ status: 204, body: '' }))
+  // レシピはミュータブルなリストで持ち、作成/更新/削除を一覧に反映する。
+  const recipes = [{ ...recipe }]
+
+  // 個別レシピ(id 付きパス)の更新・削除。一覧のリストを書き換える。
+  await page.route('**/api/recipes/*/', (route) => {
+    const method = route.request().method()
+    const id = route
+      .request()
+      .url()
+      .match(/\/api\/recipes\/([^/]+)\//)?.[1]
+    const index = recipes.findIndex((r) => r.id === id)
+    if (method === 'PUT') {
+      const body = route.request().postDataJSON()
+      // スカラー項目だけレスポンス形へ反映する(タイトル等の反映確認に使う)。
+      recipes[index] = {
+        ...recipes[index],
+        title: body.title,
+        create_for: body.create_for,
+        create_time: body.create_time,
+        procedure: body.procedure,
+        archive_flg: body.archive_flg,
+      }
+      return route.fulfill({ status: 200, json: recipes[index] })
+    }
+    if (method === 'DELETE') {
+      recipes.splice(index, 1)
+      return route.fulfill({ status: 204, body: '' })
+    }
+    return route.fallback()
+  })
+
   await page.route('**/api/recipes/', (route) => {
     if (route.request().method() === 'POST') {
-      return route.fulfill({ status: 201, json: { ...recipe, id: 'r2', title: '新レシピ' } })
+      const created = { ...recipe, id: 'r2', title: '新レシピ' }
+      recipes.push(created)
+      return route.fulfill({ status: 201, json: created })
     }
-    return route.fulfill({ status: 200, json: [recipe] })
+    return route.fulfill({ status: 200, json: recipes })
   })
 }
 
@@ -140,6 +174,57 @@ test('食材を入力せず作成すると警告が出て作成されない', as
 
   // Assert: 必須警告が表示される
   await expect(page.getByText('食材は1つ以上必要です')).toBeVisible()
+})
+
+test('レシピを編集して更新すると詳細に反映される', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+
+  // Act: 一覧のカードを開き、編集でタイトルを変えて更新する
+  await page.getByText('カレー').click()
+  await page.getByRole('button', { name: '編集' }).click()
+  const title = page.getByPlaceholder('タイトル')
+  await title.fill('ビーフカレー')
+  await page.getByRole('button', { name: '更新' }).click()
+
+  // Assert: 成功トーストが出て、詳細に新しいタイトルが反映される
+  await expect(page.getByText('レシピを編集しました')).toBeVisible()
+  await expect(page.getByText('ビーフカレー', { exact: true }).first()).toBeVisible()
+})
+
+test('レシピを削除すると一覧から消える', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+
+  // Act: 詳細を開き、削除 → 確認ダイアログで削除を確定する
+  await page.getByText('カレー').click()
+  await page.getByRole('button', { name: '削除' }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: '削除' }).click()
+
+  // Assert: 成功トーストが出て、一覧からカレーが消える
+  await expect(page.getByText('レシピを削除しました')).toBeVisible()
+  await expect(page.getByText('カレー')).toHaveCount(0)
+})
+
+test('スマホでログアウトした後もログイン画面を操作できる', async ({ page }) => {
+  // Arrange: モバイル幅(サイドバーが Sheet になる)でログインする
+  await page.setViewportSize({ width: 375, height: 800 })
+  await mockApi(page)
+  await login(page)
+
+  // Act: サイドバー → ユーザーメニュー → ログアウト
+  await page.getByRole('button', { name: 'Toggle Sidebar' }).click()
+  await page.getByText('taro', { exact: true }).click()
+  await page.getByRole('menuitem', { name: 'ログアウト' }).click()
+  await page.waitForURL('**/')
+
+  // Assert: body の pointer-events ロックが残らず、実際にクリックで操作できる
+  // (fill はヒットテストを行わないため、ロック検出には click が必要)
+  await page.locator('#email').click()
+  await page.locator('#email').fill('again@example.com')
+  await expect(page.locator('#email')).toHaveValue('again@example.com')
 })
 
 test('認証済みで未定義パスへ行くとログインではなく /top へ戻る', async ({ page }) => {
