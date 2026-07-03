@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { Label } from '@/shared/ui/label'
 import {
   Select,
@@ -10,7 +12,8 @@ import {
 
 type SelectInputProps = {
   className?: string
-  label: string
+  // アイコン付き見出しを渡せるよう ReactNode を許容する。
+  label: ReactNode
   value: string
   placeholder?: string
   onChange: (value: string) => void

@@ -1,9 +1,11 @@
 import { DialogDescription } from '@radix-ui/react-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Carrot, Clock, Droplet, ListOrdered, Users } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { splitSteps } from '@/features/recipes/steps'
+import { formatAmount } from '@/features/recipes/units'
 import {
   deleteRecipeMutation,
   listRecipesQueryKey,
@@ -62,27 +64,42 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
           </DialogHeader>
           <div className="flex-1 overflow-auto">
             <div className="grid gap-3">
-              <div className="flex gap-3 w-full justify-start">
-                <Label>{recipe.create_for}人前</Label>
-                <Label>{recipe.create_time}分</Label>
+              <div className="text-muted-foreground flex w-full items-center gap-4 text-sm">
+                <span className="flex items-center gap-1">
+                  <Users className="size-4" />
+                  {recipe.create_for}人前
+                </span>
+                {recipe.create_time != null && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="size-4" />
+                    {recipe.create_time}分
+                  </span>
+                )}
               </div>
               <div className="flex-2 gap-3">
-                <Label>食材</Label>
+                <Label className="flex items-center gap-1">
+                  <Carrot className="size-4" />
+                  食材
+                </Label>
                 {recipe.cooking.map((c) => (
                   <p key={c.ingredients.name}>
-                    {c.ingredients.name} : {c.quantity}
-                    {c.unit}
+                    {c.ingredients.name} : {formatAmount(c.quantity, c.unit)}
                   </p>
                 ))}
 
-                <Label>調味料</Label>
+                <Label className="flex items-center gap-1">
+                  <Droplet className="size-4" />
+                  調味料
+                </Label>
                 {recipe.season.map((s) => (
                   <p key={s.seasoning.name}>
-                    {s.seasoning.name} : {s.quantity}
-                    {s.unit}
+                    {s.seasoning.name} : {formatAmount(s.quantity, s.unit)}
                   </p>
                 ))}
-                <Label>作り方</Label>
+                <Label className="flex items-center gap-1">
+                  <ListOrdered className="size-4" />
+                  作り方
+                </Label>
                 <ol className="list-decimal pl-5">
                   {splitSteps(recipe.procedure)
                     .filter((step) => step.trim() !== '')

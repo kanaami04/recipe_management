@@ -1,3 +1,5 @@
+import { ListOrdered } from 'lucide-react'
+
 import { joinSteps, splitSteps } from '@/features/recipes/steps'
 import { Button } from '@/shared/ui/button'
 import { Label } from '@/shared/ui/label'
@@ -32,7 +34,10 @@ export function RecipeStepsInput({ value, onChange }: Props) {
 
   return (
     <div className="grid gap-3">
-      <Label>作り方</Label>
+      <Label className="flex items-center gap-1">
+        <ListOrdered className="size-4" />
+        作り方
+      </Label>
       <div className="flex flex-col gap-2">
         {steps.map((step, index) => (
           <div key={index} className="grid gap-1 rounded-md border p-2">
