@@ -1,24 +1,25 @@
 import { DialogDescription } from '@radix-ui/react-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Archive, ArchiveRestore, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { toFormValues, toRecipeRequest } from '@/features/recipes/schema/recipeFormSchema'
 import {
   deleteRecipeMutation,
   listRecipesQueryKey,
+  updateRecipeMutation,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { RecipeResponse } from '@/shared/api/generated/types.gen'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { Button } from '@/shared/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/shared/ui/dialog'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 
 import { RecipeCard } from './RecipeCard'
 import { RecipeDetail } from './RecipeDetail'
@@ -46,6 +47,25 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
     deleteMutation.mutate({ path: { id: recipe.id } })
   }
 
+  // アーカイブ切り替えは既存の更新 API を再利用する(archive_flg だけ反転)。
+  const archiveMutation = useMutation({
+    ...updateRecipeMutation(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: listRecipesQueryKey() })
+      toast.success(recipe.archive_flg ? 'アーカイブを解除しました' : 'レシピをアーカイブしました')
+      setIsOpen(false)
+    },
+    onError: () => toast.error('アーカイブの更新に失敗しました'),
+  })
+
+  const handleToggleArchive = () => {
+    const body = toRecipeRequest(toFormValues(recipe))
+    archiveMutation.mutate({
+      path: { id: recipe.id },
+      body: { ...body, archive_flg: !recipe.archive_flg },
+    })
+  }
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -55,29 +75,47 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
           </button>
         </DialogTrigger>
         <DialogContent className="flex max-h-[90dvh] w-full flex-col sm:max-w-3xl">
-          <DialogHeader>
+          <DialogHeader className="pr-16">
             <DialogTitle>{recipe.title}</DialogTitle>
             <DialogDescription>レシピの詳細</DialogDescription>
           </DialogHeader>
+          {/* 編集・削除・アーカイブは右上の ⋮ メニューに集約する。閉じるは DialogContent 既定の×。
+              modal={false}: メニュー選択で詳細ダイアログを閉じる操作(アーカイブ)時に、
+              Radix の body pointer-events ロックが残るのを避ける。 */}
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="操作メニュー"
+                className="absolute top-3 right-12 size-8"
+              >
+                <MoreVertical />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                <Pencil />
+                編集
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={archiveMutation.isPending} onClick={handleToggleArchive}>
+                {recipe.archive_flg ? <ArchiveRestore /> : <Archive />}
+                {recipe.archive_flg ? 'アーカイブを解除' : 'アーカイブする'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                onClick={() => setIsConfirmingDelete(true)}
+              >
+                <Trash2 />
+                削除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex-1 overflow-auto pr-1">
             <RecipeDetail recipe={recipe} />
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">閉じる</Button>
-            </DialogClose>
-            <Button type="button" onClick={() => setIsEditing(true)}>
-              編集
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleteMutation.isPending}
-              onClick={() => setIsConfirmingDelete(true)}
-            >
-              削除
-            </Button>
-          </DialogFooter>
         </DialogContent>
         <RecipeDetailEditDialog
           recipe={recipe}

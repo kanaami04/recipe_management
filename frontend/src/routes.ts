@@ -5,6 +5,9 @@ import { index, route, type RouteConfig } from '@react-router/dev/routes'
 export default [
   index('routes/login.tsx'),
   route('signup', 'routes/signup.tsx'),
-  route('top', 'routes/protected.tsx', [index('routes/recipes.tsx')]),
+  route('top', 'routes/protected.tsx', [
+    index('routes/recipes.tsx'),
+    route('archive', 'routes/archive.tsx'),
+  ]),
   route('*', 'routes/catchall.tsx'),
 ] satisfies RouteConfig
