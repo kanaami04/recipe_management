@@ -10,17 +10,18 @@ import (
 // --- RecipeRepository のモック ---
 
 type mockRecipeRepo struct {
-	store      map[string]*domain.Recipe
-	created    *domain.Recipe
-	updated    *domain.Recipe
-	deletedIDs []string
+	store        map[string]*domain.Recipe
+	created      *domain.Recipe
+	updated      *domain.Recipe
+	deletedIDs   []string
+	reorderedIDs []string
 }
 
 func newMockRecipeRepo() *mockRecipeRepo {
 	return &mockRecipeRepo{store: map[string]*domain.Recipe{}}
 }
 
-func (m *mockRecipeRepo) FindAllForUser(_ context.Context, userID string) ([]domain.Recipe, error) {
+func (m *mockRecipeRepo) FindAllForUser(_ context.Context, _ string) ([]domain.Recipe, error) {
 	var out []domain.Recipe
 	for _, r := range m.store {
 		out = append(out, *r)
@@ -52,6 +53,10 @@ func (m *mockRecipeRepo) Update(_ context.Context, recipe *domain.Recipe) error 
 func (m *mockRecipeRepo) Delete(_ context.Context, recipe *domain.Recipe) error {
 	delete(m.store, recipe.ID)
 	m.deletedIDs = append(m.deletedIDs, recipe.ID)
+	return nil
+}
+func (m *mockRecipeRepo) Reorder(_ context.Context, _ string, recipeIDs []string) error {
+	m.reorderedIDs = recipeIDs
 	return nil
 }
 

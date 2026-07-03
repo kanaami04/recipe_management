@@ -80,6 +80,22 @@ func (h *RecipeHandler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// Reorder は PUT /api/recipes/reorder/。ユーザーごとの一覧表示順を更新する。
+func (h *RecipeHandler) Reorder(c echo.Context) error {
+	userID := appmw.UserIDFromContext(c)
+	var req request.ReorderRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	if err := h.svc.Reorder(c.Request().Context(), userID, req.RecipeIds); err != nil {
+		return mapServiceError(err)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 func bindRecipe(c echo.Context) (*request.RecipeRequest, error) {
 	var req request.RecipeRequest
 	if err := c.Bind(&req); err != nil {

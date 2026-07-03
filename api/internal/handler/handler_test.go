@@ -41,10 +41,11 @@ func (m *mockAuthService) Register(ctx context.Context, u, e, p string) (*domain
 }
 
 type mockRecipeService struct {
-	listFn   func(ctx context.Context, userID string) ([]domain.Recipe, error)
-	createFn func(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error)
-	updateFn func(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error)
-	deleteFn func(ctx context.Context, userID, recipeID string) error
+	listFn    func(ctx context.Context, userID string) ([]domain.Recipe, error)
+	createFn  func(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error)
+	updateFn  func(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error)
+	deleteFn  func(ctx context.Context, userID, recipeID string) error
+	reorderFn func(ctx context.Context, userID string, recipeIDs []string) error
 }
 
 func (m *mockRecipeService) List(ctx context.Context, userID string) ([]domain.Recipe, error) {
@@ -58,6 +59,9 @@ func (m *mockRecipeService) Update(ctx context.Context, userID, recipeID string,
 }
 func (m *mockRecipeService) Delete(ctx context.Context, userID, recipeID string) error {
 	return m.deleteFn(ctx, userID, recipeID)
+}
+func (m *mockRecipeService) Reorder(ctx context.Context, userID string, recipeIDs []string) error {
+	return m.reorderFn(ctx, userID, recipeIDs)
 }
 
 // --- UserService のモック ---

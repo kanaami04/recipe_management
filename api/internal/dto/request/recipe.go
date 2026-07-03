@@ -5,6 +5,7 @@ import "recipe-backend/internal/apigen"
 // 構造体定義は openapi.yaml から生成する。生成型を再エクスポートする。
 type (
 	RecipeRequest   = apigen.RecipeRequest
+	ReorderRequest  = apigen.ReorderRequest
 	LabelInput      = apigen.LabelInput
 	SharedUserInput = apigen.SharedUserInput
 	NameInput       = apigen.NameInput

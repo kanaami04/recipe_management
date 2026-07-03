@@ -174,6 +174,84 @@ func TestRecipeRepo_FindAllForUser_StrangerDoesNotSee(t *testing.T) {
 	assert.Empty(t, list)
 }
 
+// recipeIDs は取得したレシピのスライスから ID だけを取り出す。
+func recipeIDs(recipes []domain.Recipe) []string {
+	ids := make([]string, 0, len(recipes))
+	for i := range recipes {
+		ids = append(ids, recipes[i].ID)
+	}
+	return ids
+}
+
+// 並べ替えを保存した時、FindAllForUser がその順序で返すこと。
+func TestRecipeRepo_Reorder_ReflectsInListOrder(t *testing.T) {
+	// Arrange: owner のレシピを 3 件(既定は作成=id 昇順)
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	r1 := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	r2 := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	r3 := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r1))
+	require.NoError(t, repo.Create(ctx, r2))
+	require.NoError(t, repo.Create(ctx, r3))
+
+	// Act: 逆順に並べ替える
+	want := []string{r3.ID, r1.ID, r2.ID}
+	require.NoError(t, repo.Reorder(ctx, owner.ID, want))
+
+	// Assert
+	list, err := repo.FindAllForUser(ctx, owner.ID)
+	require.NoError(t, err)
+	assert.Equal(t, want, recipeIDs(list))
+}
+
+// あるユーザーが共有レシピを並べ替えても、別ユーザーの並び順には影響しないこと。
+func TestRecipeRepo_Reorder_IsolatedPerUser(t *testing.T) {
+	// Arrange: owner が 2 件を friend と共有(両者とも既定は id 昇順で見える)
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	friend := seedUser(t, "friend")
+	a := factory.NewRecipe(factory.WithOwnerID(owner.ID), factory.WithSharedUsers(*friend))
+	b := factory.NewRecipe(factory.WithOwnerID(owner.ID), factory.WithSharedUsers(*friend))
+	require.NoError(t, repo.Create(ctx, a))
+	require.NoError(t, repo.Create(ctx, b))
+
+	// Act: owner だけ b, a の順に並べ替える
+	require.NoError(t, repo.Reorder(ctx, owner.ID, []string{b.ID, a.ID}))
+
+	// Assert: friend の並び順は既定(a, b)のままで影響を受けない
+	friendList, err := repo.FindAllForUser(ctx, friend.ID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{a.ID, b.ID}, recipeIDs(friendList))
+}
+
+// レシピを削除した時、その recipe_orders 行も FK CASCADE で消えること。
+func TestRecipeRepo_Delete_CascadesRecipeOrders(t *testing.T) {
+	// Arrange: 並べ替えで recipe_orders 行を作ってから削除する
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.Reorder(ctx, owner.ID, []string{r.ID}))
+
+	// Act
+	require.NoError(t, repo.Delete(ctx, r))
+
+	// Assert
+	var count int64
+	testDB.Table("recipe_orders").Where("recipe_id = ?", r.ID).Count(&count)
+	assert.Zero(t, count)
+}
+
 // arrangeUpdatedRecipe は初版レシピを作成後、別の食材・別ラベルに差し替える Update を実行し、
 // その ID を返す。置き換えセマンティクスを1テスト1観点で検証するための共通セットアップ。
 func arrangeUpdatedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, string) {

@@ -7,6 +7,7 @@ import (
 	"recipe-backend/internal/domain"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type recipeRepository struct {
@@ -37,12 +38,35 @@ func sharedRecipeIDs(db *gorm.DB, userID string) *gorm.DB {
 func (r *recipeRepository) FindAllForUser(ctx context.Context, userID string) ([]domain.Recipe, error) {
 	var recipes []domain.Recipe
 	db := r.db.WithContext(ctx)
+	// そのユーザーの recipe_orders を LEFT JOIN し、position 昇順で並べる。
+	// 並べ替え未設定(position が NULL)のレシピは末尾へ回し、id で安定させる。
 	err := preloadAll(db).
-		Where("owner_id = ?", userID).
-		Or("id IN (?)", sharedRecipeIDs(db, userID)).
-		Order("id").
+		Joins("LEFT JOIN recipe_orders ON recipe_orders.recipe_id = recipes.id AND recipe_orders.user_id = ?", userID).
+		Where("recipes.owner_id = ?", userID).
+		Or("recipes.id IN (?)", sharedRecipeIDs(db, userID)).
+		Order("recipe_orders.position ASC NULLS LAST").
+		Order("recipes.id ASC").
 		Find(&recipes).Error
 	return recipes, err
+}
+
+func (r *recipeRepository) Reorder(ctx context.Context, userID string, recipeIDs []string) error {
+	if len(recipeIDs) == 0 {
+		return nil
+	}
+	orders := make([]domain.RecipeOrder, 0, len(recipeIDs))
+	for i, rid := range recipeIDs {
+		orders = append(orders, domain.RecipeOrder{UserID: userID, RecipeID: rid, Position: i})
+	}
+	// (user_id, recipe_id) が既にあれば position を更新する upsert。
+	// belongs-to(User/Recipe)は FK 定義用で、書き込みでは巻き込まないよう Omit する。
+	return r.db.WithContext(ctx).
+		Omit("User", "Recipe").
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "user_id"}, {Name: "recipe_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"position"}),
+		}).
+		Create(&orders).Error
 }
 
 func (r *recipeRepository) FindByID(ctx context.Context, id string) (*domain.Recipe, error) {

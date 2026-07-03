@@ -147,3 +147,49 @@ func TestRecipeDelete_NotFound(t *testing.T) {
 	// Assert
 	assert.ErrorIs(t, err, ErrNotFound)
 }
+
+// 閲覧可能なレシピだけを並べ替えた時、その並びがリポジトリへ渡ること。
+func TestRecipeReorder_PassesOrderToRepo(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
+	rr.store["r2"] = factory.NewRecipe(factory.WithRecipeID("r2"), factory.WithOwnerID("u5"))
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	err := svc.Reorder(context.Background(), "u5", []string{"r2", "r1"})
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{"r2", "r1"}, rr.reorderedIDs)
+}
+
+// 同じレシピ ID が重複して渡された時、重複を除いてリポジトリへ渡ること。
+func TestRecipeReorder_DedupesRecipeIDs(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
+	rr.store["r2"] = factory.NewRecipe(factory.WithRecipeID("r2"), factory.WithOwnerID("u5"))
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act: r1 が重複
+	err := svc.Reorder(context.Background(), "u5", []string{"r1", "r2", "r1"})
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, []string{"r1", "r2"}, rr.reorderedIDs)
+}
+
+// 閲覧できないレシピを並べ替えに含めた時、ErrForbidden が返り保存されないこと。
+func TestRecipeReorder_ForbiddenForInvisibleRecipe(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act: r1 は見えるが r-other は見えない
+	err := svc.Reorder(context.Background(), "u5", []string{"r1", "r-other"})
+
+	// Assert
+	assert.ErrorIs(t, err, ErrForbidden)
+}

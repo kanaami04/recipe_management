@@ -200,6 +200,27 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/recipes/reorder/:
+    put:
+      tags: [recipes]
+      summary: レシピの並び順を更新(ユーザーごと。他ユーザーには影響しない)
+      operationId: reorderRecipes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderRequest'
+      responses:
+        '204':
+          description: 更新成功(本文なし)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /api/recipes/{id}/:
     parameters:
       - name: id
@@ -481,6 +502,21 @@ components:
           items:
             $ref: '#/components/schemas/SeasonInput'
           x-go-type-skip-optional-pointer: true
+
+    ReorderRequest:
+      type: object
+      description: 表示したい順にレシピ ID を並べた配列(先頭 = 一番上)
+      required: [recipe_ids]
+      properties:
+        recipe_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+            x-go-type: string
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            validate: required,dive,uuid
 
     NameResponse:
       type: object

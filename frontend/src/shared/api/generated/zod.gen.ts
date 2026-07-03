@@ -82,6 +82,13 @@ export const zRecipeRequest = z.object({
     season: z.array(zSeasonInput).optional()
 });
 
+/**
+ * 表示したい順にレシピ ID を並べた配列(先頭 = 一番上)
+ */
+export const zReorderRequest = z.object({
+    recipe_ids: z.array(z.uuid())
+});
+
 export const zNameResponse = z.object({
     name: z.string()
 });
@@ -164,6 +171,13 @@ export const zCreateRecipeBody = zRecipeRequest;
  * 作成成功
  */
 export const zCreateRecipeResponse = zRecipeResponse;
+
+export const zReorderRecipesBody = zReorderRequest;
+
+/**
+ * 更新成功(本文なし)
+ */
+export const zReorderRecipesResponse = z.void();
 
 export const zDeleteRecipePath = z.object({
     id: z.uuid()

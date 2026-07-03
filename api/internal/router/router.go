@@ -44,6 +44,8 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 		{
 			authorized.GET("/recipes/", h.Recipe.List)
 			authorized.POST("/recipes/", h.Recipe.Create)
+			// reorder は静的パス。:id より先に登録して曖昧さを避ける。
+			authorized.PUT("/recipes/reorder/", h.Recipe.Reorder)
 			authorized.PUT("/recipes/:id/", h.Recipe.Update)
 			authorized.DELETE("/recipes/:id/", h.Recipe.Delete)
 		}
