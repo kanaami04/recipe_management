@@ -57,7 +57,6 @@ export function RecipeDetailEditDialog({ recipe, open, onOpenChange }: EditDialo
           onSubmit={handleEdit}
           labelData={labelData}
           sharedUserData={sharedUserData}
-          onClickCancel={onOpenChange}
         />
       </DialogContent>
     </Dialog>

@@ -17,7 +17,7 @@ import type {
 } from '@/shared/api/generated/types.gen'
 import { Button } from '@/shared/ui/button'
 import { Checkbox } from '@/shared/ui/checkbox'
-import { DialogClose, DialogFooter } from '@/shared/ui/dialog'
+import { DialogFooter } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Separator } from '@/shared/ui/separator'
@@ -33,17 +33,9 @@ type Props = {
   onSubmit: (payload: RecipeRequest) => Promise<void>
   labelData?: LabelResponse[]
   sharedUserData?: UserListItem[]
-  onClickCancel?: () => void
 }
 
-export function RecipeForm({
-  mode,
-  initialData,
-  onSubmit,
-  labelData,
-  sharedUserData,
-  onClickCancel,
-}: Props) {
+export function RecipeForm({ mode, initialData, onSubmit, labelData, sharedUserData }: Props) {
   // フォーム状態は RHF + zod で一元管理する。
   // 検証は「作成/更新」ボタン押下時(onSubmit)に行い、必須項目の警告もそこで出す。
   // 一度送信した後は onChange で再検証され、入力を直すと警告が即座に消える(RHF 既定)。
@@ -222,11 +214,7 @@ export function RecipeForm({
         </div>
       </div>
       <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline" onClick={onClickCancel}>
-            キャンセル
-          </Button>
-        </DialogClose>
+        {/* キャンセルは DialogContent 既定の×と重複するため置かない。 */}
         <Button type="submit">{mode === 'create' ? '作成' : '更新'}</Button>
       </DialogFooter>
     </form>
