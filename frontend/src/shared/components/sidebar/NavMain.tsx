@@ -7,11 +7,19 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/shared/ui/sidebar'
 
 export function NavMain() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  // 遷移後、モバイルでは開いていたサイドバー(Sheet)を閉じる。
+  const navigateAndClose = (to: string) => {
+    navigate(to)
+    if (isMobile) setOpenMobile(false)
+  }
 
   // 現在のパスに応じてアクティブなナビを塗る。
   const activeClass =
@@ -26,7 +34,7 @@ export function NavMain() {
             <SidebarMenuButton
               tooltip="レシピ一覧"
               className={cn('min-w-8 duration-200 ease-linear', pathname === '/top' && activeClass)}
-              onClick={() => navigate('/top')}
+              onClick={() => navigateAndClose('/top')}
             >
               <span>レシピ</span>
             </SidebarMenuButton>
@@ -36,7 +44,7 @@ export function NavMain() {
             <SidebarMenuButton
               tooltip="ラベル一覧"
               className="min-w-8 duration-200 ease-linear"
-              onClick={() => navigate('/top/createLabel')}
+              onClick={() => navigateAndClose('/top/createLabel')}
             >
               <span>ラベル</span>
             </SidebarMenuButton>
@@ -48,7 +56,7 @@ export function NavMain() {
             <SidebarMenuButton
               tooltip="アーカイブ一覧"
               className={cn(pathname === '/top/archive' && activeClass)}
-              onClick={() => navigate('/top/archive')}
+              onClick={() => navigateAndClose('/top/archive')}
             >
               <span>アーカイブ</span>
             </SidebarMenuButton>
