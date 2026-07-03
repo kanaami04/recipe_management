@@ -61,7 +61,7 @@ export function RecipeForm({
 
   return (
     <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="grid gap-4 overflow-auto pr-1">
+      <div className="scrollbar-none grid gap-4 overflow-auto pr-1">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="grid flex-2 gap-3">
             <Label>タイトル</Label>
