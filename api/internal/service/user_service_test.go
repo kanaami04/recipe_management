@@ -69,3 +69,142 @@ func TestUserList_Empty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, users)
 }
+
+// arrangeSelfUser は自分(u1)を byID/byName/byEmail に登録した mock を返す。
+func arrangeSelfUser(opts ...factory.UserOption) *mockUserRepo {
+	base := []factory.UserOption{
+		factory.WithID("u1"), factory.WithUsername("alice"), factory.WithEmail("alice@example.com"),
+	}
+	self := factory.NewUser(append(base, opts...)...)
+	return &mockUserRepo{
+		byID:    map[string]*domain.User{self.ID: self},
+		byName:  map[string]*domain.User{self.Username: self},
+		byEmail: map[string]*domain.User{self.Email: self},
+	}
+}
+
+// プロフィールを更新した時、新しい username がリポジトリへ渡ること。
+func TestUserUpdateProfile_SavesUsername(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.UpdateProfile(context.Background(), "u1", "alice2", "alice2@example.com")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, ur.updated)
+	assert.Equal(t, "alice2", ur.updated.Username)
+}
+
+// プロフィールを更新した時、新しい email がリポジトリへ渡ること。
+func TestUserUpdateProfile_SavesEmail(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.UpdateProfile(context.Background(), "u1", "alice2", "alice2@example.com")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, ur.updated)
+	assert.Equal(t, "alice2@example.com", ur.updated.Email)
+}
+
+// 別ユーザーが使っている username に変更した時、ErrUserAlreadyExists が返ること。
+func TestUserUpdateProfile_DuplicateUsername(t *testing.T) {
+	// Arrange: bob(u2)が既にいる
+	ur := arrangeSelfUser()
+	ur.byName["bob"] = factory.NewUser(factory.WithID("u2"), factory.WithUsername("bob"))
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.UpdateProfile(context.Background(), "u1", "bob", "alice@example.com")
+
+	// Assert
+	assert.ErrorIs(t, err, ErrUserAlreadyExists)
+}
+
+// 別ユーザーが使っている email に変更した時、ErrUserAlreadyExists が返ること。
+func TestUserUpdateProfile_DuplicateEmail(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	ur.byEmail["bob@example.com"] = factory.NewUser(factory.WithID("u2"), factory.WithEmail("bob@example.com"))
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.UpdateProfile(context.Background(), "u1", "alice", "bob@example.com")
+
+	// Assert
+	assert.ErrorIs(t, err, ErrUserAlreadyExists)
+}
+
+// 値を変えずに更新した時、自分自身との重複判定で弾かれず成功すること。
+func TestUserUpdateProfile_SameValues(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.UpdateProfile(context.Background(), "u1", "alice", "alice@example.com")
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// 現在のパスワードが正しい時、対象ユーザーのパスワードが更新されること。
+func TestUserChangePassword_UpdatesForUser(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser(factory.WithPlainPassword(t, "oldpass12"))
+	svc := NewUserService(ur)
+
+	// Act
+	err := svc.ChangePassword(context.Background(), "u1", "oldpass12", "newpass34")
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, "u1", ur.passwordChangedID)
+}
+
+// 現在のパスワードが正しい時、新しいパスワードがハッシュ化されて渡ること。
+func TestUserChangePassword_HashesNewPassword(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser(factory.WithPlainPassword(t, "oldpass12"))
+	svc := NewUserService(ur)
+
+	// Act
+	err := svc.ChangePassword(context.Background(), "u1", "oldpass12", "newpass34")
+
+	// Assert: 平文ではなくハッシュ化された値が保存される
+	require.NoError(t, err)
+	assert.NotEqual(t, "newpass34", ur.newPasswordHash)
+}
+
+// 現在のパスワードが違う時、ErrIncorrectPassword が返ること。
+func TestUserChangePassword_WrongCurrent(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser(factory.WithPlainPassword(t, "oldpass12"))
+	svc := NewUserService(ur)
+
+	// Act
+	err := svc.ChangePassword(context.Background(), "u1", "wrongpass", "newpass34")
+
+	// Assert
+	assert.ErrorIs(t, err, ErrIncorrectPassword)
+}
+
+// アカウントを削除した時、その userID がリポジトリへ渡ること。
+func TestUserDeleteAccount_Deletes(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	svc := NewUserService(ur)
+
+	// Act
+	err := svc.DeleteAccount(context.Background(), "u1")
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, "u1", ur.deletedUserID)
+}

@@ -62,3 +62,27 @@ func (r *userRepository) FindAll(ctx context.Context) ([]domain.User, error) {
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
+
+func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.User{ID: user.ID}).
+		Updates(map[string]any{"username": user.Username, "email": user.Email}).Error
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, userID, passwordHash string) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.User{ID: userID}).
+		Update("password_hash", passwordHash).Error
+}
+
+func (r *userRepository) Delete(ctx context.Context, userID string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 所有レシピを先に消す(recipes.owner_id には CASCADE が無いため)。
+		// レシピの子テーブル・共有・並び順・アーカイブはレシピ削除で CASCADE。
+		if err := tx.Where("owner_id = ?", userID).Delete(&domain.Recipe{}).Error; err != nil {
+			return err
+		}
+		// user 削除で labels / recipe_orders / recipe_archives / 共有(共有先側)は CASCADE。
+		return tx.Where("id = ?", userID).Delete(&domain.User{}).Error
+	})
+}

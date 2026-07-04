@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { archiveRecipe, createLabel, createRecipe, deleteLabel, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe } from '../sdk.gen';
-import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse } from '../types.gen';
+import { archiveRecipe, changePassword, createLabel, createRecipe, deleteAccount, deleteLabel, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe, updateUserInfo } from '../sdk.gen';
+import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -85,6 +85,23 @@ export const registerMutation = (options?: Partial<Options<RegisterData>>): UseM
     return mutationOptions;
 };
 
+/**
+ * アカウント削除(所有レシピ等も消える)
+ */
+export const deleteAccountMutation = (options?: Partial<Options<DeleteAccountData>>): UseMutationOptions<DeleteAccountResponse, AxiosError<DeleteAccountError>, Options<DeleteAccountData>> => {
+    const mutationOptions: UseMutationOptions<DeleteAccountResponse, AxiosError<DeleteAccountError>, Options<DeleteAccountData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteAccount({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseURL' | 'body' | 'headers' | 'path' | 'query'> & {
         _id: string;
@@ -135,6 +152,40 @@ export const getUserInfoOptions = (options?: Options<GetUserInfoData>) => queryO
     },
     queryKey: getUserInfoQueryKey(options)
 });
+
+/**
+ * プロフィール更新(ユーザー名・メール)
+ */
+export const updateUserInfoMutation = (options?: Partial<Options<UpdateUserInfoData>>): UseMutationOptions<UpdateUserInfoResponse, AxiosError<UpdateUserInfoError>, Options<UpdateUserInfoData>> => {
+    const mutationOptions: UseMutationOptions<UpdateUserInfoResponse, AxiosError<UpdateUserInfoError>, Options<UpdateUserInfoData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateUserInfo({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * パスワード変更
+ */
+export const changePasswordMutation = (options?: Partial<Options<ChangePasswordData>>): UseMutationOptions<ChangePasswordResponse, AxiosError<ChangePasswordError>, Options<ChangePasswordData>> => {
+    const mutationOptions: UseMutationOptions<ChangePasswordResponse, AxiosError<ChangePasswordError>, Options<ChangePasswordData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await changePassword({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const listUsersQueryKey = (options?: Options<ListUsersData>) => createQueryKey('listUsers', options);
 

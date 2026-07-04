@@ -78,10 +78,14 @@ func (m *mockRecipeRepo) IsArchived(_ context.Context, userID, recipeID string) 
 // --- UserRepository のモック ---
 
 type mockUserRepo struct {
-	byName  map[string]*domain.User
-	byEmail map[string]*domain.User
-	byID    map[string]*domain.User
-	all     []domain.User
+	byName            map[string]*domain.User
+	byEmail           map[string]*domain.User
+	byID              map[string]*domain.User
+	all               []domain.User
+	updated           *domain.User
+	passwordChangedID string
+	newPasswordHash   string
+	deletedUserID     string
 }
 
 func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.User, error) {
@@ -108,6 +112,23 @@ func (m *mockUserRepo) Create(_ context.Context, user *domain.User) error {
 	}
 	m.byName[user.Username] = user
 	m.byEmail[user.Email] = user
+	if m.byID == nil {
+		m.byID = map[string]*domain.User{}
+	}
+	m.byID[user.ID] = user
+	return nil
+}
+func (m *mockUserRepo) Update(_ context.Context, user *domain.User) error {
+	m.updated = user
+	return nil
+}
+func (m *mockUserRepo) UpdatePassword(_ context.Context, userID, passwordHash string) error {
+	m.passwordChangedID = userID
+	m.newPasswordHash = passwordHash
+	return nil
+}
+func (m *mockUserRepo) Delete(_ context.Context, userID string) error {
+	m.deletedUserID = userID
 	return nil
 }
 

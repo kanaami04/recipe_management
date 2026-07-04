@@ -13,7 +13,12 @@ type (
 )
 
 func ToUserInfo(u *domain.User) UserInfoResponse {
-	return UserInfoResponse{ID: u.ID, Username: u.Username, Email: u.Email}
+	return UserInfoResponse{
+		ID:        u.ID,
+		Username:  u.Username,
+		Email:     u.Email,
+		CreatedAt: u.CreatedAt.In(jst).Format(dateLayout),
+	}
 }
 
 func ToUserList(users []domain.User) []UserListItem {

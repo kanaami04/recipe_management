@@ -32,6 +32,9 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 		// ユーザー
 		{
 			authorized.GET("/user_info/", h.User.Info)
+			authorized.PUT("/user_info/", h.User.Update)
+			authorized.PUT("/user_info/password/", h.User.ChangePassword)
+			authorized.DELETE("/user_info/", h.User.Delete)
 			authorized.GET("/users/", h.User.List)
 		}
 
