@@ -1,5 +1,6 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
+import { useNavigateAndClose } from '@/shared/components/sidebar/useNavigateAndClose'
 import { cn } from '@/shared/lib/utils'
 import {
   SidebarGroup,
@@ -7,19 +8,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/shared/ui/sidebar'
 
 export function NavMain() {
-  const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { isMobile, setOpenMobile } = useSidebar()
-
-  // 遷移後、モバイルでは開いていたサイドバー(Sheet)を閉じる。
-  const navigateAndClose = (to: string) => {
-    navigate(to)
-    if (isMobile) setOpenMobile(false)
-  }
+  const navigateAndClose = useNavigateAndClose()
 
   // 現在のパスに応じてアクティブなナビを塗る。
   const activeClass =

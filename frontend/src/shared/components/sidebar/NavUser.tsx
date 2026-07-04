@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 
 import { logout } from '@/shared/auth/authClient'
 import { useUser } from '@/shared/auth/UserContext'
+import { useNavigateAndClose } from '@/shared/components/sidebar/useNavigateAndClose'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import {
   DropdownMenu,
@@ -15,16 +15,12 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/shared/ui/sidebar'
 
 export function NavUser() {
-  const { isMobile, setOpenMobile } = useSidebar()
+  const { isMobile } = useSidebar()
   const { user } = useUser()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const navigateAndClose = useNavigateAndClose()
 
-  // 遷移後、モバイルでは開いていたサイドバー(Sheet)を閉じる。
-  const onClickAccount = () => {
-    navigate('/top/account')
-    if (isMobile) setOpenMobile(false)
-  }
+  const onClickAccount = () => navigateAndClose('/top/account')
 
   const onClickLogout = async () => {
     // サーバ側で refresh Cookie を失効し、メモリの access を消す。
@@ -32,18 +28,10 @@ export function NavUser() {
     // ユーザー固有のキャッシュを破棄し、別アカウントで再ログインしたとき
     // 前ユーザーの情報が一瞬残らないようにする。
     queryClient.clear()
-    navigate('/')
-    // Radix の DropdownMenu を開いたまま遷移でアンマウントすると、開いた時に
-    // 掛けた body の pointer-events:none が復元されず、遷移先のログイン画面が
-    // 操作不能になる。遷移後に明示的に解除する。
-    requestAnimationFrame(() => {
-      document.body.style.pointerEvents = ''
-    })
+    navigateAndClose('/')
   }
 
-  const onClickLogIn = () => {
-    navigate('/')
-  }
+  const onClickLogIn = () => navigateAndClose('/')
 
   return (
     <SidebarMenu>
