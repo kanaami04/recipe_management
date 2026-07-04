@@ -56,6 +56,22 @@ test('ユーザーメニューからアカウント画面へ遷移できる', as
   await expect(page.getByText('登録日: 2026-06-15 09:30')).toBeVisible()
 })
 
+test('スマホでアカウントへ遷移するとサイドバーが閉じる', async ({ page }) => {
+  // Arrange: モバイル幅(サイドバーが Sheet)でログイン
+  await page.setViewportSize({ width: 375, height: 800 })
+  await mockApi(page)
+  await login(page)
+
+  // Act: サイドバーを開き、ユーザー → アカウント
+  await page.getByRole('button', { name: 'Toggle Sidebar' }).click()
+  await page.getByText('taro', { exact: true }).click()
+  await page.getByRole('menuitem', { name: 'アカウント' }).click()
+
+  // Assert: 遷移し、サイドバー(Sheet=dialog)が閉じる
+  await expect(page).toHaveURL(/\/top\/account$/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+})
+
 test('プロフィール(ユーザー名)を更新できる', async ({ page }) => {
   // Arrange
   await mockApi(page)

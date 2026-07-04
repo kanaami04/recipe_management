@@ -15,10 +15,16 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/shared/ui/sidebar'
 
 export function NavUser() {
-  const { isMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
   const { user } = useUser()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  // 遷移後、モバイルでは開いていたサイドバー(Sheet)を閉じる。
+  const onClickAccount = () => {
+    navigate('/top/account')
+    if (isMobile) setOpenMobile(false)
+  }
 
   const onClickLogout = async () => {
     // サーバ側で refresh Cookie を失効し、メモリの access を消す。
@@ -91,9 +97,7 @@ export function NavUser() {
             <DropdownMenuSeparator />
             {user ? (
               <>
-                <DropdownMenuItem onClick={() => navigate('/top/account')}>
-                  アカウント
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onClickAccount}>アカウント</DropdownMenuItem>
                 <DropdownMenuItem onClick={onClickLogout}>ログアウト</DropdownMenuItem>
               </>
             ) : (
