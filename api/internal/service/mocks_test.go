@@ -98,8 +98,14 @@ func (m *mockUserRepo) FindByEmail(_ context.Context, email string) (*domain.Use
 func (m *mockUserRepo) FindByID(_ context.Context, id string) (*domain.User, error) {
 	return m.byID[id], nil
 }
-func (m *mockUserRepo) FindAll(_ context.Context) ([]domain.User, error) {
-	return m.all, nil
+func (m *mockUserRepo) FindAllExcept(_ context.Context, excludeID string) ([]domain.User, error) {
+	var out []domain.User
+	for _, u := range m.all {
+		if u.ID != excludeID {
+			out = append(out, u)
+		}
+	}
+	return out, nil
 }
 func (m *mockUserRepo) Create(_ context.Context, user *domain.User) error {
 	if user.ID == "" {

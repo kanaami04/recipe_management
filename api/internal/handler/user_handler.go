@@ -34,9 +34,10 @@ func (h *UserHandler) Info(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.ToUserInfo(u, h.avatars))
 }
 
-// List は GET /api/users/。共有先選択用に全ユーザーを返す。
+// List は GET /api/users/。共有先選択用のユーザー一覧を返す（自分自身は除く）。
 func (h *UserHandler) List(c echo.Context) error {
-	users, err := h.svc.List(c.Request().Context())
+	userID := appmw.UserIDFromContext(c)
+	users, err := h.svc.List(c.Request().Context(), userID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
