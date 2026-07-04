@@ -113,7 +113,7 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <div className="flex-1 overflow-auto pr-1">
+          <div className="scrollbar-none flex-1 overflow-auto pr-1">
             <RecipeDetail recipe={recipe} />
           </div>
         </DialogContent>

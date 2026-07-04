@@ -55,7 +55,9 @@ export function RecipeForm({ mode, initialData, onSubmit, labelData, sharedUserD
 
   return (
     <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="scrollbar-none grid gap-4 overflow-auto pr-1">
+      {/* overflow-auto は子の box-shadow を切り落とすため、左右対称の余白(px-1)で
+          タイトル等の Input の影が片側だけ欠けないようにする。 */}
+      <div className="scrollbar-none grid gap-4 overflow-auto px-1">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="grid flex-2 gap-3">
             <Label>タイトル</Label>
