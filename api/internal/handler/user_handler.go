@@ -41,14 +41,28 @@ func (h *UserHandler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.ToUserList(users))
 }
 
-// Update は PUT /api/user_info/。プロフィール(ユーザー名・メール)を更新する。
+// Update は PUT /api/user_info/。プロフィール(ユーザー名)を更新する。
 func (h *UserHandler) Update(c echo.Context) error {
 	userID := appmw.UserIDFromContext(c)
 	var req request.UpdateUserRequest
 	if err := bindAndValidate(c, &req); err != nil {
 		return err
 	}
-	u, err := h.svc.UpdateProfile(c.Request().Context(), userID, req.Username, req.Email)
+	u, err := h.svc.UpdateProfile(c.Request().Context(), userID, req.Username)
+	if err != nil {
+		return mapServiceError(err)
+	}
+	return c.JSON(http.StatusOK, response.ToUserInfo(u))
+}
+
+// ChangeEmail は PUT /api/user_info/email/。現在のパスワード確認のうえメールを変更する。
+func (h *UserHandler) ChangeEmail(c echo.Context) error {
+	userID := appmw.UserIDFromContext(c)
+	var req request.ChangeEmailRequest
+	if err := bindAndValidate(c, &req); err != nil {
+		return err
+	}
+	u, err := h.svc.ChangeEmail(c.Request().Context(), userID, req.Email, req.Password)
 	if err != nil {
 		return mapServiceError(err)
 	}

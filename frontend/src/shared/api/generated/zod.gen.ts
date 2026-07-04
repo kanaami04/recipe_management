@@ -39,8 +39,15 @@ export const zUserInfoResponse = z.object({
 });
 
 export const zUpdateUserRequest = z.object({
-    username: z.string().max(50),
-    email: z.email().max(50)
+    username: z.string().max(50)
+});
+
+/**
+ * メールアドレス変更。本人確認のため現在のパスワードを要求する。
+ */
+export const zChangeEmailRequest = z.object({
+    email: z.email().max(50),
+    password: z.string()
 });
 
 export const zChangePasswordRequest = z.object({
@@ -186,6 +193,13 @@ export const zUpdateUserInfoBody = zUpdateUserRequest;
  * 更新成功
  */
 export const zUpdateUserInfoResponse = zUserInfoResponse;
+
+export const zChangeEmailBody = zChangeEmailRequest;
+
+/**
+ * 変更成功
+ */
+export const zChangeEmailResponse = zUserInfoResponse;
 
 export const zChangePasswordBody = zChangePasswordRequest;
 

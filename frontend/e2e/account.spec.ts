@@ -19,12 +19,20 @@ async function mockApi(page: Page) {
   await page.route('**/api/user_info/password/', (r) =>
     r.request().method() === 'PUT' ? r.fulfill({ status: 204, body: '' }) : r.fallback(),
   )
+  // メール変更(パスワード確認)。パスワードが一致すれば email を反映する。
+  await page.route('**/api/user_info/email/', (r) => {
+    if (r.request().method() !== 'PUT') return r.fallback()
+    const body = r.request().postDataJSON()
+    if (body.password !== 'password123') {
+      return r.fulfill({ status: 400, json: { message: 'wrong password' } })
+    }
+    user.email = body.email
+    return r.fulfill({ status: 200, json: user })
+  })
   await page.route('**/api/user_info/', (r) => {
     const method = r.request().method()
     if (method === 'PUT') {
-      const body = r.request().postDataJSON()
-      user.username = body.username
-      user.email = body.email
+      user.username = r.request().postDataJSON().username
       return r.fulfill({ status: 200, json: user })
     }
     if (method === 'DELETE') {
@@ -85,6 +93,47 @@ test('プロフィール(ユーザー名)を更新できる', async ({ page }) =
 
   // Assert
   await expect(page.getByText('プロフィールを更新しました')).toBeVisible()
+})
+
+test('プロフィールのメール欄は編集できない(disabled)', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+  await page.goto('/top/account')
+
+  // Assert: プロフィールのメール欄は現在値を表示しつつ無効化されている
+  await expect(page.locator('#email')).toHaveValue('taro@example.com')
+  await expect(page.locator('#email')).toBeDisabled()
+})
+
+test('パスワード確認のうえメールアドレスを変更できる', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+  await page.goto('/top/account')
+
+  // Act: 新しいメール + 現在のパスワードで変更
+  await page.locator('#newEmail').fill('taro2@example.com')
+  await page.locator('#emailPassword').fill('password123')
+  await page.getByRole('button', { name: 'メールアドレスを変更' }).click()
+
+  // Assert
+  await expect(page.getByText('メールアドレスを変更しました')).toBeVisible()
+})
+
+test('パスワードが違うとメールアドレスを変更できない', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+  await page.goto('/top/account')
+
+  // Act: 誤ったパスワードで変更
+  await page.locator('#newEmail').fill('taro2@example.com')
+  await page.locator('#emailPassword').fill('wrongpass')
+  await page.getByRole('button', { name: 'メールアドレスを変更' }).click()
+
+  // Assert
+  await expect(page.getByText('パスワードが違います')).toBeVisible()
 })
 
 test('パスワードを変更できる', async ({ page }) => {

@@ -13,7 +13,7 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 
-// プロフィール(ユーザー名・メール)の編集フォーム。
+// プロフィール(ユーザー名)の編集フォーム。メールは EmailForm で別途扱う。
 export function ProfileForm({ user }: { user: UserInfoResponse }) {
   const queryClient = useQueryClient()
   const {
@@ -23,7 +23,7 @@ export function ProfileForm({ user }: { user: UserInfoResponse }) {
     formState: { errors, isDirty },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: { username: user.username, email: user.email },
+    defaultValues: { username: user.username },
     mode: 'onBlur',
   })
 
@@ -38,7 +38,7 @@ export function ProfileForm({ user }: { user: UserInfoResponse }) {
     onError: (error) =>
       toast.error(
         error.response?.status === 409
-          ? 'そのユーザー名またはメールアドレスは既に使われています'
+          ? 'そのユーザー名は既に使われています'
           : 'プロフィールの更新に失敗しました',
       ),
   })
@@ -67,20 +67,11 @@ export function ProfileForm({ user }: { user: UserInfoResponse }) {
       </div>
       <div className="grid gap-2">
         <Label htmlFor="email">メールアドレス</Label>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field }) => (
-            <Input
-              id="email"
-              type="email"
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-        {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
+        {/* メールは本人確認が要るためここでは編集不可。変更は「メールアドレス変更」から。 */}
+        <Input id="email" type="email" value={user.email} disabled />
+        <p className="text-muted-foreground text-sm">
+          メールアドレスの変更にはパスワードの確認が必要です。
+        </p>
       </div>
       <Button type="submit" className="self-start" disabled={!isDirty || updateProfile.isPending}>
         保存

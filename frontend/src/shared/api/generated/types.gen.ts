@@ -45,7 +45,14 @@ export type UserInfoResponse = {
 
 export type UpdateUserRequest = {
     username: string;
+};
+
+/**
+ * メールアドレス変更。本人確認のため現在のパスワードを要求する。
+ */
+export type ChangeEmailRequest = {
     email: string;
+    password: string;
 };
 
 export type ChangePasswordRequest = {
@@ -347,6 +354,39 @@ export type UpdateUserInfoResponses = {
 };
 
 export type UpdateUserInfoResponse = UpdateUserInfoResponses[keyof UpdateUserInfoResponses];
+
+export type ChangeEmailData = {
+    body: ChangeEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/api/user_info/email/';
+};
+
+export type ChangeEmailErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 既に存在する(ユーザー名・メール重複)
+     */
+    409: Error;
+};
+
+export type ChangeEmailError = ChangeEmailErrors[keyof ChangeEmailErrors];
+
+export type ChangeEmailResponses = {
+    /**
+     * 変更成功
+     */
+    200: UserInfoResponse;
+};
+
+export type ChangeEmailResponse = ChangeEmailResponses[keyof ChangeEmailResponses];
 
 export type ChangePasswordData = {
     body: ChangePasswordRequest;

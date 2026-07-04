@@ -90,27 +90,12 @@ func TestUserUpdateProfile_SavesUsername(t *testing.T) {
 	svc := NewUserService(ur)
 
 	// Act
-	_, err := svc.UpdateProfile(context.Background(), "u1", "alice2", "alice2@example.com")
+	_, err := svc.UpdateProfile(context.Background(), "u1", "alice2")
 
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, ur.updated)
 	assert.Equal(t, "alice2", ur.updated.Username)
-}
-
-// プロフィールを更新した時、新しい email がリポジトリへ渡ること。
-func TestUserUpdateProfile_SavesEmail(t *testing.T) {
-	// Arrange
-	ur := arrangeSelfUser()
-	svc := NewUserService(ur)
-
-	// Act
-	_, err := svc.UpdateProfile(context.Background(), "u1", "alice2", "alice2@example.com")
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, ur.updated)
-	assert.Equal(t, "alice2@example.com", ur.updated.Email)
 }
 
 // 別ユーザーが使っている username に変更した時、ErrUserAlreadyExists が返ること。
@@ -121,37 +106,65 @@ func TestUserUpdateProfile_DuplicateUsername(t *testing.T) {
 	svc := NewUserService(ur)
 
 	// Act
-	_, err := svc.UpdateProfile(context.Background(), "u1", "bob", "alice@example.com")
-
-	// Assert
-	assert.ErrorIs(t, err, ErrUserAlreadyExists)
-}
-
-// 別ユーザーが使っている email に変更した時、ErrUserAlreadyExists が返ること。
-func TestUserUpdateProfile_DuplicateEmail(t *testing.T) {
-	// Arrange
-	ur := arrangeSelfUser()
-	ur.byEmail["bob@example.com"] = factory.NewUser(factory.WithID("u2"), factory.WithEmail("bob@example.com"))
-	svc := NewUserService(ur)
-
-	// Act
-	_, err := svc.UpdateProfile(context.Background(), "u1", "alice", "bob@example.com")
+	_, err := svc.UpdateProfile(context.Background(), "u1", "bob")
 
 	// Assert
 	assert.ErrorIs(t, err, ErrUserAlreadyExists)
 }
 
 // 値を変えずに更新した時、自分自身との重複判定で弾かれず成功すること。
-func TestUserUpdateProfile_SameValues(t *testing.T) {
+func TestUserUpdateProfile_SameValue(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser()
 	svc := NewUserService(ur)
 
 	// Act
-	_, err := svc.UpdateProfile(context.Background(), "u1", "alice", "alice@example.com")
+	_, err := svc.UpdateProfile(context.Background(), "u1", "alice")
 
 	// Assert
 	require.NoError(t, err)
+}
+
+// 正しいパスワードでメールを変更した時、新しい email がリポジトリへ渡ること。
+func TestUserChangeEmail_Saves(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser(factory.WithPlainPassword(t, "pass1234"))
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.ChangeEmail(context.Background(), "u1", "alice2@example.com", "pass1234")
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, ur.updated)
+	assert.Equal(t, "alice2@example.com", ur.updated.Email)
+}
+
+// パスワードが違う時、メール変更が ErrIncorrectPassword で弾かれること。
+func TestUserChangeEmail_WrongPassword(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser(factory.WithPlainPassword(t, "pass1234"))
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.ChangeEmail(context.Background(), "u1", "alice2@example.com", "WRONG")
+
+	// Assert
+	assert.ErrorIs(t, err, ErrIncorrectPassword)
+}
+
+// 別ユーザーが使っている email に変更した時、ErrUserAlreadyExists が返ること。
+func TestUserChangeEmail_Duplicate(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser(factory.WithPlainPassword(t, "pass1234"))
+	ur.byEmail["bob@example.com"] = factory.NewUser(factory.WithID("u2"), factory.WithEmail("bob@example.com"))
+	svc := NewUserService(ur)
+
+	// Act
+	_, err := svc.ChangeEmail(context.Background(), "u1", "bob@example.com", "pass1234")
+
+	// Assert
+	assert.ErrorIs(t, err, ErrUserAlreadyExists)
 }
 
 // 現在のパスワードが正しい時、対象ユーザーのパスワードが更新されること。
