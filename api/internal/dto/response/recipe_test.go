@@ -1,6 +1,7 @@
 package response
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -8,6 +9,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+// mockAvatarStorage は avatar_url 組み立て用の AvatarStorage モック。PublicURL は key を URL 化する。
+type mockAvatarStorage struct{}
+
+func (mockAvatarStorage) PresignUpload(_ context.Context, _, _ string) (string, error) {
+	return "", nil
+}
+func (mockAvatarStorage) Delete(_ context.Context, _ string) error { return nil }
+func (mockAvatarStorage) PublicURL(key string) string              { return "https://cdn.example/" + key }
 
 // レシピを変換した時、各項目がマッピングされ日時が JST 文字列に整形された DTO になること。
 func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
@@ -38,7 +48,7 @@ func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
 	}
 
 	// Act
-	got := ToRecipeResponse(r)
+	got := ToRecipeResponse(r, mockAvatarStorage{})
 
 	// Assert
 	want := RecipeResponse{
@@ -59,13 +69,31 @@ func TestToRecipeResponse_MapsAndFormats(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+// 共有ユーザーにアバターがある時、shared_user の avatar_url が PublicURL で組まれること。
+func TestToRecipeResponse_SharedUserAvatarURL(t *testing.T) {
+	// Arrange
+	key := "avatars/u20/pic.png"
+	r := &domain.Recipe{
+		ID:          "r1",
+		Owner:       domain.User{ID: "u10", Username: "alice"},
+		SharedUsers: []domain.User{{ID: "u20", Username: "bob", AvatarKey: &key}},
+	}
+
+	// Act
+	got := ToRecipeResponse(r, mockAvatarStorage{})
+
+	// Assert
+	wantURL := "https://cdn.example/" + key
+	assert.Equal(t, &wantURL, got.SharedUser[0].AvatarUrl)
+}
+
 // 関連が空のレシピを変換した時、各スライスが nil ではなく空スライス([])になること。
 func TestToRecipeResponse_EmptySlicesNotNil(t *testing.T) {
 	// Arrange
 	r := &domain.Recipe{ID: "r1", Owner: domain.User{ID: "u1"}}
 
 	// Act
-	got := ToRecipeResponse(r)
+	got := ToRecipeResponse(r, mockAvatarStorage{})
 
 	// Assert: JSON で [] になるよう、nil ではなく空スライスを返すこと。
 	assert.NotNil(t, got.Cooking)

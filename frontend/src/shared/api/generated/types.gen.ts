@@ -86,6 +86,10 @@ export type ChangePasswordRequest = {
 export type UserListItem = {
     id: string;
     username: string;
+    /**
+     * プロフィール画像の URL。未設定なら null。
+     */
+    avatar_url: string | null;
 };
 
 export type LabelResponse = {

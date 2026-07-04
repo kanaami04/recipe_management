@@ -215,8 +215,10 @@ type UserInfoResponse struct {
 
 // UserListItem defines model for UserListItem.
 type UserListItem struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
+	// AvatarUrl プロフィール画像の URL。未設定なら null。
+	AvatarUrl *string `json:"avatar_url"`
+	ID        string  `json:"id"`
+	Username  string  `json:"username"`
 }
 
 // BadRequest Echo の既定エラー形式

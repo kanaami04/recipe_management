@@ -30,10 +30,21 @@ func ToUserInfo(u *domain.User, avatars domain.AvatarStorage) UserInfoResponse {
 	}
 }
 
-func ToUserList(users []domain.User) []UserListItem {
+func ToUserList(users []domain.User, avatars domain.AvatarStorage) []UserListItem {
 	out := make([]UserListItem, 0, len(users))
 	for i := range users {
-		out = append(out, UserListItem{ID: users[i].ID, Username: users[i].Username})
+		out = append(out, ToUserListItem(&users[i], avatars))
 	}
 	return out
+}
+
+// ToUserListItem は domain.User を UserListItem(recipe の owner/shared_user 共通)へ変換する。
+// avatars はアバター URL の組み立てに使う(ToUserInfo と同じパターン)。
+func ToUserListItem(u *domain.User, avatars domain.AvatarStorage) UserListItem {
+	item := UserListItem{ID: u.ID, Username: u.Username}
+	if u.AvatarKey != nil {
+		url := avatars.PublicURL(*u.AvatarKey)
+		item.AvatarUrl = &url
+	}
+	return item
 }

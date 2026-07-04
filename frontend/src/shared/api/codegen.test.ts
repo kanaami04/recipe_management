@@ -36,7 +36,7 @@ describe('生成された zod スキーマ', () => {
       cooking: [],
       season: [],
       procedure: '',
-      owner: { id: '018f1a2b-3c4d-7e5f-8a9b-0000000000b2', username: 'taro' },
+      owner: { id: '018f1a2b-3c4d-7e5f-8a9b-0000000000b2', username: 'taro', avatar_url: null },
       shared_user: [],
       title: 'カレー',
       create_time: null,
