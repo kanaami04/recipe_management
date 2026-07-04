@@ -36,7 +36,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeResponse }) {
         <div className="text-xs">
           食材{recipe.cooking.length}・調味料{recipe.season.length}・手順{stepCount}
         </div>
-        <SharedAvatars users={recipe.shared_user} />
+        <SharedAvatars users={recipe.shared_user} className="mt-1 self-start" />
       </CardContent>
     </Card>
   )
@@ -44,12 +44,12 @@ export function RecipeCard({ recipe }: { recipe: RecipeResponse }) {
 
 // 共有相手のアバターを重ねて並べる。共有が無いときも高さを確保し、
 // 共有あり/なしでカードの大きさが変わらないようにする。
-function SharedAvatars({ users }: { users: UserListItem[] }) {
+function SharedAvatars({ users, className }: { users: UserListItem[]; className?: string }) {
   const shown = users.slice(0, MAX_AVATARS)
   const overflow = users.length - shown.length
 
   return (
-    <div className="flex h-6 items-center">
+    <div className={cn('flex h-6 items-center', className)}>
       {shown.map((u, i) => (
         <Avatar key={u.id} className={cn('border-card size-6 border-2', i > 0 && '-ml-2')}>
           <AvatarImage src={u.avatar_url ?? undefined} alt={u.username} />
