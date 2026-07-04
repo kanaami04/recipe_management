@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { EmailForm } from '@/features/account/components/EmailForm'
 import { PasswordForm } from '@/features/account/components/PasswordForm'
 import { ProfileForm } from '@/features/account/components/ProfileForm'
 import { deleteAccountMutation } from '@/shared/api/generated/@tanstack/react-query.gen'
@@ -57,15 +56,6 @@ export function AccountPage() {
             </CardHeader>
             <CardContent>
               <ProfileForm user={user} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>メールアドレス変更</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EmailForm />
             </CardContent>
           </Card>
 

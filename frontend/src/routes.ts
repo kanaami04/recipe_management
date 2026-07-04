@@ -10,6 +10,7 @@ export default [
     route('archive', 'routes/archive.tsx'),
     route('labels', 'routes/labels.tsx'),
     route('account', 'routes/account.tsx'),
+    route('account/email', 'routes/account-email.tsx'),
   ]),
   route('*', 'routes/catchall.tsx'),
 ] satisfies RouteConfig

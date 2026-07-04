@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Controller, useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { profileFormSchema, type ProfileFormValues } from '@/features/account/schema/accountSchema'
@@ -16,6 +17,7 @@ import { Label } from '@/shared/ui/label'
 // プロフィール(ユーザー名)の編集フォーム。メールは EmailForm で別途扱う。
 export function ProfileForm({ user }: { user: UserInfoResponse }) {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const {
     control,
     handleSubmit,
@@ -67,15 +69,17 @@ export function ProfileForm({ user }: { user: UserInfoResponse }) {
       </div>
       <div className="grid gap-2">
         <Label htmlFor="email">メールアドレス</Label>
-        {/* メールは本人確認が要るためここでは編集不可。変更は「メールアドレス変更」から。 */}
+        {/* メールは本人確認が要るためここでは編集不可。変更は別画面(パスワード確認あり)で行う。 */}
         <Input id="email" type="email" value={user.email} disabled />
-        <p className="text-muted-foreground text-sm">
-          メールアドレスの変更にはパスワードの確認が必要です。
-        </p>
       </div>
-      <Button type="submit" className="self-start" disabled={!isDirty || updateProfile.isPending}>
-        保存
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button type="submit" disabled={!isDirty || updateProfile.isPending}>
+          保存
+        </Button>
+        <Button type="button" variant="outline" onClick={() => navigate('/top/account/email')}>
+          メールアドレスを変更
+        </Button>
+      </div>
     </form>
   )
 }
