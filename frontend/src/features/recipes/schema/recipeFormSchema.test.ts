@@ -7,7 +7,6 @@ const validValues = {
   createFor: '2',
   createTime: '30',
   procedure: '煮る',
-  archiveFlg: false,
   label: ['夕食'],
   sharedUser: ['taro'],
   ingredients: [{ name: '玉ねぎ', quantity: 1, unit: '個' }],

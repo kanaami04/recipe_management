@@ -27,17 +27,17 @@ async function mockApi(page: Page) {
   )
   await page.route('**/api/label/', (r) => r.fulfill({ status: 200, json: [] }))
   await page.route('**/api/users/', (r) => r.fulfill({ status: 200, json: [] }))
-  // PUT は archive_flg を反映して以降の一覧へ反映する。
-  await page.route('**/api/recipes/*/', (r) => {
+  // アーカイブ専用 PUT。ユーザーごとの状態(このモックは taro 単一)を一覧に反映し、204 を返す。
+  await page.route('**/api/recipes/*/archive/', (r) => {
     const id = r
       .request()
       .url()
-      .match(/\/api\/recipes\/([^/]+)\//)?.[1]
+      .match(/\/api\/recipes\/([^/]+)\/archive\//)?.[1]
     const body = r.request().postDataJSON()
     const idx = recipes.findIndex((x) => x.id === id)
     if (r.request().method() === 'PUT' && idx >= 0) {
       recipes[idx] = { ...recipes[idx], archive_flg: body.archive_flg }
-      return r.fulfill({ status: 200, json: recipes[idx] })
+      return r.fulfill({ status: 204, body: '' })
     }
     return r.fallback()
   })

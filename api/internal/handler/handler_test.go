@@ -46,6 +46,7 @@ type mockRecipeService struct {
 	updateFn  func(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error)
 	deleteFn  func(ctx context.Context, userID, recipeID string) error
 	reorderFn func(ctx context.Context, userID string, recipeIDs []string) error
+	archiveFn func(ctx context.Context, userID, recipeID string, archived bool) error
 }
 
 func (m *mockRecipeService) List(ctx context.Context, userID string) ([]domain.Recipe, error) {
@@ -62,6 +63,9 @@ func (m *mockRecipeService) Delete(ctx context.Context, userID, recipeID string)
 }
 func (m *mockRecipeService) Reorder(ctx context.Context, userID string, recipeIDs []string) error {
 	return m.reorderFn(ctx, userID, recipeIDs)
+}
+func (m *mockRecipeService) SetArchived(ctx context.Context, userID, recipeID string, archived bool) error {
+	return m.archiveFn(ctx, userID, recipeID, archived)
 }
 
 // --- UserService のモック ---

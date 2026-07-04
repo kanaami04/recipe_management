@@ -7,6 +7,11 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// ArchiveRequest アーカイブ状態(ユーザーごと)。true でアーカイブ、false で解除。
+type ArchiveRequest struct {
+	ArchiveFlg bool `json:"archive_flg"`
+}
+
 // CookingInput defines model for CookingInput.
 type CookingInput struct {
 	Ingredients NameInput `json:"ingredients"`
@@ -48,8 +53,7 @@ type NameResponse struct {
 
 // RecipeRequest defines model for RecipeRequest.
 type RecipeRequest struct {
-	ArchiveFlg bool           `json:"archive_flg,omitempty"`
-	Cooking    []CookingInput `json:"cooking,omitempty"`
+	Cooking []CookingInput `json:"cooking,omitempty"`
 
 	// CreateFor 何人前。未指定時はサーバ側で 1 に正規化される。
 	CreateFor int `json:"create_for,omitempty"`
@@ -175,6 +179,9 @@ type ReorderRecipesJSONRequestBody = ReorderRequest
 
 // UpdateRecipeJSONRequestBody defines body for UpdateRecipe for application/json ContentType.
 type UpdateRecipeJSONRequestBody = RecipeRequest
+
+// ArchiveRecipeJSONRequestBody defines body for ArchiveRecipe for application/json ContentType.
+type ArchiveRecipeJSONRequestBody = ArchiveRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = TokenRequest

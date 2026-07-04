@@ -193,3 +193,80 @@ func TestRecipeReorder_ForbiddenForInvisibleRecipe(t *testing.T) {
 	// Assert
 	assert.ErrorIs(t, err, ErrForbidden)
 }
+
+// 所有レシピをアーカイブした時、その状態がリポジトリへ保存されること。
+func TestRecipeSetArchived_OwnerSaves(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	err := svc.SetArchived(context.Background(), "u5", "r1", true)
+
+	// Assert
+	require.NoError(t, err)
+	assert.True(t, rr.archived["u5"]["r1"])
+}
+
+// 共有先ユーザーは、共有されたレシピを自分の状態としてアーカイブできること。
+func TestRecipeSetArchived_SharedUserAllowed(t *testing.T) {
+	// Arrange: r1 は u5 所有、u9 に共有
+	rr := newMockRecipeRepo()
+	rr.store["r1"] = factory.NewRecipe(
+		factory.WithRecipeID("r1"),
+		factory.WithOwnerID("u5"),
+		factory.WithSharedUsers(*factory.NewUser(factory.WithID("u9"))),
+	)
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	err := svc.SetArchived(context.Background(), "u9", "r1", true)
+
+	// Assert
+	require.NoError(t, err)
+	assert.True(t, rr.archived["u9"]["r1"])
+}
+
+// 閲覧できないユーザーがアーカイブしようとした時、ErrForbidden が返り保存されないこと。
+func TestRecipeSetArchived_ForbiddenForInvisibleRecipe(t *testing.T) {
+	// Arrange: r1 は u5 所有・共有なし。u9 からは見えない
+	rr := newMockRecipeRepo()
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	err := svc.SetArchived(context.Background(), "u9", "r1", true)
+
+	// Assert
+	assert.ErrorIs(t, err, ErrForbidden)
+}
+
+// 存在しないレシピをアーカイブしようとした時、ErrNotFound が返ること。
+func TestRecipeSetArchived_NotFound(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	err := svc.SetArchived(context.Background(), "u1", "no-such-recipe", true)
+
+	// Assert
+	assert.ErrorIs(t, err, ErrNotFound)
+}
+
+// 更新した時、レスポンスの Archived に操作ユーザーのアーカイブ状態が反映されること。
+func TestRecipeUpdate_ReflectsPerUserArchived(t *testing.T) {
+	// Arrange: u5 所有の r1 を、u5 が事前にアーカイブしている
+	rr := newMockRecipeRepo()
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
+	require.NoError(t, rr.SetArchived(context.Background(), "u5", "r1", true))
+	svc := NewRecipeService(rr, &mockUserRepo{})
+
+	// Act
+	updated, err := svc.Update(context.Background(), "u5", "r1", request.RecipeRequest{Title: "肉じゃが"})
+
+	// Assert
+	require.NoError(t, err)
+	assert.True(t, updated.Archived)
+}

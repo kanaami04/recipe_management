@@ -22,6 +22,7 @@ type LabelRepository interface {
 type RecipeRepository interface {
 	// FindAllForUser は owner == userID または共有先に userID を含むレシピを、
 	// そのユーザーの表示順(recipe_orders.position 昇順、未設定は末尾)で返す。
+	// 各レシピの Archived には、この userID にとってのアーカイブ状態を詰める。
 	FindAllForUser(ctx context.Context, userID string) ([]Recipe, error)
 	FindByID(ctx context.Context, id string) (*Recipe, error)
 	Create(ctx context.Context, recipe *Recipe) error
@@ -30,4 +31,9 @@ type RecipeRepository interface {
 	// Reorder は userID の表示順を recipeIDs の並び(先頭 = position 0)で保存する。
 	// 他ユーザーの順序には影響しない。
 	Reorder(ctx context.Context, userID string, recipeIDs []string) error
+	// SetArchived は userID にとっての recipeID のアーカイブ状態を保存する。
+	// archived=true で行を作り(冪等)、false で行を消す。他ユーザーには影響しない。
+	SetArchived(ctx context.Context, userID, recipeID string, archived bool) error
+	// IsArchived は userID にとって recipeID がアーカイブ済みかを返す。
+	IsArchived(ctx context.Context, userID, recipeID string) (bool, error)
 }

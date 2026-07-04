@@ -83,11 +83,17 @@ export type RecipeRequest = {
      */
     create_for?: number;
     procedure?: string;
-    archive_flg?: boolean;
     label?: Array<LabelInput>;
     shared_user?: Array<SharedUserInput>;
     cooking?: Array<CookingInput>;
     season?: Array<SeasonInput>;
+};
+
+/**
+ * アーカイブ状態(ユーザーごと)。true でアーカイブ、false で解除。
+ */
+export type ArchiveRequest = {
+    archive_flg: boolean;
 };
 
 /**
@@ -398,6 +404,48 @@ export type ReorderRecipesResponses = {
 };
 
 export type ReorderRecipesResponse = ReorderRecipesResponses[keyof ReorderRecipesResponses];
+
+export type ArchiveRecipeData = {
+    body: ArchiveRequest;
+    path: {
+        /**
+         * レシピ ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/recipes/{id}/archive/';
+};
+
+export type ArchiveRecipeErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type ArchiveRecipeError = ArchiveRecipeErrors[keyof ArchiveRecipeErrors];
+
+export type ArchiveRecipeResponses = {
+    /**
+     * 更新成功(本文なし)
+     */
+    204: void;
+};
+
+export type ArchiveRecipeResponse = ArchiveRecipeResponses[keyof ArchiveRecipeResponses];
 
 export type DeleteRecipeData = {
     body?: never;

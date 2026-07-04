@@ -43,7 +43,6 @@ export const recipeFormSchema = z.object({
   createFor: z.string().min(1, '人数を選択してください'),
   createTime: z.string(), // 任意。空文字を許容し、変換時に null へ。
   procedure: z.string(),
-  archiveFlg: z.boolean(),
   label: z.array(z.string()),
   sharedUser: z.array(z.string()),
   // 食材は完全に入力された行が最低 1 つ必須。調味料は任意(空行は無視)。
@@ -63,7 +62,6 @@ export function toFormValues(recipe?: RecipeResponse): RecipeFormValues {
     createFor: recipe ? String(recipe.create_for) : '',
     createTime: recipe?.create_time != null ? String(recipe.create_time) : '',
     procedure: recipe?.procedure ?? '',
-    archiveFlg: recipe?.archive_flg ?? false,
     label: recipe?.label.map((l) => l.name) ?? [],
     sharedUser: recipe?.shared_user.map((u) => u.username) ?? [],
     ingredients: recipe?.cooking.map((c) => ({
@@ -86,7 +84,6 @@ export function toRecipeRequest(values: RecipeFormValues): RecipeRequest {
     create_for: Number(values.createFor),
     create_time: values.createTime === '' ? null : Number(values.createTime),
     procedure: values.procedure,
-    archive_flg: values.archiveFlg,
     label: values.label.map((name) => ({ name })),
     shared_user: values.sharedUser.map((username) => ({ username })),
     // 未使用の空行は送らない(検証で除外済みだが、送信でも念のため除く)。

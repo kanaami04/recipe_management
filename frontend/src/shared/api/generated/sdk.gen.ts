@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses } from './types.gen';
+import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -128,6 +128,19 @@ export const createRecipe = <ThrowOnError extends boolean = false>(options: Opti
 export const reorderRecipes = <ThrowOnError extends boolean = false>(options: Options<ReorderRecipesData, ThrowOnError>): RequestResult<ReorderRecipesResponses, ReorderRecipesErrors, ThrowOnError> => (options.client ?? client).put<ReorderRecipesResponses, ReorderRecipesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/recipes/reorder/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * アーカイブ状態を更新(ユーザーごと。他ユーザーには影響しない)
+ */
+export const archiveRecipe = <ThrowOnError extends boolean = false>(options: Options<ArchiveRecipeData, ThrowOnError>): RequestResult<ArchiveRecipeResponses, ArchiveRecipeErrors, ThrowOnError> => (options.client ?? client).put<ArchiveRecipeResponses, ArchiveRecipeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/recipes/{id}/archive/',
     ...options,
     headers: {
         'Content-Type': 'application/json',

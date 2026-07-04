@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { createRecipe, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateRecipe } from '../sdk.gen';
-import type { CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse } from '../types.gen';
+import { archiveRecipe, createRecipe, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateRecipe } from '../sdk.gen';
+import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -214,6 +214,23 @@ export const reorderRecipesMutation = (options?: Partial<Options<ReorderRecipesD
     const mutationOptions: UseMutationOptions<ReorderRecipesResponse, AxiosError<ReorderRecipesError>, Options<ReorderRecipesData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await reorderRecipes({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * アーカイブ状態を更新(ユーザーごと。他ユーザーには影響しない)
+ */
+export const archiveRecipeMutation = (options?: Partial<Options<ArchiveRecipeData>>): UseMutationOptions<ArchiveRecipeResponse, AxiosError<ArchiveRecipeError>, Options<ArchiveRecipeData>> => {
+    const mutationOptions: UseMutationOptions<ArchiveRecipeResponse, AxiosError<ArchiveRecipeError>, Options<ArchiveRecipeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await archiveRecipe({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
