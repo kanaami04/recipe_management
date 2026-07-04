@@ -4,11 +4,10 @@ import { Archive, ArchiveRestore, MoreVertical, Pencil, Trash2 } from 'lucide-re
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { toFormValues, toRecipeRequest } from '@/features/recipes/schema/recipeFormSchema'
 import {
+  archiveRecipeMutation,
   deleteRecipeMutation,
   listRecipesQueryKey,
-  updateRecipeMutation,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { RecipeResponse } from '@/shared/api/generated/types.gen'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
@@ -47,9 +46,10 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
     deleteMutation.mutate({ path: { id: recipe.id } })
   }
 
-  // アーカイブ切り替えは既存の更新 API を再利用する(archive_flg だけ反転)。
+  // アーカイブはユーザーごとの状態。専用 API で自分の状態だけ切り替える
+  // (共有相手の状態には影響しない)。
   const archiveMutation = useMutation({
-    ...updateRecipeMutation(),
+    ...archiveRecipeMutation(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: listRecipesQueryKey() })
       toast.success(recipe.archive_flg ? 'アーカイブを解除しました' : 'レシピをアーカイブしました')
@@ -59,10 +59,9 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
   })
 
   const handleToggleArchive = () => {
-    const body = toRecipeRequest(toFormValues(recipe))
     archiveMutation.mutate({
       path: { id: recipe.id },
-      body: { ...body, archive_flg: !recipe.archive_flg },
+      body: { archive_flg: !recipe.archive_flg },
     })
   }
 

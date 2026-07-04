@@ -15,6 +15,8 @@ type mockRecipeRepo struct {
 	updated      *domain.Recipe
 	deletedIDs   []string
 	reorderedIDs []string
+	// archived[userID][recipeID] = true でアーカイブ済み。
+	archived map[string]map[string]bool
 }
 
 func newMockRecipeRepo() *mockRecipeRepo {
@@ -58,6 +60,19 @@ func (m *mockRecipeRepo) Delete(_ context.Context, recipe *domain.Recipe) error 
 func (m *mockRecipeRepo) Reorder(_ context.Context, _ string, recipeIDs []string) error {
 	m.reorderedIDs = recipeIDs
 	return nil
+}
+func (m *mockRecipeRepo) SetArchived(_ context.Context, userID, recipeID string, archived bool) error {
+	if m.archived == nil {
+		m.archived = map[string]map[string]bool{}
+	}
+	if m.archived[userID] == nil {
+		m.archived[userID] = map[string]bool{}
+	}
+	m.archived[userID][recipeID] = archived
+	return nil
+}
+func (m *mockRecipeRepo) IsArchived(_ context.Context, userID, recipeID string) (bool, error) {
+	return m.archived[userID][recipeID], nil
 }
 
 // --- UserRepository のモック ---

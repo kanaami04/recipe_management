@@ -63,7 +63,7 @@ func TestMain(m *testing.M) {
 func truncateAll(t *testing.T) {
 	t.Helper()
 	const stmt = `TRUNCATE recipes, recipe_labels, recipe_ingredients, recipe_seasonings,
-		recipe_shares, recipe_orders, users RESTART IDENTITY CASCADE`
+		recipe_shares, recipe_orders, recipe_archives, users RESTART IDENTITY CASCADE`
 	if err := testDB.Exec(stmt).Error; err != nil {
 		t.Fatalf("truncate: %v", err)
 	}

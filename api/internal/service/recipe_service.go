@@ -14,6 +14,7 @@ type RecipeService interface {
 	Update(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error)
 	Delete(ctx context.Context, userID, recipeID string) error
 	Reorder(ctx context.Context, userID string, recipeIDs []string) error
+	SetArchived(ctx context.Context, userID, recipeID string, archived bool) error
 }
 
 type recipeService struct {
@@ -35,7 +36,6 @@ func (s *recipeService) Create(ctx context.Context, userID string, req request.R
 		CookingTime: req.CreateTime,
 		Servings:    normalizeServings(req.CreateFor),
 		Procedure:   req.Procedure,
-		Archived:    req.ArchiveFlg,
 		OwnerID:     userID,
 	}
 	if err := s.buildAssociations(ctx, req, recipe); err != nil {
@@ -63,15 +63,40 @@ func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req
 	existing.CookingTime = req.CreateTime
 	existing.Servings = normalizeServings(req.CreateFor)
 	existing.Procedure = req.Procedure
-	existing.Archived = req.ArchiveFlg
-	// owner は変更しない
+	// owner・アーカイブ状態は更新対象外(アーカイブは専用の SetArchived で扱う)
 	if err := s.buildAssociations(ctx, req, existing); err != nil {
 		return nil, err
 	}
 	if err := s.recipes.Update(ctx, existing); err != nil {
 		return nil, err
 	}
-	return s.recipes.FindByID(ctx, recipeID)
+	updated, err := s.recipes.FindByID(ctx, recipeID)
+	if err != nil {
+		return nil, err
+	}
+	// レスポンスの archive_flg は「操作したユーザーにとっての状態」を返す。
+	archived, err := s.recipes.IsArchived(ctx, userID, recipeID)
+	if err != nil {
+		return nil, err
+	}
+	updated.Archived = archived
+	return updated, nil
+}
+
+// SetArchived は userID にとっての recipeID のアーカイブ状態を切り替える。
+// 閲覧できる(所有 or 共有された)レシピにのみ許可し、他ユーザーの状態には影響しない。
+func (s *recipeService) SetArchived(ctx context.Context, userID, recipeID string, archived bool) error {
+	existing, err := s.recipes.FindByID(ctx, recipeID)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return ErrNotFound
+	}
+	if !canModify(existing, userID) {
+		return ErrForbidden
+	}
+	return s.recipes.SetArchived(ctx, userID, recipeID, archived)
 }
 
 func (s *recipeService) Delete(ctx context.Context, userID, recipeID string) error {

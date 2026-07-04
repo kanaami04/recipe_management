@@ -221,6 +221,37 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /api/recipes/{id}/archive/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: レシピ ID
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [recipes]
+      summary: アーカイブ状態を更新(ユーザーごと。他ユーザーには影響しない)
+      operationId: archiveRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchiveRequest'
+      responses:
+        '204':
+          description: 更新成功(本文なし)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/recipes/{id}/:
     parameters:
       - name: id
@@ -479,9 +510,6 @@ components:
         procedure:
           type: string
           x-go-type-skip-optional-pointer: true
-        archive_flg:
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         label:
           type: array
           items:
@@ -501,6 +529,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SeasonInput'
+          x-go-type-skip-optional-pointer: true
+
+    ArchiveRequest:
+      type: object
+      description: アーカイブ状態(ユーザーごと)。true でアーカイブ、false で解除。
+      required: [archive_flg]
+      properties:
+        # boolean に validate:required は付けない(false=解除 がゼロ値扱いで弾かれるため)。
+        archive_flg:
+          type: boolean
           x-go-type-skip-optional-pointer: true
 
     ReorderRequest:

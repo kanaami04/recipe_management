@@ -453,3 +453,99 @@ func TestRecipeHandler_Reorder_InternalError(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }
+
+// serveArchive は archiveFn を差し替えた RecipeHandler に、認証付きで PUT /api/recipes/:id/archive/ し結果を返す。
+func serveArchive(t *testing.T, archiveFn func(context.Context, string, string, bool) error, idParam, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	jm := jwtpkg.NewManager("secret")
+	e := newTestEcho()
+	h := NewRecipeHandler(&mockRecipeService{archiveFn: archiveFn})
+	e.PUT("/api/recipes/:id/archive/", h.Archive, appmw.JWT(jm))
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, authedRequest(t, jm, http.MethodPut, "/api/recipes/"+idParam+"/archive/", body))
+	return rec
+}
+
+// 認証済みでアーカイブ更新した時、204 が返ること。
+func TestRecipeHandler_Archive_Returns204(t *testing.T) {
+	// Arrange & Act
+	rec := serveArchive(t, func(_ context.Context, _, _ string, _ bool) error {
+		return nil
+	}, testRecipeID, `{"archive_flg":true}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// アーカイブ更新した時、JWT のユーザーIDがサービスに渡されること。
+func TestRecipeHandler_Archive_ForwardsUserID(t *testing.T) {
+	// Arrange & Act
+	var gotUserID string
+	serveArchive(t, func(_ context.Context, userID, _ string, _ bool) error {
+		gotUserID = userID
+		return nil
+	}, testRecipeID, `{"archive_flg":true}`)
+
+	// Assert
+	assert.Equal(t, testUserID, gotUserID)
+}
+
+// アーカイブ更新した時、対象レシピIDと状態がサービスに渡されること。
+func TestRecipeHandler_Archive_ForwardsTarget(t *testing.T) {
+	// Arrange & Act
+	var gotRecipeID string
+	var gotArchived bool
+	serveArchive(t, func(_ context.Context, _, recipeID string, archived bool) error {
+		gotRecipeID, gotArchived = recipeID, archived
+		return nil
+	}, testRecipeID, `{"archive_flg":true}`)
+
+	// Assert
+	assert.Equal(t, testRecipeID, gotRecipeID)
+	assert.True(t, gotArchived)
+}
+
+// id が UUID でない時、サービスを呼ばず 400 が返ること。
+func TestRecipeHandler_Archive_InvalidID(t *testing.T) {
+	// Arrange & Act
+	rec := serveArchive(t, func(_ context.Context, _, _ string, _ bool) error {
+		t.Fatal("id 不正時に service を呼んではいけない")
+		return nil
+	}, "not-a-uuid", `{"archive_flg":true}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// 閲覧できないレシピのアーカイブでサービスが ErrForbidden を返した時、403 が返ること。
+func TestRecipeHandler_Archive_Forbidden(t *testing.T) {
+	// Arrange & Act
+	rec := serveArchive(t, func(_ context.Context, _, _ string, _ bool) error {
+		return service.ErrForbidden
+	}, testRecipeID, `{"archive_flg":true}`)
+
+	// Assert
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+// 存在しないレシピのアーカイブでサービスが ErrNotFound を返した時、404 が返ること。
+func TestRecipeHandler_Archive_NotFound(t *testing.T) {
+	// Arrange & Act
+	rec := serveArchive(t, func(_ context.Context, _, _ string, _ bool) error {
+		return service.ErrNotFound
+	}, testRecipeID, `{"archive_flg":false}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+// サービスが想定外のエラーを返した時、500 が返ること。
+func TestRecipeHandler_Archive_InternalError(t *testing.T) {
+	// Arrange & Act
+	rec := serveArchive(t, func(_ context.Context, _, _ string, _ bool) error {
+		return assert.AnError
+	}, testRecipeID, `{"archive_flg":true}`)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}

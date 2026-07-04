@@ -96,6 +96,23 @@ func (h *RecipeHandler) Reorder(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// Archive は PUT /api/recipes/:id/archive/。ユーザーごとのアーカイブ状態を更新する。
+func (h *RecipeHandler) Archive(c echo.Context) error {
+	userID := appmw.UserIDFromContext(c)
+	id, err := parseID(c)
+	if err != nil {
+		return err
+	}
+	var req request.ArchiveRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := h.svc.SetArchived(c.Request().Context(), userID, id, req.ArchiveFlg); err != nil {
+		return mapServiceError(err)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 func bindRecipe(c echo.Context) (*request.RecipeRequest, error) {
 	var req request.RecipeRequest
 	if err := c.Bind(&req); err != nil {

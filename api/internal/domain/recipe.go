@@ -10,7 +10,11 @@ type Recipe struct {
 	CookingTime *int   // 調理時間(分)。任意
 	Servings    int    `gorm:"not null;default:1"` // 何人前
 	Procedure   string `gorm:"type:text"`
-	Archived    bool   `gorm:"not null;default:false"`
+
+	// Archived はレシピ本体には保持しない(列を持たない)。アーカイブは
+	// ユーザーごとの状態のため recipe_archives(RecipeArchive)を単一のソースとし、
+	// リポジトリが「リクエストしたユーザーにとってのアーカイブ状態」を詰める。
+	Archived bool `gorm:"-"`
 
 	OwnerID string `gorm:"type:uuid;not null;index"`
 	Owner   User   `gorm:"foreignKey:OwnerID"`

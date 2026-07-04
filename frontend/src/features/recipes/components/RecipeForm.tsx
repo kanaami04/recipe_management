@@ -16,7 +16,6 @@ import type {
   UserListItem,
 } from '@/shared/api/generated/types.gen'
 import { Button } from '@/shared/ui/button'
-import { Checkbox } from '@/shared/ui/checkbox'
 import { DialogFooter } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -199,20 +198,6 @@ export function RecipeForm({ mode, initialData, onSubmit, labelData, sharedUserD
               )}
             />
           )}
-        </div>
-        <div className="flex items-center gap-3">
-          <Controller
-            control={control}
-            name="archiveFlg"
-            render={({ field }) => (
-              <Checkbox
-                id="archive_flg"
-                checked={field.value}
-                onCheckedChange={(value) => field.onChange(Boolean(value))}
-              />
-            )}
-          />
-          <Label htmlFor="archive_flg">アーカイブ</Label>
         </div>
       </div>
       <DialogFooter>

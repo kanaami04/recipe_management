@@ -6,6 +6,7 @@ import "recipe-backend/internal/apigen"
 type (
 	RecipeRequest   = apigen.RecipeRequest
 	ReorderRequest  = apigen.ReorderRequest
+	ArchiveRequest  = apigen.ArchiveRequest
 	LabelInput      = apigen.LabelInput
 	SharedUserInput = apigen.SharedUserInput
 	NameInput       = apigen.NameInput

@@ -231,6 +231,123 @@ func TestRecipeRepo_Reorder_IsolatedPerUser(t *testing.T) {
 	assert.Equal(t, []string{a.ID, b.ID}, recipeIDs(friendList))
 }
 
+// archivedOf は list から id のレシピの Archived を返す(無ければ false)。
+func archivedOf(list []domain.Recipe, id string) bool {
+	for i := range list {
+		if list[i].ID == id {
+			return list[i].Archived
+		}
+	}
+	return false
+}
+
+// アーカイブを保存した時、そのユーザーの FindAllForUser で Archived=true になること。
+func TestRecipeRepo_SetArchived_ReflectsInList(t *testing.T) {
+	// Arrange
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+
+	// Act
+	require.NoError(t, repo.SetArchived(ctx, owner.ID, r.ID, true))
+
+	// Assert
+	list, err := repo.FindAllForUser(ctx, owner.ID)
+	require.NoError(t, err)
+	assert.True(t, archivedOf(list, r.ID))
+}
+
+// 共有相手がアーカイブしても、所有者の一覧では Archived のままにならないこと(ユーザーごと)。
+func TestRecipeRepo_SetArchived_IsolatedPerUser(t *testing.T) {
+	// Arrange: owner が friend に共有したレシピ
+	ctx, repo, owner, friend, _ := arrangeSharedRecipe(t)
+	list, err := repo.FindAllForUser(ctx, friend.ID)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	recipeID := list[0].ID
+
+	// Act: friend が自分の状態としてアーカイブする
+	require.NoError(t, repo.SetArchived(ctx, friend.ID, recipeID, true))
+
+	// Assert: friend では Archived、owner では非 Archived
+	friendList, err := repo.FindAllForUser(ctx, friend.ID)
+	require.NoError(t, err)
+	assert.True(t, archivedOf(friendList, recipeID))
+	ownerList, err := repo.FindAllForUser(ctx, owner.ID)
+	require.NoError(t, err)
+	assert.False(t, archivedOf(ownerList, recipeID))
+}
+
+// アーカイブを解除した時、そのユーザーの FindAllForUser で Archived=false に戻ること。
+func TestRecipeRepo_SetArchived_Unarchive(t *testing.T) {
+	// Arrange: 一度アーカイブする
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.SetArchived(ctx, owner.ID, r.ID, true))
+
+	// Act
+	require.NoError(t, repo.SetArchived(ctx, owner.ID, r.ID, false))
+
+	// Assert
+	list, err := repo.FindAllForUser(ctx, owner.ID)
+	require.NoError(t, err)
+	assert.False(t, archivedOf(list, r.ID))
+}
+
+// IsArchived は、アーカイブ済みのユーザーには true、そうでないユーザーには false を返すこと。
+func TestRecipeRepo_IsArchived_PerUser(t *testing.T) {
+	// Arrange: owner が r をアーカイブ、friend はしていない
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	friend := seedUser(t, "friend")
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.SetArchived(ctx, owner.ID, r.ID, true))
+
+	// Act
+	ownerArchived, err := repo.IsArchived(ctx, owner.ID, r.ID)
+	require.NoError(t, err)
+	friendArchived, err := repo.IsArchived(ctx, friend.ID, r.ID)
+	require.NoError(t, err)
+
+	// Assert
+	assert.True(t, ownerArchived)
+	assert.False(t, friendArchived)
+}
+
+// レシピを削除した時、その recipe_archives 行も FK CASCADE で消えること。
+func TestRecipeRepo_Delete_CascadesRecipeArchives(t *testing.T) {
+	// Arrange: アーカイブ行を作ってから削除する
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.SetArchived(ctx, owner.ID, r.ID, true))
+
+	// Act
+	require.NoError(t, repo.Delete(ctx, r))
+
+	// Assert
+	var count int64
+	testDB.Table("recipe_archives").Where("recipe_id = ?", r.ID).Count(&count)
+	assert.Zero(t, count)
+}
+
 // レシピを削除した時、その recipe_orders 行も FK CASCADE で消えること。
 func TestRecipeRepo_Delete_CascadesRecipeOrders(t *testing.T) {
 	// Arrange: 並べ替えで recipe_orders 行を作ってから削除する

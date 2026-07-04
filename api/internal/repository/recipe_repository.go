@@ -47,7 +47,61 @@ func (r *recipeRepository) FindAllForUser(ctx context.Context, userID string) ([
 		Order("recipe_orders.position ASC NULLS LAST").
 		Order("recipes.id ASC").
 		Find(&recipes).Error
-	return recipes, err
+	if err != nil {
+		return nil, err
+	}
+	// 各レシピに、この userID にとってのアーカイブ状態を詰める。
+	if err := r.fillArchived(ctx, userID, recipes); err != nil {
+		return nil, err
+	}
+	return recipes, nil
+}
+
+// fillArchived は userID がアーカイブ済みのレシピを引いて、recipes の Archived を立てる。
+func (r *recipeRepository) fillArchived(ctx context.Context, userID string, recipes []domain.Recipe) error {
+	if len(recipes) == 0 {
+		return nil
+	}
+	var archivedIDs []string
+	if err := r.db.WithContext(ctx).
+		Model(&domain.RecipeArchive{}).
+		Where("user_id = ?", userID).
+		Pluck("recipe_id", &archivedIDs).Error; err != nil {
+		return err
+	}
+	archived := make(map[string]struct{}, len(archivedIDs))
+	for _, id := range archivedIDs {
+		archived[id] = struct{}{}
+	}
+	for i := range recipes {
+		if _, ok := archived[recipes[i].ID]; ok {
+			recipes[i].Archived = true
+		}
+	}
+	return nil
+}
+
+func (r *recipeRepository) SetArchived(ctx context.Context, userID, recipeID string, archived bool) error {
+	if !archived {
+		return r.db.WithContext(ctx).
+			Where("user_id = ? AND recipe_id = ?", userID, recipeID).
+			Delete(&domain.RecipeArchive{}).Error
+	}
+	// 既に行があれば何もしない upsert。belongs-to(User/Recipe)は FK 定義用で、
+	// 書き込みでは巻き込まないよう Omit する(recipe_orders と同じ扱い)。
+	return r.db.WithContext(ctx).
+		Omit("User", "Recipe").
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&domain.RecipeArchive{UserID: userID, RecipeID: recipeID}).Error
+}
+
+func (r *recipeRepository) IsArchived(ctx context.Context, userID, recipeID string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&domain.RecipeArchive{}).
+		Where("user_id = ? AND recipe_id = ?", userID, recipeID).
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (r *recipeRepository) Reorder(ctx context.Context, userID string, recipeIDs []string) error {
@@ -95,13 +149,13 @@ func (r *recipeRepository) Create(ctx context.Context, recipe *domain.Recipe) er
 func (r *recipeRepository) Update(ctx context.Context, recipe *domain.Recipe) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// スカラー項目のみ更新（owner / created_at は変更しない）。
+		// アーカイブは per-user のため recipe_archives 側で扱い、ここでは触らない。
 		// cooking_time は NULL を書ける必要があるため map で更新する。
-		if err := tx.Model(&domain.Recipe{ID: recipe.ID}).Updates(map[string]interface{}{
+		if err := tx.Model(&domain.Recipe{ID: recipe.ID}).Updates(map[string]any{
 			"title":        recipe.Title,
 			"cooking_time": recipe.CookingTime,
 			"servings":     recipe.Servings,
 			"procedure":    recipe.Procedure,
-			"archived":     recipe.Archived,
 		}).Error; err != nil {
 			return err
 		}

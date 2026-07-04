@@ -75,11 +75,17 @@ export const zRecipeRequest = z.object({
     create_time: z.int().nullish(),
     create_for: z.int().optional(),
     procedure: z.string().optional(),
-    archive_flg: z.boolean().optional(),
     label: z.array(zLabelInput).optional(),
     shared_user: z.array(zSharedUserInput).optional(),
     cooking: z.array(zCookingInput).optional(),
     season: z.array(zSeasonInput).optional()
+});
+
+/**
+ * アーカイブ状態(ユーザーごと)。true でアーカイブ、false で解除。
+ */
+export const zArchiveRequest = z.object({
+    archive_flg: z.boolean()
 });
 
 /**
@@ -178,6 +184,17 @@ export const zReorderRecipesBody = zReorderRequest;
  * 更新成功(本文なし)
  */
 export const zReorderRecipesResponse = z.void();
+
+export const zArchiveRecipeBody = zArchiveRequest;
+
+export const zArchiveRecipePath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 更新成功(本文なし)
+ */
+export const zArchiveRecipeResponse = z.void();
 
 export const zDeleteRecipePath = z.object({
     id: z.uuid()
