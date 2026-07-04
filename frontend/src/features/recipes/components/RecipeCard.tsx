@@ -36,7 +36,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeResponse }) {
         <div className="text-xs">
           食材{recipe.cooking.length}・調味料{recipe.season.length}・手順{stepCount}
         </div>
-        <SharedAvatars users={recipe.shared_user} className="mt-1 self-start" />
+        <SharedAvatars users={recipe.shared_user} className="mt-3 self-start" />
       </CardContent>
     </Card>
   )
