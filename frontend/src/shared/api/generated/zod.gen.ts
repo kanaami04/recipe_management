@@ -46,6 +46,14 @@ export const zLabelResponse = z.object({
     name: z.string()
 });
 
+/**
+ * ユーザーが管理するラベル(マスタ)。作成・改名・削除の対象。
+ */
+export const zLabelItem = z.object({
+    id: z.uuid(),
+    name: z.string()
+});
+
 export const zNameInput = z.object({
     name: z.string()
 });
@@ -164,7 +172,34 @@ export const zListUsersResponse = z.array(zUserListItem);
 /**
  * 取得成功
  */
-export const zListLabelsResponse = z.array(zLabelResponse);
+export const zListLabelsResponse = z.array(zLabelItem);
+
+export const zCreateLabelBody = zLabelInput;
+
+/**
+ * 作成成功
+ */
+export const zCreateLabelResponse = zLabelItem;
+
+export const zDeleteLabelPath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 削除成功(本文なし)
+ */
+export const zDeleteLabelResponse = z.void();
+
+export const zUpdateLabelBody = zLabelInput;
+
+export const zUpdateLabelPath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 更新成功
+ */
+export const zUpdateLabelResponse = zLabelItem;
 
 /**
  * 取得成功

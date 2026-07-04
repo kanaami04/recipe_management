@@ -10,7 +10,7 @@ import {
 } from '@/features/recipes/schema/recipeFormSchema'
 import { INGREDIENT_UNITS, SEASONING_UNITS } from '@/features/recipes/units'
 import type {
-  LabelResponse,
+  LabelItem,
   RecipeRequest,
   RecipeResponse,
   UserListItem,
@@ -30,7 +30,7 @@ type Props = {
   mode: 'create' | 'edit'
   initialData?: RecipeResponse
   onSubmit: (payload: RecipeRequest) => Promise<void>
-  labelData?: LabelResponse[]
+  labelData?: LabelItem[]
   sharedUserData?: UserListItem[]
 }
 

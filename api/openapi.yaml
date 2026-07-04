@@ -148,7 +148,7 @@ paths:
   /api/label/:
     get:
       tags: [labels]
-      summary: 自分が閲覧できるレシピに付いたラベル一覧
+      summary: 自分が管理するラベル一覧
       operationId: listLabels
       responses:
         '200':
@@ -158,9 +158,82 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LabelResponse'
+                  $ref: '#/components/schemas/LabelItem'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [labels]
+      summary: ラベルを作成する
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelInput'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/label/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ラベル ID
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [labels]
+      summary: ラベルを改名する(自分のレシピのラベル名にも伝播)
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelInput'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [labels]
+      summary: ラベルを削除する(自分のレシピからも外す)
+      operationId: deleteLabel
+      responses:
+        '204':
+          description: 削除成功(本文なし)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/recipes/:
     get:
@@ -437,6 +510,18 @@ components:
       type: object
       required: [name]
       properties:
+        name:
+          type: string
+
+    LabelItem:
+      type: object
+      description: ユーザーが管理するラベル(マスタ)。作成・改名・削除の対象。
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
         name:
           type: string
 

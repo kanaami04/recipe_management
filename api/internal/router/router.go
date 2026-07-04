@@ -38,6 +38,9 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 		// ラベル
 		{
 			authorized.GET("/label/", h.Label.List)
+			authorized.POST("/label/", h.Label.Create)
+			authorized.PUT("/label/:id/", h.Label.Update)
+			authorized.DELETE("/label/:id/", h.Label.Delete)
 		}
 
 		// レシピ

@@ -14,9 +14,18 @@ type UserRepository interface {
 }
 
 type LabelRepository interface {
-	// FindNamesForUser は userID が閲覧できる(所有 or 共有された)レシピの
-	// ラベル名を重複なく昇順で返す。
-	FindNamesForUser(ctx context.Context, userID string) ([]string, error)
+	// FindAllForOwner は ownerID が管理するラベルを名前昇順で返す。
+	FindAllForOwner(ctx context.Context, ownerID string) ([]Label, error)
+	// FindByID は id のラベルを返す(無ければ nil)。所有チェック用。
+	FindByID(ctx context.Context, id string) (*Label, error)
+	// FindByOwnerAndName は (ownerID, name) のラベルを返す(無ければ nil)。重複チェック用。
+	FindByOwnerAndName(ctx context.Context, ownerID, name string) (*Label, error)
+	// Create はラベルを1件作る。
+	Create(ctx context.Context, label *Label) error
+	// Rename はラベル名を newName に変え、所有者のレシピの recipe_labels.name にも伝播する。
+	Rename(ctx context.Context, label *Label, newName string) error
+	// Delete はラベルを消し、所有者のレシピの recipe_labels からも同名を外す。
+	Delete(ctx context.Context, label *Label) error
 }
 
 type RecipeRepository interface {

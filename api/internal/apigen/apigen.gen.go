@@ -36,6 +36,12 @@ type LabelInput struct {
 	Name string `json:"name" validate:"required"`
 }
 
+// LabelItem ユーザーが管理するラベル(マスタ)。作成・改名・削除の対象。
+type LabelItem struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // LabelResponse defines model for LabelResponse.
 type LabelResponse struct {
 	Name string `json:"name"`
@@ -170,6 +176,12 @@ type bearerAuthContextKey string
 
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest
+
+// CreateLabelJSONRequestBody defines body for CreateLabel for application/json ContentType.
+type CreateLabelJSONRequestBody = LabelInput
+
+// UpdateLabelJSONRequestBody defines body for UpdateLabel for application/json ContentType.
+type UpdateLabelJSONRequestBody = LabelInput
 
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = RecipeRequest

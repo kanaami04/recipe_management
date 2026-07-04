@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { archiveRecipe, createRecipe, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateRecipe } from '../sdk.gen';
-import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse } from '../types.gen';
+import { archiveRecipe, createLabel, createRecipe, deleteLabel, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe } from '../sdk.gen';
+import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -157,7 +157,7 @@ export const listUsersOptions = (options?: Options<ListUsersData>) => queryOptio
 export const listLabelsQueryKey = (options?: Options<ListLabelsData>) => createQueryKey('listLabels', options);
 
 /**
- * 自分が閲覧できるレシピに付いたラベル一覧
+ * 自分が管理するラベル一覧
  */
 export const listLabelsOptions = (options?: Options<ListLabelsData>) => queryOptions<ListLabelsResponse, AxiosError<ListLabelsError>, ListLabelsResponse, ReturnType<typeof listLabelsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -171,6 +171,57 @@ export const listLabelsOptions = (options?: Options<ListLabelsData>) => queryOpt
     },
     queryKey: listLabelsQueryKey(options)
 });
+
+/**
+ * ラベルを作成する
+ */
+export const createLabelMutation = (options?: Partial<Options<CreateLabelData>>): UseMutationOptions<CreateLabelResponse, AxiosError<CreateLabelError>, Options<CreateLabelData>> => {
+    const mutationOptions: UseMutationOptions<CreateLabelResponse, AxiosError<CreateLabelError>, Options<CreateLabelData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createLabel({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * ラベルを削除する(自分のレシピからも外す)
+ */
+export const deleteLabelMutation = (options?: Partial<Options<DeleteLabelData>>): UseMutationOptions<DeleteLabelResponse, AxiosError<DeleteLabelError>, Options<DeleteLabelData>> => {
+    const mutationOptions: UseMutationOptions<DeleteLabelResponse, AxiosError<DeleteLabelError>, Options<DeleteLabelData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteLabel({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * ラベルを改名する(自分のレシピのラベル名にも伝播)
+ */
+export const updateLabelMutation = (options?: Partial<Options<UpdateLabelData>>): UseMutationOptions<UpdateLabelResponse, AxiosError<UpdateLabelError>, Options<UpdateLabelData>> => {
+    const mutationOptions: UseMutationOptions<UpdateLabelResponse, AxiosError<UpdateLabelError>, Options<UpdateLabelData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateLabel({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const listRecipesQueryKey = (options?: Options<ListRecipesData>) => createQueryKey('listRecipes', options);
 

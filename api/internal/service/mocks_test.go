@@ -114,10 +114,62 @@ func (m *mockUserRepo) Create(_ context.Context, user *domain.User) error {
 // --- LabelRepository のモック ---
 
 type mockLabelRepo struct {
-	names []string
-	err   error
+	store      map[string]*domain.Label // id -> label
+	created    *domain.Label
+	renamedTo  string
+	deletedIDs []string
+	err        error
 }
 
-func (m *mockLabelRepo) FindNamesForUser(_ context.Context, _ string) ([]string, error) {
-	return m.names, m.err
+func newMockLabelRepo() *mockLabelRepo {
+	return &mockLabelRepo{store: map[string]*domain.Label{}}
+}
+
+func (m *mockLabelRepo) FindAllForOwner(_ context.Context, ownerID string) ([]domain.Label, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	var out []domain.Label
+	for _, l := range m.store {
+		if l.OwnerID == ownerID {
+			out = append(out, *l)
+		}
+	}
+	return out, nil
+}
+func (m *mockLabelRepo) FindByID(_ context.Context, id string) (*domain.Label, error) {
+	l, ok := m.store[id]
+	if !ok {
+		return nil, nil
+	}
+	return l, nil
+}
+func (m *mockLabelRepo) FindByOwnerAndName(_ context.Context, ownerID, name string) (*domain.Label, error) {
+	for _, l := range m.store {
+		if l.OwnerID == ownerID && l.Name == name {
+			return l, nil
+		}
+	}
+	return nil, nil
+}
+func (m *mockLabelRepo) Create(_ context.Context, label *domain.Label) error {
+	if label.ID == "" {
+		label.ID = id.New()
+	}
+	cp := *label
+	m.store[label.ID] = &cp
+	m.created = &cp
+	return nil
+}
+func (m *mockLabelRepo) Rename(_ context.Context, label *domain.Label, newName string) error {
+	m.renamedTo = newName
+	if l, ok := m.store[label.ID]; ok {
+		l.Name = newName
+	}
+	return nil
+}
+func (m *mockLabelRepo) Delete(_ context.Context, label *domain.Label) error {
+	delete(m.store, label.ID)
+	m.deletedIDs = append(m.deletedIDs, label.ID)
+	return nil
 }

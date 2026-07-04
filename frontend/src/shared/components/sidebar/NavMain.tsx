@@ -39,12 +39,15 @@ export function NavMain() {
               <span>レシピ</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {/* ラベル一覧画面へ遷移するボタン */}
+          {/* ラベル管理画面へ遷移するボタン */}
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
-              tooltip="ラベル一覧"
-              className="min-w-8 duration-200 ease-linear"
-              onClick={() => navigateAndClose('/top/createLabel')}
+              tooltip="ラベル管理"
+              className={cn(
+                'min-w-8 duration-200 ease-linear',
+                pathname === '/top/labels' && activeClass,
+              )}
+              onClick={() => navigateAndClose('/top/labels')}
             >
               <span>ラベル</span>
             </SidebarMenuButton>

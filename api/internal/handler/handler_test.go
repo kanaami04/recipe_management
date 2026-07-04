@@ -85,9 +85,21 @@ func (m *mockUserService) List(ctx context.Context) ([]domain.User, error) {
 // --- LabelService のモック ---
 
 type mockLabelService struct {
-	listFn func(ctx context.Context, userID string) ([]string, error)
+	listFn   func(ctx context.Context, ownerID string) ([]domain.Label, error)
+	createFn func(ctx context.Context, ownerID, name string) (*domain.Label, error)
+	renameFn func(ctx context.Context, ownerID, id, name string) (*domain.Label, error)
+	deleteFn func(ctx context.Context, ownerID, id string) error
 }
 
-func (m *mockLabelService) List(ctx context.Context, userID string) ([]string, error) {
-	return m.listFn(ctx, userID)
+func (m *mockLabelService) List(ctx context.Context, ownerID string) ([]domain.Label, error) {
+	return m.listFn(ctx, ownerID)
+}
+func (m *mockLabelService) Create(ctx context.Context, ownerID, name string) (*domain.Label, error) {
+	return m.createFn(ctx, ownerID, name)
+}
+func (m *mockLabelService) Rename(ctx context.Context, ownerID, id, name string) (*domain.Label, error) {
+	return m.renameFn(ctx, ownerID, id, name)
+}
+func (m *mockLabelService) Delete(ctx context.Context, ownerID, id string) error {
+	return m.deleteFn(ctx, ownerID, id)
 }

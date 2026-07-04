@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses } from './types.gen';
+import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -89,13 +89,50 @@ export const listUsers = <ThrowOnError extends boolean = false>(options?: Option
 });
 
 /**
- * 自分が閲覧できるレシピに付いたラベル一覧
+ * 自分が管理するラベル一覧
  */
 export const listLabels = <ThrowOnError extends boolean = false>(options?: Options<ListLabelsData, ThrowOnError>): RequestResult<ListLabelsResponses, ListLabelsErrors, ThrowOnError> => (options?.client ?? client).get<ListLabelsResponses, ListLabelsErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/label/',
     ...options
+});
+
+/**
+ * ラベルを作成する
+ */
+export const createLabel = <ThrowOnError extends boolean = false>(options: Options<CreateLabelData, ThrowOnError>): RequestResult<CreateLabelResponses, CreateLabelErrors, ThrowOnError> => (options.client ?? client).post<CreateLabelResponses, CreateLabelErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/label/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * ラベルを削除する(自分のレシピからも外す)
+ */
+export const deleteLabel = <ThrowOnError extends boolean = false>(options: Options<DeleteLabelData, ThrowOnError>): RequestResult<DeleteLabelResponses, DeleteLabelErrors, ThrowOnError> => (options.client ?? client).delete<DeleteLabelResponses, DeleteLabelErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/label/{id}/',
+    ...options
+});
+
+/**
+ * ラベルを改名する(自分のレシピのラベル名にも伝播)
+ */
+export const updateLabel = <ThrowOnError extends boolean = false>(options: Options<UpdateLabelData, ThrowOnError>): RequestResult<UpdateLabelResponses, UpdateLabelErrors, ThrowOnError> => (options.client ?? client).put<UpdateLabelResponses, UpdateLabelErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/label/{id}/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
