@@ -65,6 +65,29 @@ export class RecipeStack extends Stack {
       autoDeleteObjects: true,
     })
 
+    // ---- S3 (プロフィール画像) -------------------------------------------
+    // 非公開バケット。閲覧は CloudFront(/avatars/*, OAC)経由でのみ。
+    // アップロードはブラウザ → 署名付き URL で S3 へ直 PUT する。署名は Lambda が
+    // 発行するため CORS はブラウザ側の許可のみを担う(認可は署名が担保)ので "*" で十分。
+    const avatars = new s3.Bucket(this, 'Avatars', {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      cors: [
+        {
+          allowedOrigins: ['*'],
+          allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET],
+          allowedHeaders: ['*'],
+          maxAge: 3000,
+        },
+      ],
+    })
+    // Lambda は署名付きアップロード URL の発行(PutObject)と、差し替え/削除時の
+    // オブジェクト削除(DeleteObject)を行う。閲覧は CloudFront が OAC で読むので付与しない。
+    avatars.grantPut(api)
+    avatars.grantDelete(api)
+
     // ---- CloudFront ------------------------------------------------------
     const spaRewrite = new cloudfront.Function(this, 'SpaRewrite', {
       runtime: cloudfront.FunctionRuntime.JS_2_0,
@@ -99,8 +122,30 @@ export class RecipeStack extends Stack {
           cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
           originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         },
+        // プロフィール画像を同一オリジンで公開する(OAC で非公開バケットを読む)。
+        // オブジェクトキーは avatars/{userID}/{uuid} で毎回一意なので長期キャッシュで安全。
+        '/avatars/*': {
+          origin: origins.S3BucketOrigin.withOriginAccessControl(avatars),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          compress: true,
+          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        },
       },
     })
+
+    // アバターの公開・保存に必要な設定を Lambda 環境変数へ渡す。
+    // 本番は実 AWS + Lambda 実行ロールを使うため、エンドポイント・静的認証情報は
+    // "明示的に空文字" を渡す(空 = 未設定ではなく「AWS を使う」の意。config.lookupOr 参照)。
+    api.addEnvironment('AVATAR_BUCKET', avatars.bucketName)
+    api.addEnvironment('S3_REGION', this.region)
+    api.addEnvironment('S3_ENDPOINT', '')
+    api.addEnvironment('S3_FORCE_PATH_STYLE', 'false')
+    api.addEnvironment('S3_ACCESS_KEY_ID', '')
+    api.addEnvironment('S3_SECRET_ACCESS_KEY', '')
+    // 画像 URL は相対パス "/avatars/{key}" にして同一オリジンの CloudFront から返す。
+    // ここで distribution.distributionDomainName を参照すると Lambda→Distribution→Lambda の
+    // 循環依存になるため、絶対 URL は使わず "" を渡す(config.lookupOr が空を尊重する)。
+    api.addEnvironment('AVATAR_PUBLIC_BASE_URL', '')
 
     // ---- フロントのデプロイ ----------------------------------------------
     // ハッシュ付きアセットは immutable 長期キャッシュ。

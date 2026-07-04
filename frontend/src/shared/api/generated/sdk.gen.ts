@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
+import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -121,6 +121,44 @@ export const changeEmail = <ThrowOnError extends boolean = false>(options: Optio
 export const changePassword = <ThrowOnError extends boolean = false>(options: Options<ChangePasswordData, ThrowOnError>): RequestResult<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError> => (options.client ?? client).put<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/user_info/password/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * プロフィール画像を削除する
+ */
+export const deleteAvatar = <ThrowOnError extends boolean = false>(options?: Options<DeleteAvatarData, ThrowOnError>): RequestResult<DeleteAvatarResponses, DeleteAvatarErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteAvatarResponses, DeleteAvatarErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/user_info/avatar/',
+    ...options
+});
+
+/**
+ * プロフィール画像のアップロード用 URL を発行する
+ */
+export const createAvatarUploadUrl = <ThrowOnError extends boolean = false>(options: Options<CreateAvatarUploadUrlData, ThrowOnError>): RequestResult<CreateAvatarUploadUrlResponses, CreateAvatarUploadUrlErrors, ThrowOnError> => (options.client ?? client).post<CreateAvatarUploadUrlResponses, CreateAvatarUploadUrlErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/user_info/avatar/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * アップロード済みの画像をプロフィール画像として確定する
+ */
+export const confirmAvatar = <ThrowOnError extends boolean = false>(options: Options<ConfirmAvatarData, ThrowOnError>): RequestResult<ConfirmAvatarResponses, ConfirmAvatarErrors, ThrowOnError> => (options.client ?? client).put<ConfirmAvatarResponses, ConfirmAvatarErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/user_info/avatar/',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -7,9 +7,37 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for CreateAvatarUploadUrlRequestContentType.
+const (
+	Imagejpeg CreateAvatarUploadUrlRequestContentType = "image/jpeg"
+	Imagepng  CreateAvatarUploadUrlRequestContentType = "image/png"
+	Imagewebp CreateAvatarUploadUrlRequestContentType = "image/webp"
+)
+
+// Valid indicates whether the value is a known member of the CreateAvatarUploadUrlRequestContentType enum.
+func (e CreateAvatarUploadUrlRequestContentType) Valid() bool {
+	switch e {
+	case Imagejpeg:
+		return true
+	case Imagepng:
+		return true
+	case Imagewebp:
+		return true
+	default:
+		return false
+	}
+}
+
 // ArchiveRequest アーカイブ状態(ユーザーごと)。true でアーカイブ、false で解除。
 type ArchiveRequest struct {
 	ArchiveFlg bool `json:"archive_flg"`
+}
+
+// AvatarUploadUrlResponse アップロード先の署名付き URL。この URL へ画像本体を PUT する(Content-Type ヘッダは要求時と同じ値にする)。
+type AvatarUploadUrlResponse struct {
+	// Key アップロード後、確定(PUT /api/user_info/avatar/)に渡すオブジェクトキー。
+	Key       string `json:"key"`
+	UploadUrl string `json:"upload_url"`
 }
 
 // ChangeEmailRequest メールアドレス変更。本人確認のため現在のパスワードを要求する。
@@ -22,6 +50,11 @@ type ChangeEmailRequest struct {
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
 	NewPassword     string `json:"new_password" validate:"required,min=8"`
+}
+
+// ConfirmAvatarRequest defines model for ConfirmAvatarRequest.
+type ConfirmAvatarRequest struct {
+	Key string `json:"key" validate:"required"`
 }
 
 // CookingInput defines model for CookingInput.
@@ -37,6 +70,14 @@ type CookingResponse struct {
 	Quantity    float64      `json:"quantity"`
 	Unit        string       `json:"unit"`
 }
+
+// CreateAvatarUploadUrlRequest defines model for CreateAvatarUploadUrlRequest.
+type CreateAvatarUploadUrlRequest struct {
+	ContentType CreateAvatarUploadUrlRequestContentType `json:"content_type" validate:"required,oneof=image/jpeg image/png image/webp"`
+}
+
+// CreateAvatarUploadUrlRequestContentType defines model for CreateAvatarUploadUrlRequest.ContentType.
+type CreateAvatarUploadUrlRequestContentType string
 
 // Error Echo の既定エラー形式
 type Error struct {
@@ -162,6 +203,9 @@ type UpdateUserRequest struct {
 
 // UserInfoResponse defines model for UserInfoResponse.
 type UserInfoResponse struct {
+	// AvatarUrl プロフィール画像の URL。未設定なら null。
+	AvatarUrl *string `json:"avatar_url"`
+
 	// CreatedAt 登録日時(JST, "YYYY-MM-DD HH:MM")
 	CreatedAt string `json:"created_at"`
 	Email     string `json:"email"`
@@ -219,6 +263,12 @@ type LoginJSONRequestBody = TokenRequest
 
 // UpdateUserInfoJSONRequestBody defines body for UpdateUserInfo for application/json ContentType.
 type UpdateUserInfoJSONRequestBody = UpdateUserRequest
+
+// CreateAvatarUploadUrlJSONRequestBody defines body for CreateAvatarUploadUrl for application/json ContentType.
+type CreateAvatarUploadUrlJSONRequestBody = CreateAvatarUploadUrlRequest
+
+// ConfirmAvatarJSONRequestBody defines body for ConfirmAvatar for application/json ContentType.
+type ConfirmAvatarJSONRequestBody = ConfirmAvatarRequest
 
 // ChangeEmailJSONRequestBody defines body for ChangeEmail for application/json ContentType.
 type ChangeEmailJSONRequestBody = ChangeEmailRequest

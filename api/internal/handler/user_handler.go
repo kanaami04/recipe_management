@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"recipe-backend/internal/domain"
 	"recipe-backend/internal/dto/request"
 	"recipe-backend/internal/dto/response"
 	appmw "recipe-backend/internal/middleware"
@@ -12,11 +13,12 @@ import (
 )
 
 type UserHandler struct {
-	svc service.UserService
+	svc     service.UserService
+	avatars domain.AvatarStorage
 }
 
-func NewUserHandler(svc service.UserService) *UserHandler {
-	return &UserHandler{svc: svc}
+func NewUserHandler(svc service.UserService, avatars domain.AvatarStorage) *UserHandler {
+	return &UserHandler{svc: svc, avatars: avatars}
 }
 
 // Info は GET /api/user_info/。ログインユーザー情報を返す。
@@ -29,7 +31,7 @@ func (h *UserHandler) Info(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
-	return c.JSON(http.StatusOK, response.ToUserInfo(u))
+	return c.JSON(http.StatusOK, response.ToUserInfo(u, h.avatars))
 }
 
 // List は GET /api/users/。共有先選択用に全ユーザーを返す。
@@ -52,7 +54,7 @@ func (h *UserHandler) Update(c echo.Context) error {
 	if err != nil {
 		return mapServiceError(err)
 	}
-	return c.JSON(http.StatusOK, response.ToUserInfo(u))
+	return c.JSON(http.StatusOK, response.ToUserInfo(u, h.avatars))
 }
 
 // ChangeEmail は PUT /api/user_info/email/。現在のパスワード確認のうえメールを変更する。
@@ -66,7 +68,7 @@ func (h *UserHandler) ChangeEmail(c echo.Context) error {
 	if err != nil {
 		return mapServiceError(err)
 	}
-	return c.JSON(http.StatusOK, response.ToUserInfo(u))
+	return c.JSON(http.StatusOK, response.ToUserInfo(u, h.avatars))
 }
 
 // ChangePassword は PUT /api/user_info/password/。パスワードを変更する。
@@ -89,4 +91,44 @@ func (h *UserHandler) Delete(c echo.Context) error {
 		return mapServiceError(err)
 	}
 	return c.NoContent(http.StatusNoContent)
+}
+
+// CreateAvatarUploadURL は POST /api/user_info/avatar/。
+// プロフィール画像アップロード用の署名付き URL を発行する。
+func (h *UserHandler) CreateAvatarUploadURL(c echo.Context) error {
+	userID := appmw.UserIDFromContext(c)
+	var req request.CreateAvatarUploadUrlRequest
+	if err := bindAndValidate(c, &req); err != nil {
+		return err
+	}
+	uploadURL, key, err := h.svc.CreateAvatarUploadURL(c.Request().Context(), userID, string(req.ContentType))
+	if err != nil {
+		return mapServiceError(err)
+	}
+	return c.JSON(http.StatusOK, response.AvatarUploadUrlResponse{UploadUrl: uploadURL, Key: key})
+}
+
+// ConfirmAvatar は PUT /api/user_info/avatar/。
+// アップロード済みの画像をプロフィール画像として確定する。
+func (h *UserHandler) ConfirmAvatar(c echo.Context) error {
+	userID := appmw.UserIDFromContext(c)
+	var req request.ConfirmAvatarRequest
+	if err := bindAndValidate(c, &req); err != nil {
+		return err
+	}
+	u, err := h.svc.ConfirmAvatar(c.Request().Context(), userID, req.Key)
+	if err != nil {
+		return mapServiceError(err)
+	}
+	return c.JSON(http.StatusOK, response.ToUserInfo(u, h.avatars))
+}
+
+// DeleteAvatar は DELETE /api/user_info/avatar/。プロフィール画像を削除する。
+func (h *UserHandler) DeleteAvatar(c echo.Context) error {
+	userID := appmw.UserIDFromContext(c)
+	u, err := h.svc.DeleteAvatar(c.Request().Context(), userID)
+	if err != nil {
+		return mapServiceError(err)
+	}
+	return c.JSON(http.StatusOK, response.ToUserInfo(u, h.avatars))
 }

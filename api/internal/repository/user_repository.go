@@ -75,6 +75,12 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID, passwordHas
 		Update("password_hash", passwordHash).Error
 }
 
+func (r *userRepository) UpdateAvatarKey(ctx context.Context, userID string, key *string) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.User{ID: userID}).
+		Update("avatar_key", key).Error
+}
+
 func (r *userRepository) Delete(ctx context.Context, userID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 所有レシピを先に消す(recipes.owner_id には CASCADE が無いため)。

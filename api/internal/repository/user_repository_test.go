@@ -196,6 +196,40 @@ func TestUserRepo_UpdatePassword_SavesHash(t *testing.T) {
 	assert.Equal(t, "new-hash", got.PasswordHash)
 }
 
+// アバターキーを設定した時、avatar_key が保存されること。
+func TestUserRepo_UpdateAvatarKey_SavesKey(t *testing.T) {
+	// Arrange
+	ctx, repo, alice := arrangeUserRepo(t)
+	key := "avatars/" + alice.ID + "/abc"
+
+	// Act
+	require.NoError(t, repo.UpdateAvatarKey(ctx, alice.ID, &key))
+
+	// Assert
+	got, err := repo.FindByID(ctx, alice.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	require.NotNil(t, got.AvatarKey)
+	assert.Equal(t, key, *got.AvatarKey)
+}
+
+// アバターキーを nil に戻した時、avatar_key が消えること。
+func TestUserRepo_UpdateAvatarKey_ClearsKey(t *testing.T) {
+	// Arrange: 一度設定してから
+	ctx, repo, alice := arrangeUserRepo(t)
+	key := "avatars/" + alice.ID + "/abc"
+	require.NoError(t, repo.UpdateAvatarKey(ctx, alice.ID, &key))
+
+	// Act
+	require.NoError(t, repo.UpdateAvatarKey(ctx, alice.ID, nil))
+
+	// Assert
+	got, err := repo.FindByID(ctx, alice.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Nil(t, got.AvatarKey)
+}
+
 // アカウントを削除した時、ユーザーが消えること。
 func TestUserRepo_Delete_RemovesUser(t *testing.T) {
 	// Arrange

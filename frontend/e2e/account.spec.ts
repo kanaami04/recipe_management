@@ -1,11 +1,18 @@
 import { expect, type Page, test } from '@playwright/test'
 
 async function mockApi(page: Page) {
-  const user = {
+  const user: {
+    id: string
+    username: string
+    email: string
+    created_at: string
+    avatar_url: string | null
+  } = {
     id: 'u-taro',
     username: 'taro',
     email: 'taro@example.com',
     created_at: '2026-06-15 09:30',
+    avatar_url: null,
   }
   await page.route('**/api/token/', (r) => r.fulfill({ status: 200, json: { access: 'a' } }))
   await page.route('**/api/token/refresh/', (r) =>
@@ -15,6 +22,30 @@ async function mockApi(page: Page) {
   await page.route('**/api/users/', (r) => r.fulfill({ status: 200, json: [] }))
   await page.route('**/api/label/', (r) => r.fulfill({ status: 200, json: [] }))
   await page.route('**/api/recipes/', (r) => r.fulfill({ status: 200, json: [] }))
+
+  // 署名付き URL への直 PUT(実体は S3)。モックでは 200 を返すだけ。
+  await page.route('**/mock-upload', (r) =>
+    r.request().method() === 'PUT' ? r.fulfill({ status: 200, body: '' }) : r.fallback(),
+  )
+  // アバター: 発行(POST)→ 確定(PUT で avatar_url 反映)→ 削除(DELETE で null)。
+  await page.route('**/api/user_info/avatar/', (r) => {
+    const method = r.request().method()
+    if (method === 'POST') {
+      return r.fulfill({
+        status: 200,
+        json: { upload_url: 'http://localhost:9999/mock-upload', key: 'avatars/u-taro/new' },
+      })
+    }
+    if (method === 'PUT') {
+      user.avatar_url = 'http://localhost:9999/avatar.png'
+      return r.fulfill({ status: 200, json: user })
+    }
+    if (method === 'DELETE') {
+      user.avatar_url = null
+      return r.fulfill({ status: 200, json: user })
+    }
+    return r.fallback()
+  })
 
   await page.route('**/api/user_info/password/', (r) =>
     r.request().method() === 'PUT' ? r.fulfill({ status: 204, body: '' }) : r.fallback(),
@@ -197,6 +228,48 @@ test('確認用パスワードが一致しないと検証エラーになる', as
 
   // Assert
   await expect(page.getByText('パスワードが一致しません')).toBeVisible()
+})
+
+test('プロフィール画像をアップロードして削除できる', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+  await page.goto('/top/account')
+
+  // Act: 画像を選択(隠し input にファイルをセット)→ アップロード
+  await page.setInputFiles('input[type="file"]', {
+    name: 'avatar.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+  })
+
+  // Assert: 変更成功のトーストが出て、削除ボタンが現れる
+  await expect(page.getByText('プロフィール画像を変更しました')).toBeVisible()
+  const del = page.getByRole('button', { name: '削除', exact: true })
+  await expect(del).toBeVisible()
+
+  // Act: 削除
+  await del.click()
+
+  // Assert
+  await expect(page.getByText('プロフィール画像を削除しました')).toBeVisible()
+})
+
+test('対応外の画像形式はアップロードできない', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+  await page.goto('/top/account')
+
+  // Act: GIF を選択
+  await page.setInputFiles('input[type="file"]', {
+    name: 'avatar.gif',
+    mimeType: 'image/gif',
+    buffer: Buffer.from([0x47, 0x49, 0x46]),
+  })
+
+  // Assert: 形式エラーのトーストが出る
+  await expect(page.getByText('対応している形式は JPEG / PNG / WebP です')).toBeVisible()
 })
 
 test('アカウントを削除するとログイン画面に戻る', async ({ page }) => {

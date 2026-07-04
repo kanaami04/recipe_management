@@ -36,6 +36,9 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 			authorized.PUT("/user_info/email/", h.User.ChangeEmail)
 			authorized.PUT("/user_info/password/", h.User.ChangePassword)
 			authorized.DELETE("/user_info/", h.User.Delete)
+			authorized.POST("/user_info/avatar/", h.User.CreateAvatarUploadURL)
+			authorized.PUT("/user_info/avatar/", h.User.ConfirmAvatar)
+			authorized.DELETE("/user_info/avatar/", h.User.DeleteAvatar)
 			authorized.GET("/users/", h.User.List)
 		}
 

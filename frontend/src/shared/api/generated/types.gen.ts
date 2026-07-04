@@ -41,6 +41,29 @@ export type UserInfoResponse = {
      * 登録日時(JST, "YYYY-MM-DD HH:MM")
      */
     created_at: string;
+    /**
+     * プロフィール画像の URL。未設定なら null。
+     */
+    avatar_url: string | null;
+};
+
+export type CreateAvatarUploadUrlRequest = {
+    content_type: 'image/jpeg' | 'image/png' | 'image/webp';
+};
+
+/**
+ * アップロード先の署名付き URL。この URL へ画像本体を PUT する(Content-Type ヘッダは要求時と同じ値にする)。
+ */
+export type AvatarUploadUrlResponse = {
+    upload_url: string;
+    /**
+     * アップロード後、確定(PUT /api/user_info/avatar/)に渡すオブジェクトキー。
+     */
+    key: string;
+};
+
+export type ConfirmAvatarRequest = {
+    key: string;
 };
 
 export type UpdateUserRequest = {
@@ -416,6 +439,89 @@ export type ChangePasswordResponses = {
 };
 
 export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
+
+export type DeleteAvatarData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/user_info/avatar/';
+};
+
+export type DeleteAvatarErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+};
+
+export type DeleteAvatarError = DeleteAvatarErrors[keyof DeleteAvatarErrors];
+
+export type DeleteAvatarResponses = {
+    /**
+     * 削除成功
+     */
+    200: UserInfoResponse;
+};
+
+export type DeleteAvatarResponse = DeleteAvatarResponses[keyof DeleteAvatarResponses];
+
+export type CreateAvatarUploadUrlData = {
+    body: CreateAvatarUploadUrlRequest;
+    path?: never;
+    query?: never;
+    url: '/api/user_info/avatar/';
+};
+
+export type CreateAvatarUploadUrlErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+};
+
+export type CreateAvatarUploadUrlError = CreateAvatarUploadUrlErrors[keyof CreateAvatarUploadUrlErrors];
+
+export type CreateAvatarUploadUrlResponses = {
+    /**
+     * 発行成功
+     */
+    200: AvatarUploadUrlResponse;
+};
+
+export type CreateAvatarUploadUrlResponse = CreateAvatarUploadUrlResponses[keyof CreateAvatarUploadUrlResponses];
+
+export type ConfirmAvatarData = {
+    body: ConfirmAvatarRequest;
+    path?: never;
+    query?: never;
+    url: '/api/user_info/avatar/';
+};
+
+export type ConfirmAvatarErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+};
+
+export type ConfirmAvatarError = ConfirmAvatarErrors[keyof ConfirmAvatarErrors];
+
+export type ConfirmAvatarResponses = {
+    /**
+     * 確定成功
+     */
+    200: UserInfoResponse;
+};
+
+export type ConfirmAvatarResponse = ConfirmAvatarResponses[keyof ConfirmAvatarResponses];
 
 export type ListUsersData = {
     body?: never;

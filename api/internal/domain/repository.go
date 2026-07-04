@@ -15,9 +15,22 @@ type UserRepository interface {
 	Update(ctx context.Context, user *User) error
 	// UpdatePassword は password_hash を更新する。
 	UpdatePassword(ctx context.Context, userID, passwordHash string) error
+	// UpdateAvatarKey は avatar_key を更新する。nil で未設定に戻す。
+	UpdateAvatarKey(ctx context.Context, userID string, key *string) error
 	// Delete はユーザーと、そのユーザーが所有するレシピを削除する。
 	// user 側の従属(labels / recipe_orders / recipe_archives / 共有)は FK CASCADE で消える。
 	Delete(ctx context.Context, userID string) error
+}
+
+// AvatarStorage はプロフィール画像の実体(S3 互換オブジェクトストレージ)を扱う抽象。
+// GORM 経由の永続化ではなくオブジェクトストレージのため、他のリポジトリとは別インターフェースにする。
+type AvatarStorage interface {
+	// PresignUpload は key への PUT 用の署名付き URL を発行する。
+	PresignUpload(ctx context.Context, key, contentType string) (url string, err error)
+	// Delete は key のオブジェクトを削除する。
+	Delete(ctx context.Context, key string) error
+	// PublicURL は key を(相対または絶対の)公開 URL に変換する。ネットワークアクセスは行わない。
+	PublicURL(key string) string
 }
 
 type LabelRepository interface {

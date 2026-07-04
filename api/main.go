@@ -18,6 +18,7 @@ import (
 	"recipe-backend/internal/config"
 	"recipe-backend/internal/database"
 	"recipe-backend/internal/logger"
+	"recipe-backend/internal/storage"
 )
 
 // shutdownTimeout はグレースフルシャットダウン時に処理中リクエストを待つ最大時間。
@@ -44,7 +45,7 @@ func run() error {
 	log := logger.New(cfg.LogLevel, cfg.LogFormat)
 	slog.SetDefault(log)
 
-	// インフラ（DB）の用意は main が担い、各層の配線は app（合成ルート）に委ねる。
+	// インフラ（DB・S3）の用意は main が担い、各層の配線は app（合成ルート）に委ねる。
 	db, err := database.Connect(cfg.DatabaseURL, log)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
@@ -54,6 +55,14 @@ func run() error {
 		return fmt.Errorf("get sql.DB: %w", err)
 	}
 	defer sqlDB.Close() // 終了時に DB プールを閉じる（サーバ停止の後に走る）
+
+	s3Client, err := storage.NewS3Client(
+		context.Background(),
+		cfg.S3Region, cfg.S3Endpoint, cfg.S3AccessKeyID, cfg.S3SecretAccessKey, cfg.S3ForcePathStyle,
+	)
+	if err != nil {
+		return fmt.Errorf("create s3 client: %w", err)
+	}
 
 	if *migrateOnly {
 		if err := database.Migrate(db); err != nil {
@@ -71,7 +80,7 @@ func run() error {
 		}
 	}
 
-	e := app.New(cfg, db, log)
+	e := app.New(cfg, db, s3Client, log)
 
 	// SIGINT / SIGTERM を待ち受ける context。
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

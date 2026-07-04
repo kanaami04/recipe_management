@@ -53,6 +53,13 @@ CloudFront
 mise run deploy
 ```
 
+> **スキーマを変更したときは必ず migrate → deploy の順**。列を追加した新コードを
+> 先にデプロイすると、既存レコードの読み取りが「列が無い」で全て 500 になる。
+> 例: プロフィール画像対応で `users.avatar_key` を追加したときは、先に session pooler の
+> DSN で `cd ../api && DATABASE_URL='<session pooler>?sslmode=require' go run . -migrate` を
+> 実行してから `mise run deploy` する。アバター用の S3 バケット・CloudFront 配信・
+> Lambda 権限・環境変数は CDK が自動で作成する(手動設定は不要)。
+
 ## デプロイ後の確認
 
 ```bash

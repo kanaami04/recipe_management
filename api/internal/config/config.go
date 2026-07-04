@@ -24,6 +24,27 @@ type Config struct {
 	// OriginVerifySecret は CloudFront が付与する X-Origin-Verify ヘッダの期待値
 	//。空なら検証しない(dev 向け)。
 	OriginVerifySecret string
+
+	// --- プロフィール画像(S3 互換オブジェクトストレージ) ---
+	// AvatarBucket はアバター画像を置くバケット名。
+	AvatarBucket string
+	// S3Region は SDK が要求するリージョン値。MinIO 互換ストレージでは値そのものは
+	// 使われないが指定必須のため、本番と同じ ap-northeast-1 を既定にする。
+	S3Region string
+	// S3Endpoint が空なら実 AWS の S3 エンドポイントを使う(本番)。
+	// 値があればそこへ向ける(ローカルの pgsty/minio 等)。
+	S3Endpoint string
+	// S3ForcePathStyle は virtual-hosted style ではなく path-style
+	// (http://host/bucket/key)でアクセスするか。MinIO 互換ストレージでは true が必要。
+	S3ForcePathStyle bool
+	// S3AccessKeyID / S3SecretAccessKey が空なら SDK のデフォルト認証チェーン
+	// (本番は Lambda 実行ロール)を使う。値があれば静的認証情報として使う(ローカル向け)。
+	S3AccessKeyID     string
+	S3SecretAccessKey string
+	// AvatarPublicBaseURL が空ならアバター URL は相対パス "/{key}" になる
+	// (本番: CloudFront 同一オリジン)。値があれば "{AvatarPublicBaseURL}/{key}" になる
+	// (ローカル: pgsty/minio への絶対 URL)。
+	AvatarPublicBaseURL string
 }
 
 // Load は指定された env ファイル（存在すれば）と環境変数から設定を読み込む。
@@ -44,11 +65,32 @@ func Load(envFile string) *Config {
 		CookieSecure:       getEnvBool("COOKIE_SECURE", false),
 		AutoMigrate:        getEnvBool("AUTO_MIGRATE", true),
 		OriginVerifySecret: getEnv("ORIGIN_VERIFY_SECRET", ""),
+
+		// 既定値はローカルの pgsty/minio(docker-compose)にそのまま繋がるようにする。
+		// 本番は CDK が全て上書きする。S3Endpoint / 認証情報は "明示的に空文字" を渡して
+		// 実 AWS + Lambda 実行ロールを使うため、これらは未設定と空を区別する lookupOr を使う。
+		AvatarBucket:      getEnv("AVATAR_BUCKET", "recipe-avatars"),
+		S3Region:          getEnv("S3_REGION", "ap-northeast-1"),
+		S3Endpoint:        lookupOr("S3_ENDPOINT", "http://localhost:9000"),
+		S3ForcePathStyle:  getEnvBool("S3_FORCE_PATH_STYLE", true),
+		S3AccessKeyID:     lookupOr("S3_ACCESS_KEY_ID", "minioadmin"),
+		S3SecretAccessKey: lookupOr("S3_SECRET_ACCESS_KEY", "minioadmin"),
+		// 本番は "" を明示指定して相対パス "/avatars/{key}"(同一オリジンの CloudFront)にする。
+		AvatarPublicBaseURL: lookupOr("AVATAR_PUBLIC_BASE_URL", "http://localhost:9000/recipe-avatars"),
 	}
 }
 
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+// lookupOr は環境変数が設定されていればその値(空文字でも)を、未設定なら fallback を返す。
+// 本番で「実 AWS を使う」意図の空文字指定を、未設定によるローカル既定値と区別するために使う。
+func lookupOr(key, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok {
 		return v
 	}
 	return fallback

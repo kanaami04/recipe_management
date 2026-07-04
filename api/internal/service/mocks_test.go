@@ -86,6 +86,7 @@ type mockUserRepo struct {
 	passwordChangedID string
 	newPasswordHash   string
 	deletedUserID     string
+	avatarKeyUpdates  []*string // UpdateAvatarKey に渡された key を呼び出し順に記録
 }
 
 func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.User, error) {
@@ -129,6 +130,13 @@ func (m *mockUserRepo) UpdatePassword(_ context.Context, userID, passwordHash st
 }
 func (m *mockUserRepo) Delete(_ context.Context, userID string) error {
 	m.deletedUserID = userID
+	return nil
+}
+func (m *mockUserRepo) UpdateAvatarKey(_ context.Context, userID string, key *string) error {
+	m.avatarKeyUpdates = append(m.avatarKeyUpdates, key)
+	if u, ok := m.byID[userID]; ok {
+		u.AvatarKey = key
+	}
 	return nil
 }
 
@@ -193,4 +201,27 @@ func (m *mockLabelRepo) Delete(_ context.Context, label *domain.Label) error {
 	delete(m.store, label.ID)
 	m.deletedIDs = append(m.deletedIDs, label.ID)
 	return nil
+}
+
+// --- AvatarStorage のモック ---
+
+type mockAvatarStorage struct {
+	presignedKeys []string // PresignUpload に渡された key を呼び出し順に記録
+	deletedKeys   []string // Delete に渡された key を呼び出し順に記録
+	presignErr    error
+}
+
+func (m *mockAvatarStorage) PresignUpload(_ context.Context, key, _ string) (string, error) {
+	if m.presignErr != nil {
+		return "", m.presignErr
+	}
+	m.presignedKeys = append(m.presignedKeys, key)
+	return "https://example.com/upload/" + key, nil
+}
+func (m *mockAvatarStorage) Delete(_ context.Context, key string) error {
+	m.deletedKeys = append(m.deletedKeys, key)
+	return nil
+}
+func (m *mockAvatarStorage) PublicURL(key string) string {
+	return "https://example.com/public/" + key
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"recipe-backend/internal/domain"
@@ -16,7 +17,7 @@ func TestUserGetByID_Found(t *testing.T) {
 	// Arrange
 	user := factory.NewUser(factory.WithID("u7"), factory.WithUsername("alice"))
 	ur := &mockUserRepo{byID: map[string]*domain.User{"u7": user}}
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	got, err := svc.GetByID(context.Background(), "u7")
@@ -30,7 +31,7 @@ func TestUserGetByID_Found(t *testing.T) {
 func TestUserGetByID_NotFound(t *testing.T) {
 	// Arrange
 	ur := &mockUserRepo{byID: map[string]*domain.User{}}
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	got, err := svc.GetByID(context.Background(), "u999")
@@ -47,7 +48,7 @@ func TestUserList_ReturnsAll(t *testing.T) {
 		*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice")),
 		*factory.NewUser(factory.WithID("u2"), factory.WithUsername("bob")),
 	}}
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	users, err := svc.List(context.Background())
@@ -60,7 +61,7 @@ func TestUserList_ReturnsAll(t *testing.T) {
 // ユーザーが1人もいない時、List で空が返ること。
 func TestUserList_Empty(t *testing.T) {
 	// Arrange
-	svc := NewUserService(&mockUserRepo{})
+	svc := NewUserService(&mockUserRepo{}, &mockAvatarStorage{})
 
 	// Act
 	users, err := svc.List(context.Background())
@@ -87,7 +88,7 @@ func arrangeSelfUser(opts ...factory.UserOption) *mockUserRepo {
 func TestUserUpdateProfile_SavesUsername(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser()
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	_, err := svc.UpdateProfile(context.Background(), "u1", "alice2")
@@ -103,7 +104,7 @@ func TestUserUpdateProfile_DuplicateUsername(t *testing.T) {
 	// Arrange: bob(u2)が既にいる
 	ur := arrangeSelfUser()
 	ur.byName["bob"] = factory.NewUser(factory.WithID("u2"), factory.WithUsername("bob"))
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	_, err := svc.UpdateProfile(context.Background(), "u1", "bob")
@@ -116,7 +117,7 @@ func TestUserUpdateProfile_DuplicateUsername(t *testing.T) {
 func TestUserUpdateProfile_SameValue(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser()
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	_, err := svc.UpdateProfile(context.Background(), "u1", "alice")
@@ -129,7 +130,7 @@ func TestUserUpdateProfile_SameValue(t *testing.T) {
 func TestUserChangeEmail_Saves(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser(factory.WithPlainPassword(t, "pass1234"))
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	_, err := svc.ChangeEmail(context.Background(), "u1", "alice2@example.com", "pass1234")
@@ -144,7 +145,7 @@ func TestUserChangeEmail_Saves(t *testing.T) {
 func TestUserChangeEmail_WrongPassword(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser(factory.WithPlainPassword(t, "pass1234"))
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	_, err := svc.ChangeEmail(context.Background(), "u1", "alice2@example.com", "WRONG")
@@ -158,7 +159,7 @@ func TestUserChangeEmail_Duplicate(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser(factory.WithPlainPassword(t, "pass1234"))
 	ur.byEmail["bob@example.com"] = factory.NewUser(factory.WithID("u2"), factory.WithEmail("bob@example.com"))
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	_, err := svc.ChangeEmail(context.Background(), "u1", "bob@example.com", "pass1234")
@@ -171,7 +172,7 @@ func TestUserChangeEmail_Duplicate(t *testing.T) {
 func TestUserChangePassword_UpdatesForUser(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser(factory.WithPlainPassword(t, "oldpass12"))
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	err := svc.ChangePassword(context.Background(), "u1", "oldpass12", "newpass34")
@@ -185,7 +186,7 @@ func TestUserChangePassword_UpdatesForUser(t *testing.T) {
 func TestUserChangePassword_HashesNewPassword(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser(factory.WithPlainPassword(t, "oldpass12"))
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	err := svc.ChangePassword(context.Background(), "u1", "oldpass12", "newpass34")
@@ -199,7 +200,7 @@ func TestUserChangePassword_HashesNewPassword(t *testing.T) {
 func TestUserChangePassword_WrongCurrent(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser(factory.WithPlainPassword(t, "oldpass12"))
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	err := svc.ChangePassword(context.Background(), "u1", "wrongpass", "newpass34")
@@ -212,7 +213,7 @@ func TestUserChangePassword_WrongCurrent(t *testing.T) {
 func TestUserDeleteAccount_Deletes(t *testing.T) {
 	// Arrange
 	ur := arrangeSelfUser()
-	svc := NewUserService(ur)
+	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
 	err := svc.DeleteAccount(context.Background(), "u1")
@@ -220,4 +221,120 @@ func TestUserDeleteAccount_Deletes(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	assert.Equal(t, "u1", ur.deletedUserID)
+}
+
+// アバターのアップロード URL を発行した時、自分の接頭辞を持つ key がストレージに渡ること。
+func TestUserCreateAvatarUploadURL_KeyIsOwnedPrefix(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	st := &mockAvatarStorage{}
+	svc := NewUserService(ur, st)
+
+	// Act
+	_, key, err := svc.CreateAvatarUploadURL(context.Background(), "u1", "image/png")
+
+	// Assert: key は avatars/{userID}/ 配下(ConfirmAvatar の所有チェックと一致)
+	require.NoError(t, err)
+	assert.True(t, strings.HasPrefix(key, "avatars/u1/"))
+}
+
+// 自分宛ての key を確定した時、その key が avatar_key に保存されること。
+func TestUserConfirmAvatar_SavesKey(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	svc := NewUserService(ur, &mockAvatarStorage{})
+	key := "avatars/u1/abc"
+
+	// Act
+	_, err := svc.ConfirmAvatar(context.Background(), "u1", key)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, ur.avatarKeyUpdates, 1)
+	require.NotNil(t, ur.avatarKeyUpdates[0])
+	assert.Equal(t, key, *ur.avatarKeyUpdates[0])
+}
+
+// 他人宛ての key を確定しようとした時、ErrForbidden が返り保存されないこと。
+func TestUserConfirmAvatar_ForbiddenForOthersKey(t *testing.T) {
+	// Arrange
+	ur := arrangeSelfUser()
+	svc := NewUserService(ur, &mockAvatarStorage{})
+
+	// Act: 別ユーザー(u2)配下の key
+	_, err := svc.ConfirmAvatar(context.Background(), "u1", "avatars/u2/abc")
+
+	// Assert
+	assert.ErrorIs(t, err, ErrForbidden)
+}
+
+// 既存アバターがある状態で確定した時、古い画像がストレージから削除されること。
+func TestUserConfirmAvatar_DeletesOldObject(t *testing.T) {
+	// Arrange: 既にアバターを持つ
+	old := "avatars/u1/old"
+	ur := arrangeSelfUser()
+	ur.byID["u1"].AvatarKey = &old
+	st := &mockAvatarStorage{}
+	svc := NewUserService(ur, st)
+
+	// Act
+	_, err := svc.ConfirmAvatar(context.Background(), "u1", "avatars/u1/new")
+
+	// Assert
+	require.NoError(t, err)
+	assert.Contains(t, st.deletedKeys, old)
+}
+
+// 同じ key を二重に確定した時、現在の画像オブジェクトを消さないこと。
+func TestUserConfirmAvatar_SameKeyKeepsObject(t *testing.T) {
+	// Arrange: 現在のアバターと同じ key を確定する
+	key := "avatars/u1/same"
+	ur := arrangeSelfUser()
+	ur.byID["u1"].AvatarKey = &key
+	st := &mockAvatarStorage{}
+	svc := NewUserService(ur, st)
+
+	// Act
+	_, err := svc.ConfirmAvatar(context.Background(), "u1", key)
+
+	// Assert: 現行 key は削除されない
+	require.NoError(t, err)
+	assert.NotContains(t, st.deletedKeys, key)
+}
+
+// arrangeUserWithAvatar は avatar を持つ u1 の mock repo とストレージ mock を返す。
+func arrangeUserWithAvatar(key string) (*mockUserRepo, *mockAvatarStorage) {
+	ur := arrangeSelfUser()
+	ur.byID["u1"].AvatarKey = &key
+	return ur, &mockAvatarStorage{}
+}
+
+// アバターを削除した時、ストレージからオブジェクトが消えること。
+func TestUserDeleteAvatar_DeletesObject(t *testing.T) {
+	// Arrange
+	key := "avatars/u1/abc"
+	ur, st := arrangeUserWithAvatar(key)
+	svc := NewUserService(ur, st)
+
+	// Act
+	_, err := svc.DeleteAvatar(context.Background(), "u1")
+
+	// Assert
+	require.NoError(t, err)
+	assert.Contains(t, st.deletedKeys, key)
+}
+
+// アバターを削除した時、avatar_key が nil に戻ること。
+func TestUserDeleteAvatar_ClearsKey(t *testing.T) {
+	// Arrange
+	ur, st := arrangeUserWithAvatar("avatars/u1/abc")
+	svc := NewUserService(ur, st)
+
+	// Act
+	_, err := svc.DeleteAvatar(context.Background(), "u1")
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, ur.avatarKeyUpdates, 1)
+	assert.Nil(t, ur.avatarKeyUpdates[0])
 }
