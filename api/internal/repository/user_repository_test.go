@@ -146,3 +146,116 @@ func TestUserRepo_FindAll_OrderedByID(t *testing.T) {
 	}
 	assert.Equal(t, []string{"alice", "bob", "carol"}, names)
 }
+
+// プロフィールを更新した時、username が保存されること。
+func TestUserRepo_Update_SavesUsername(t *testing.T) {
+	// Arrange
+	ctx, repo, alice := arrangeUserRepo(t)
+	alice.Username = "alice2"
+	alice.Email = "alice2@example.com"
+
+	// Act
+	require.NoError(t, repo.Update(ctx, alice))
+
+	// Assert
+	got, err := repo.FindByID(ctx, alice.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, "alice2", got.Username)
+}
+
+// プロフィールを更新した時、email が保存されること。
+func TestUserRepo_Update_SavesEmail(t *testing.T) {
+	// Arrange
+	ctx, repo, alice := arrangeUserRepo(t)
+	alice.Username = "alice2"
+	alice.Email = "alice2@example.com"
+
+	// Act
+	require.NoError(t, repo.Update(ctx, alice))
+
+	// Assert
+	got, err := repo.FindByID(ctx, alice.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, "alice2@example.com", got.Email)
+}
+
+// パスワードを更新した時、password_hash が保存されること。
+func TestUserRepo_UpdatePassword_SavesHash(t *testing.T) {
+	// Arrange
+	ctx, repo, alice := arrangeUserRepo(t)
+
+	// Act
+	require.NoError(t, repo.UpdatePassword(ctx, alice.ID, "new-hash"))
+
+	// Assert
+	got, err := repo.FindByID(ctx, alice.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, "new-hash", got.PasswordHash)
+}
+
+// アカウントを削除した時、ユーザーが消えること。
+func TestUserRepo_Delete_RemovesUser(t *testing.T) {
+	// Arrange
+	ctx, repo, alice := arrangeUserRepo(t)
+
+	// Act
+	require.NoError(t, repo.Delete(ctx, alice.ID))
+
+	// Assert
+	got, err := repo.FindByID(ctx, alice.ID)
+	require.NoError(t, err)
+	assert.Nil(t, got)
+}
+
+// アカウントを削除した時、所有レシピも消えること(owner FK は CASCADE 無しのため明示削除)。
+func TestUserRepo_Delete_CascadesOwnedRecipes(t *testing.T) {
+	// Arrange: alice が1件レシピを所有
+	ctx, repo, alice := arrangeUserRepo(t)
+	recipeRepo := NewRecipeRepository(testDB)
+	r := factory.NewRecipe(factory.WithOwnerID(alice.ID))
+	require.NoError(t, recipeRepo.Create(ctx, r))
+
+	// Act
+	require.NoError(t, repo.Delete(ctx, alice.ID))
+
+	// Assert
+	var count int64
+	testDB.Model(&domain.Recipe{}).Where("owner_id = ?", alice.ID).Count(&count)
+	assert.Zero(t, count)
+}
+
+// アカウントを削除した時、自分のラベルも FK CASCADE で消えること。
+func TestUserRepo_Delete_CascadesOwnedLabels(t *testing.T) {
+	// Arrange
+	ctx, repo, alice := arrangeUserRepo(t)
+	require.NoError(t, NewLabelRepository(testDB).Create(ctx, &domain.Label{Name: "和食", OwnerID: alice.ID}))
+
+	// Act
+	require.NoError(t, repo.Delete(ctx, alice.ID))
+
+	// Assert
+	var count int64
+	testDB.Model(&domain.Label{}).Where("owner_id = ?", alice.ID).Count(&count)
+	assert.Zero(t, count)
+}
+
+// アカウントを削除しても、他人が所有し自分に共有していたレシピは残ること。
+func TestUserRepo_Delete_KeepsOthersSharedRecipe(t *testing.T) {
+	// Arrange: bob 所有のレシピを alice に共有
+	ctx, repo, alice := arrangeUserRepo(t)
+	bob := seedUser(t, "bob")
+	recipeRepo := NewRecipeRepository(testDB)
+	shared := factory.NewRecipe(factory.WithOwnerID(bob.ID), factory.WithSharedUsers(*alice))
+	require.NoError(t, recipeRepo.Create(ctx, shared))
+
+	// Act: alice を削除
+	require.NoError(t, repo.Delete(ctx, alice.ID))
+
+	// Assert: bob のレシピは残る
+	got, err := recipeRepo.FindByID(ctx, shared.ID)
+	require.NoError(t, err)
+	assert.NotNil(t, got)
+}

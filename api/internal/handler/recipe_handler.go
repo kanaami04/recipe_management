@@ -115,13 +115,21 @@ func (h *RecipeHandler) Archive(c echo.Context) error {
 
 func bindRecipe(c echo.Context) (*request.RecipeRequest, error) {
 	var req request.RecipeRequest
-	if err := c.Bind(&req); err != nil {
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
-	}
-	if err := c.Validate(&req); err != nil {
-		return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	if err := bindAndValidate(c, &req); err != nil {
+		return nil, err
 	}
 	return &req, nil
+}
+
+// bindAndValidate はリクエストボディを req に bind し、バリデーションまで行う。
+func bindAndValidate(c echo.Context, req any) error {
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := c.Validate(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
 }
 
 func parseID(c echo.Context) (string, error) {
@@ -142,6 +150,10 @@ func mapServiceError(err error) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case errors.Is(err, service.ErrDuplicate):
 		return echo.NewHTTPError(http.StatusConflict, "already exists")
+	case errors.Is(err, service.ErrUserAlreadyExists):
+		return echo.NewHTTPError(http.StatusConflict, err.Error())
+	case errors.Is(err, service.ErrIncorrectPassword):
+		return echo.NewHTTPError(http.StatusBadRequest, "現在のパスワードが違います")
 	default:
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}

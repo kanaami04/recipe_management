@@ -80,11 +80,8 @@ func (h *LabelHandler) Delete(c echo.Context) error {
 
 func bindLabel(c echo.Context) (*request.LabelInput, error) {
 	var req request.LabelInput
-	if err := c.Bind(&req); err != nil {
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
-	}
-	if err := c.Validate(&req); err != nil {
-		return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	if err := bindAndValidate(c, &req); err != nil {
+		return nil, err
 	}
 	return &req, nil
 }

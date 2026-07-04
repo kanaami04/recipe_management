@@ -34,7 +34,18 @@ export const zRegisterRequest = z.object({
 export const zUserInfoResponse = z.object({
     id: z.uuid(),
     username: z.string(),
-    email: z.string()
+    email: z.string(),
+    created_at: z.string()
+});
+
+export const zUpdateUserRequest = z.object({
+    username: z.string().max(50),
+    email: z.email().max(50)
+});
+
+export const zChangePasswordRequest = z.object({
+    current_password: z.string(),
+    new_password: z.string().min(8)
 });
 
 export const zUserListItem = z.object({
@@ -160,9 +171,28 @@ export const zRegisterBody = zRegisterRequest;
 export const zRegisterResponse = zUserInfoResponse;
 
 /**
+ * 削除成功(本文なし)
+ */
+export const zDeleteAccountResponse = z.void();
+
+/**
  * 取得成功
  */
 export const zGetUserInfoResponse = zUserInfoResponse;
+
+export const zUpdateUserInfoBody = zUpdateUserRequest;
+
+/**
+ * 更新成功
+ */
+export const zUpdateUserInfoResponse = zUserInfoResponse;
+
+export const zChangePasswordBody = zChangePasswordRequest;
+
+/**
+ * 変更成功(本文なし)
+ */
+export const zChangePasswordResponse = z.void();
 
 /**
  * 取得成功

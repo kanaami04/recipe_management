@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses } from './types.gen';
+import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -69,6 +69,15 @@ export const register = <ThrowOnError extends boolean = false>(options: Options<
 });
 
 /**
+ * アカウント削除(所有レシピ等も消える)
+ */
+export const deleteAccount = <ThrowOnError extends boolean = false>(options?: Options<DeleteAccountData, ThrowOnError>): RequestResult<DeleteAccountResponses, DeleteAccountErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteAccountResponses, DeleteAccountErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/user_info/',
+    ...options
+});
+
+/**
  * ログイン中ユーザーの情報取得
  */
 export const getUserInfo = <ThrowOnError extends boolean = false>(options?: Options<GetUserInfoData, ThrowOnError>): RequestResult<GetUserInfoResponses, GetUserInfoErrors, ThrowOnError> => (options?.client ?? client).get<GetUserInfoResponses, GetUserInfoErrors, ThrowOnError>({
@@ -76,6 +85,33 @@ export const getUserInfo = <ThrowOnError extends boolean = false>(options?: Opti
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/user_info/',
     ...options
+});
+
+/**
+ * プロフィール更新(ユーザー名・メール)
+ */
+export const updateUserInfo = <ThrowOnError extends boolean = false>(options: Options<UpdateUserInfoData, ThrowOnError>): RequestResult<UpdateUserInfoResponses, UpdateUserInfoErrors, ThrowOnError> => (options.client ?? client).put<UpdateUserInfoResponses, UpdateUserInfoErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/user_info/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * パスワード変更
+ */
+export const changePassword = <ThrowOnError extends boolean = false>(options: Options<ChangePasswordData, ThrowOnError>): RequestResult<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError> => (options.client ?? client).put<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/user_info/password/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

@@ -71,8 +71,11 @@ func (m *mockRecipeService) SetArchived(ctx context.Context, userID, recipeID st
 // --- UserService のモック ---
 
 type mockUserService struct {
-	getByIDFn func(ctx context.Context, id string) (*domain.User, error)
-	listFn    func(ctx context.Context) ([]domain.User, error)
+	getByIDFn  func(ctx context.Context, id string) (*domain.User, error)
+	listFn     func(ctx context.Context) ([]domain.User, error)
+	updateFn   func(ctx context.Context, userID, username, email string) (*domain.User, error)
+	changePwFn func(ctx context.Context, userID, current, next string) error
+	deleteFn   func(ctx context.Context, userID string) error
 }
 
 func (m *mockUserService) GetByID(ctx context.Context, id string) (*domain.User, error) {
@@ -80,6 +83,15 @@ func (m *mockUserService) GetByID(ctx context.Context, id string) (*domain.User,
 }
 func (m *mockUserService) List(ctx context.Context) ([]domain.User, error) {
 	return m.listFn(ctx)
+}
+func (m *mockUserService) UpdateProfile(ctx context.Context, userID, username, email string) (*domain.User, error) {
+	return m.updateFn(ctx, userID, username, email)
+}
+func (m *mockUserService) ChangePassword(ctx context.Context, userID, current, next string) error {
+	return m.changePwFn(ctx, userID, current, next)
+}
+func (m *mockUserService) DeleteAccount(ctx context.Context, userID string) error {
+	return m.deleteFn(ctx, userID)
 }
 
 // --- LabelService のモック ---

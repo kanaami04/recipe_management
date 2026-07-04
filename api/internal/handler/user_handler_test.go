@@ -9,6 +9,7 @@ import (
 	"recipe-backend/internal/domain"
 	appmw "recipe-backend/internal/middleware"
 	jwtpkg "recipe-backend/internal/pkg/jwt"
+	"recipe-backend/internal/service"
 	"recipe-backend/internal/testutil/factory"
 
 	"github.com/stretchr/testify/assert"
@@ -126,4 +127,132 @@ func TestUserHandler_List_InternalError(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}
+
+// serveUserUpdate は updateFn を差し替えた UserHandler に、認証付きで PUT /api/user_info/ し結果を返す。
+func serveUserUpdate(t *testing.T, updateFn func(context.Context, string, string, string) (*domain.User, error), body string) *httptest.ResponseRecorder {
+	t.Helper()
+	jm := jwtpkg.NewManager("secret")
+	e := newTestEcho()
+	h := NewUserHandler(&mockUserService{updateFn: updateFn})
+	e.PUT("/api/user_info/", h.Update, appmw.JWT(jm))
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, authedRequest(t, jm, http.MethodPut, "/api/user_info/", body))
+	return rec
+}
+
+// プロフィール更新した時、200 が返ること。
+func TestUserHandler_Update_Returns200(t *testing.T) {
+	// Arrange & Act
+	rec := serveUserUpdate(t, func(_ context.Context, _, username, _ string) (*domain.User, error) {
+		return factory.NewUser(factory.WithID(testUserID), factory.WithUsername(username)), nil
+	}, `{"username":"alice2","email":"alice2@example.com"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+// 必須項目が欠けている時、サービスを呼ばず 400 が返ること。
+func TestUserHandler_Update_ValidationError(t *testing.T) {
+	// Arrange & Act
+	rec := serveUserUpdate(t, func(_ context.Context, _, _, _ string) (*domain.User, error) {
+		t.Fatal("validation fail 時に service を呼んではいけない")
+		return nil, nil
+	}, `{"username":"alice2"}`) // email 欠落
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// 別ユーザーと重複しサービスが ErrUserAlreadyExists を返した時、409 が返ること。
+func TestUserHandler_Update_Conflict(t *testing.T) {
+	// Arrange & Act
+	rec := serveUserUpdate(t, func(_ context.Context, _, _, _ string) (*domain.User, error) {
+		return nil, service.ErrUserAlreadyExists
+	}, `{"username":"bob","email":"bob@example.com"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusConflict, rec.Code)
+}
+
+// serveChangePassword は changePwFn を差し替えた UserHandler に、認証付きで PUT /api/user_info/password/ し結果を返す。
+func serveChangePassword(t *testing.T, changePwFn func(context.Context, string, string, string) error, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	jm := jwtpkg.NewManager("secret")
+	e := newTestEcho()
+	h := NewUserHandler(&mockUserService{changePwFn: changePwFn})
+	e.PUT("/api/user_info/password/", h.ChangePassword, appmw.JWT(jm))
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, authedRequest(t, jm, http.MethodPut, "/api/user_info/password/", body))
+	return rec
+}
+
+// パスワード変更した時、204 が返ること。
+func TestUserHandler_ChangePassword_Returns204(t *testing.T) {
+	// Arrange & Act
+	rec := serveChangePassword(t, func(_ context.Context, _, _, _ string) error {
+		return nil
+	}, `{"current_password":"oldpass12","new_password":"newpass34"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// 新パスワードが短すぎる時、サービスを呼ばず 400 が返ること。
+func TestUserHandler_ChangePassword_ValidationError(t *testing.T) {
+	// Arrange & Act
+	rec := serveChangePassword(t, func(_ context.Context, _, _, _ string) error {
+		t.Fatal("validation fail 時に service を呼んではいけない")
+		return nil
+	}, `{"current_password":"oldpass12","new_password":"short"}`) // 8 文字未満
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// 現在のパスワードが違いサービスが ErrIncorrectPassword を返した時、400 が返ること。
+func TestUserHandler_ChangePassword_WrongCurrent(t *testing.T) {
+	// Arrange & Act
+	rec := serveChangePassword(t, func(_ context.Context, _, _, _ string) error {
+		return service.ErrIncorrectPassword
+	}, `{"current_password":"wrong","new_password":"newpass34"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// serveDeleteAccount は deleteFn を差し替えた UserHandler に、認証付きで DELETE /api/user_info/ し結果を返す。
+func serveDeleteAccount(t *testing.T, deleteFn func(context.Context, string) error) *httptest.ResponseRecorder {
+	t.Helper()
+	jm := jwtpkg.NewManager("secret")
+	e := newTestEcho()
+	h := NewUserHandler(&mockUserService{deleteFn: deleteFn})
+	e.DELETE("/api/user_info/", h.Delete, appmw.JWT(jm))
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, authedRequest(t, jm, http.MethodDelete, "/api/user_info/", ""))
+	return rec
+}
+
+// アカウント削除した時、204 が返ること。
+func TestUserHandler_Delete_Returns204(t *testing.T) {
+	// Arrange & Act
+	rec := serveDeleteAccount(t, func(_ context.Context, _ string) error {
+		return nil
+	})
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// アカウント削除した時、JWT のユーザーIDがサービスに渡されること。
+func TestUserHandler_Delete_ForwardsUserID(t *testing.T) {
+	// Arrange & Act
+	var gotID string
+	serveDeleteAccount(t, func(_ context.Context, userID string) error {
+		gotID = userID
+		return nil
+	})
+
+	// Assert
+	assert.Equal(t, testUserID, gotID)
 }

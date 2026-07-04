@@ -12,6 +12,12 @@ type ArchiveRequest struct {
 	ArchiveFlg bool `json:"archive_flg"`
 }
 
+// ChangePasswordRequest defines model for ChangePasswordRequest.
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,min=8"`
+}
+
 // CookingInput defines model for CookingInput.
 type CookingInput struct {
 	Ingredients NameInput `json:"ingredients"`
@@ -143,11 +149,19 @@ type TokenResponse struct {
 	Access string `json:"access"`
 }
 
+// UpdateUserRequest defines model for UpdateUserRequest.
+type UpdateUserRequest struct {
+	Email    string `json:"email" validate:"required,email,max=50"`
+	Username string `json:"username" validate:"required,max=50"`
+}
+
 // UserInfoResponse defines model for UserInfoResponse.
 type UserInfoResponse struct {
-	Email    string `json:"email"`
-	ID       string `json:"id"`
-	Username string `json:"username"`
+	// CreatedAt 登録日時(JST, "YYYY-MM-DD HH:MM")
+	CreatedAt string `json:"created_at"`
+	Email     string `json:"email"`
+	ID        string `json:"id"`
+	Username  string `json:"username"`
 }
 
 // UserListItem defines model for UserListItem.
@@ -197,3 +211,9 @@ type ArchiveRecipeJSONRequestBody = ArchiveRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = TokenRequest
+
+// UpdateUserInfoJSONRequestBody defines body for UpdateUserInfo for application/json ContentType.
+type UpdateUserInfoJSONRequestBody = UpdateUserRequest
+
+// ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
+type ChangePasswordJSONRequestBody = ChangePasswordRequest

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
 import { logout } from '@/shared/auth/authClient'
@@ -17,10 +18,14 @@ export function NavUser() {
   const { isMobile } = useSidebar()
   const { user } = useUser()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const onClickLogout = async () => {
     // サーバ側で refresh Cookie を失効し、メモリの access を消す。
     await logout()
+    // ユーザー固有のキャッシュを破棄し、別アカウントで再ログインしたとき
+    // 前ユーザーの情報が一瞬残らないようにする。
+    queryClient.clear()
     navigate('/')
     // Radix の DropdownMenu を開いたまま遷移でアンマウントすると、開いた時に
     // 掛けた body の pointer-events:none が復元されず、遷移先のログイン画面が
@@ -85,7 +90,12 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {user ? (
-              <DropdownMenuItem onClick={onClickLogout}>ログアウト</DropdownMenuItem>
+              <>
+                <DropdownMenuItem onClick={() => navigate('/top/account')}>
+                  アカウント
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onClickLogout}>ログアウト</DropdownMenuItem>
+              </>
             ) : (
               <DropdownMenuItem onClick={onClickLogIn}>ログイン</DropdownMenuItem>
             )}

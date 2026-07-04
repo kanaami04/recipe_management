@@ -37,6 +37,20 @@ export type UserInfoResponse = {
     id: string;
     username: string;
     email: string;
+    /**
+     * 登録日時(JST, "YYYY-MM-DD HH:MM")
+     */
+    created_at: string;
+};
+
+export type UpdateUserRequest = {
+    username: string;
+    email: string;
+};
+
+export type ChangePasswordRequest = {
+    current_password: string;
+    new_password: string;
 };
 
 export type UserListItem = {
@@ -251,6 +265,31 @@ export type RegisterResponses = {
 
 export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
 
+export type DeleteAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/user_info/';
+};
+
+export type DeleteAccountErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+};
+
+export type DeleteAccountError = DeleteAccountErrors[keyof DeleteAccountErrors];
+
+export type DeleteAccountResponses = {
+    /**
+     * 削除成功(本文なし)
+     */
+    204: void;
+};
+
+export type DeleteAccountResponse = DeleteAccountResponses[keyof DeleteAccountResponses];
+
 export type GetUserInfoData = {
     body?: never;
     path?: never;
@@ -275,6 +314,68 @@ export type GetUserInfoResponses = {
 };
 
 export type GetUserInfoResponse = GetUserInfoResponses[keyof GetUserInfoResponses];
+
+export type UpdateUserInfoData = {
+    body: UpdateUserRequest;
+    path?: never;
+    query?: never;
+    url: '/api/user_info/';
+};
+
+export type UpdateUserInfoErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 既に存在する(ユーザー名・メール重複)
+     */
+    409: Error;
+};
+
+export type UpdateUserInfoError = UpdateUserInfoErrors[keyof UpdateUserInfoErrors];
+
+export type UpdateUserInfoResponses = {
+    /**
+     * 更新成功
+     */
+    200: UserInfoResponse;
+};
+
+export type UpdateUserInfoResponse = UpdateUserInfoResponses[keyof UpdateUserInfoResponses];
+
+export type ChangePasswordData = {
+    body: ChangePasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/api/user_info/password/';
+};
+
+export type ChangePasswordErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+};
+
+export type ChangePasswordError = ChangePasswordErrors[keyof ChangePasswordErrors];
+
+export type ChangePasswordResponses = {
+    /**
+     * 変更成功(本文なし)
+     */
+    204: void;
+};
+
+export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
 
 export type ListUsersData = {
     body?: never;

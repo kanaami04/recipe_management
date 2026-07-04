@@ -11,6 +11,13 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id string) (*User, error)
 	FindAll(ctx context.Context) ([]User, error)
 	Create(ctx context.Context, user *User) error
+	// Update は username / email を更新する。
+	Update(ctx context.Context, user *User) error
+	// UpdatePassword は password_hash を更新する。
+	UpdatePassword(ctx context.Context, userID, passwordHash string) error
+	// Delete はユーザーと、そのユーザーが所有するレシピを削除する。
+	// user 側の従属(labels / recipe_orders / recipe_archives / 共有)は FK CASCADE で消える。
+	Delete(ctx context.Context, userID string) error
 }
 
 type LabelRepository interface {
