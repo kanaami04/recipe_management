@@ -130,7 +130,7 @@ func TestUserHandler_List_InternalError(t *testing.T) {
 }
 
 // serveUserUpdate は updateFn を差し替えた UserHandler に、認証付きで PUT /api/user_info/ し結果を返す。
-func serveUserUpdate(t *testing.T, updateFn func(context.Context, string, string, string) (*domain.User, error), body string) *httptest.ResponseRecorder {
+func serveUserUpdate(t *testing.T, updateFn func(context.Context, string, string) (*domain.User, error), body string) *httptest.ResponseRecorder {
 	t.Helper()
 	jm := jwtpkg.NewManager("secret")
 	e := newTestEcho()
@@ -144,9 +144,9 @@ func serveUserUpdate(t *testing.T, updateFn func(context.Context, string, string
 // プロフィール更新した時、200 が返ること。
 func TestUserHandler_Update_Returns200(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserUpdate(t, func(_ context.Context, _, username, _ string) (*domain.User, error) {
+	rec := serveUserUpdate(t, func(_ context.Context, _, username string) (*domain.User, error) {
 		return factory.NewUser(factory.WithID(testUserID), factory.WithUsername(username)), nil
-	}, `{"username":"alice2","email":"alice2@example.com"}`)
+	}, `{"username":"alice2"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -155,10 +155,10 @@ func TestUserHandler_Update_Returns200(t *testing.T) {
 // 必須項目が欠けている時、サービスを呼ばず 400 が返ること。
 func TestUserHandler_Update_ValidationError(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserUpdate(t, func(_ context.Context, _, _, _ string) (*domain.User, error) {
+	rec := serveUserUpdate(t, func(_ context.Context, _, _ string) (*domain.User, error) {
 		t.Fatal("validation fail 時に service を呼んではいけない")
 		return nil, nil
-	}, `{"username":"alice2"}`) // email 欠落
+	}, `{}`) // username 欠落
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -167,9 +167,66 @@ func TestUserHandler_Update_ValidationError(t *testing.T) {
 // 別ユーザーと重複しサービスが ErrUserAlreadyExists を返した時、409 が返ること。
 func TestUserHandler_Update_Conflict(t *testing.T) {
 	// Arrange & Act
-	rec := serveUserUpdate(t, func(_ context.Context, _, _, _ string) (*domain.User, error) {
+	rec := serveUserUpdate(t, func(_ context.Context, _, _ string) (*domain.User, error) {
 		return nil, service.ErrUserAlreadyExists
-	}, `{"username":"bob","email":"bob@example.com"}`)
+	}, `{"username":"bob"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusConflict, rec.Code)
+}
+
+// serveChangeEmail は changeEmailFn を差し替えた UserHandler に、認証付きで PUT /api/user_info/email/ し結果を返す。
+func serveChangeEmail(t *testing.T, changeEmailFn func(context.Context, string, string, string) (*domain.User, error), body string) *httptest.ResponseRecorder {
+	t.Helper()
+	jm := jwtpkg.NewManager("secret")
+	e := newTestEcho()
+	h := NewUserHandler(&mockUserService{changeEmailFn: changeEmailFn})
+	e.PUT("/api/user_info/email/", h.ChangeEmail, appmw.JWT(jm))
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, authedRequest(t, jm, http.MethodPut, "/api/user_info/email/", body))
+	return rec
+}
+
+// メール変更した時、200 が返ること。
+func TestUserHandler_ChangeEmail_Returns200(t *testing.T) {
+	// Arrange & Act
+	rec := serveChangeEmail(t, func(_ context.Context, _, email, _ string) (*domain.User, error) {
+		return factory.NewUser(factory.WithID(testUserID), factory.WithEmail(email)), nil
+	}, `{"email":"alice2@example.com","password":"pass1234"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+// パスワードが欠けている時、サービスを呼ばず 400 が返ること。
+func TestUserHandler_ChangeEmail_ValidationError(t *testing.T) {
+	// Arrange & Act
+	rec := serveChangeEmail(t, func(_ context.Context, _, _, _ string) (*domain.User, error) {
+		t.Fatal("validation fail 時に service を呼んではいけない")
+		return nil, nil
+	}, `{"email":"alice2@example.com"}`) // password 欠落
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// パスワードが違いサービスが ErrIncorrectPassword を返した時、400 が返ること。
+func TestUserHandler_ChangeEmail_WrongPassword(t *testing.T) {
+	// Arrange & Act
+	rec := serveChangeEmail(t, func(_ context.Context, _, _, _ string) (*domain.User, error) {
+		return nil, service.ErrIncorrectPassword
+	}, `{"email":"alice2@example.com","password":"wrong"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// 別ユーザーと重複しサービスが ErrUserAlreadyExists を返した時、409 が返ること。
+func TestUserHandler_ChangeEmail_Conflict(t *testing.T) {
+	// Arrange & Act
+	rec := serveChangeEmail(t, func(_ context.Context, _, _, _ string) (*domain.User, error) {
+		return nil, service.ErrUserAlreadyExists
+	}, `{"email":"bob@example.com","password":"pass1234"}`)
 
 	// Assert
 	assert.Equal(t, http.StatusConflict, rec.Code)

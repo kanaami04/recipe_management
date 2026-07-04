@@ -12,6 +12,12 @@ type ArchiveRequest struct {
 	ArchiveFlg bool `json:"archive_flg"`
 }
 
+// ChangeEmailRequest メールアドレス変更。本人確認のため現在のパスワードを要求する。
+type ChangeEmailRequest struct {
+	Email    string `json:"email" validate:"required,email,max=50"`
+	Password string `json:"password" validate:"required"`
+}
+
 // ChangePasswordRequest defines model for ChangePasswordRequest.
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
@@ -151,7 +157,6 @@ type TokenResponse struct {
 
 // UpdateUserRequest defines model for UpdateUserRequest.
 type UpdateUserRequest struct {
-	Email    string `json:"email" validate:"required,email,max=50"`
 	Username string `json:"username" validate:"required,max=50"`
 }
 
@@ -214,6 +219,9 @@ type LoginJSONRequestBody = TokenRequest
 
 // UpdateUserInfoJSONRequestBody defines body for UpdateUserInfo for application/json ContentType.
 type UpdateUserInfoJSONRequestBody = UpdateUserRequest
+
+// ChangeEmailJSONRequestBody defines body for ChangeEmail for application/json ContentType.
+type ChangeEmailJSONRequestBody = ChangeEmailRequest
 
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = ChangePasswordRequest

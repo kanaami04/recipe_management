@@ -160,6 +160,31 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/user_info/email/:
+    put:
+      tags: [users]
+      summary: メールアドレス変更(現在のパスワード確認あり)
+      operationId: changeEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeEmailRequest'
+      responses:
+        '200':
+          description: 変更成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /api/user_info/password/:
     put:
       tags: [users]
@@ -550,13 +575,19 @@ components:
 
     UpdateUserRequest:
       type: object
-      required: [username, email]
+      required: [username]
       properties:
         username:
           type: string
           maxLength: 50
           x-oapi-codegen-extra-tags:
             validate: required,max=50
+
+    ChangeEmailRequest:
+      type: object
+      description: メールアドレス変更。本人確認のため現在のパスワードを要求する。
+      required: [email, password]
+      properties:
         email:
           type: string
           format: email
@@ -564,6 +595,10 @@ components:
           x-go-type: string
           x-oapi-codegen-extra-tags:
             validate: required,email,max=50
+        password:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
 
     ChangePasswordRequest:
       type: object
