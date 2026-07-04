@@ -1,24 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Controller, useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { emailFormSchema, type EmailFormValues } from '@/features/account/schema/accountSchema'
-import {
-  changeEmailMutation,
-  getUserInfoQueryKey,
-} from '@/shared/api/generated/@tanstack/react-query.gen'
+import { changeEmailMutation } from '@/shared/api/generated/@tanstack/react-query.gen'
+import { logout } from '@/shared/auth/authClient'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 
 // メールアドレス変更フォーム。本人確認のため現在のパスワードを求める。
+// メールは新しいログイン識別子になるため、変更が成功したらログアウトして
+// ログイン画面へ戻し、新しいメールで再ログインしてもらう。
 export function EmailForm() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const {
     control,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm<EmailFormValues>({
     resolver: zodResolver(emailFormSchema),
@@ -28,10 +29,13 @@ export function EmailForm() {
 
   const changeEmail = useMutation({
     ...changeEmailMutation(),
-    onSuccess: () => {
-      reset()
-      queryClient.invalidateQueries({ queryKey: getUserInfoQueryKey() })
-      toast.success('メールアドレスを変更しました')
+    onSuccess: async () => {
+      await logout()
+      // 別アカウント(または同アカウントの新メール)で再ログインしたとき、
+      // 旧メールの情報が一瞬残らないようキャッシュを空にする。
+      queryClient.clear()
+      navigate('/')
+      toast.success('メールアドレスを変更しました。新しいメールアドレスでログインしてください。')
     },
     onError: (error) => {
       if (error.response?.status === 409) {

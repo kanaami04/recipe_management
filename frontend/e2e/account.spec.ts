@@ -106,34 +106,65 @@ test('プロフィールのメール欄は編集できない(disabled)', async (
   await expect(page.locator('#email')).toBeDisabled()
 })
 
-test('パスワード確認のうえメールアドレスを変更できる', async ({ page }) => {
+test('「メールアドレスを変更」ボタンで専用画面へ遷移する', async ({ page }) => {
   // Arrange
   await mockApi(page)
   await login(page)
   await page.goto('/top/account')
+
+  // Act
+  await page.getByRole('button', { name: 'メールアドレスを変更' }).click()
+
+  // Assert
+  await expect(page).toHaveURL(/\/top\/account\/email$/)
+  await expect(page.locator('#newEmail')).toBeVisible()
+})
+
+test('メール変更画面の「アカウントに戻る」で戻れる', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+  await page.goto('/top/account/email')
+
+  // Act
+  await page.getByRole('button', { name: 'アカウントに戻る' }).click()
+
+  // Assert
+  await expect(page).toHaveURL(/\/top\/account$/)
+})
+
+test('パスワード確認のうえメールアドレスを変更するとログイン画面に戻る', async ({ page }) => {
+  // Arrange
+  await mockApi(page)
+  await login(page)
+  await page.goto('/top/account/email')
 
   // Act: 新しいメール + 現在のパスワードで変更
   await page.locator('#newEmail').fill('taro2@example.com')
   await page.locator('#emailPassword').fill('password123')
   await page.getByRole('button', { name: 'メールアドレスを変更' }).click()
 
-  // Assert
-  await expect(page.getByText('メールアドレスを変更しました')).toBeVisible()
+  // Assert: 再ログインを促され、ログイン画面へ戻る
+  await expect(page).toHaveURL(/\/$/)
+  await expect(
+    page.getByText('メールアドレスを変更しました。新しいメールアドレスでログインしてください。'),
+  ).toBeVisible()
 })
 
 test('パスワードが違うとメールアドレスを変更できない', async ({ page }) => {
   // Arrange
   await mockApi(page)
   await login(page)
-  await page.goto('/top/account')
+  await page.goto('/top/account/email')
 
   // Act: 誤ったパスワードで変更
   await page.locator('#newEmail').fill('taro2@example.com')
   await page.locator('#emailPassword').fill('wrongpass')
   await page.getByRole('button', { name: 'メールアドレスを変更' }).click()
 
-  // Assert
+  // Assert: 画面遷移せずエラーが出る
   await expect(page.getByText('パスワードが違います')).toBeVisible()
+  await expect(page).toHaveURL(/\/top\/account\/email$/)
 })
 
 test('パスワードを変更できる', async ({ page }) => {
