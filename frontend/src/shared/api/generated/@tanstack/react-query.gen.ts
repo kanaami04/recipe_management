@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { archiveRecipe, changeEmail, changePassword, createLabel, createRecipe, deleteAccount, deleteLabel, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe, updateUserInfo } from '../sdk.gen';
-import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
+import { archiveRecipe, changeEmail, changePassword, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe, updateUserInfo } from '../sdk.gen';
+import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -194,6 +194,57 @@ export const changePasswordMutation = (options?: Partial<Options<ChangePasswordD
     const mutationOptions: UseMutationOptions<ChangePasswordResponse, AxiosError<ChangePasswordError>, Options<ChangePasswordData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await changePassword({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * プロフィール画像を削除する
+ */
+export const deleteAvatarMutation = (options?: Partial<Options<DeleteAvatarData>>): UseMutationOptions<DeleteAvatarResponse, AxiosError<DeleteAvatarError>, Options<DeleteAvatarData>> => {
+    const mutationOptions: UseMutationOptions<DeleteAvatarResponse, AxiosError<DeleteAvatarError>, Options<DeleteAvatarData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteAvatar({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * プロフィール画像のアップロード用 URL を発行する
+ */
+export const createAvatarUploadUrlMutation = (options?: Partial<Options<CreateAvatarUploadUrlData>>): UseMutationOptions<CreateAvatarUploadUrlResponse, AxiosError<CreateAvatarUploadUrlError>, Options<CreateAvatarUploadUrlData>> => {
+    const mutationOptions: UseMutationOptions<CreateAvatarUploadUrlResponse, AxiosError<CreateAvatarUploadUrlError>, Options<CreateAvatarUploadUrlData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createAvatarUploadUrl({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * アップロード済みの画像をプロフィール画像として確定する
+ */
+export const confirmAvatarMutation = (options?: Partial<Options<ConfirmAvatarData>>): UseMutationOptions<ConfirmAvatarResponse, AxiosError<ConfirmAvatarError>, Options<ConfirmAvatarData>> => {
+    const mutationOptions: UseMutationOptions<ConfirmAvatarResponse, AxiosError<ConfirmAvatarError>, Options<ConfirmAvatarData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await confirmAvatar({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

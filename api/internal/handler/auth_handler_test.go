@@ -17,7 +17,7 @@ import (
 // serveToken は loginFn を差し替えた AuthHandler に POST /api/token/ し、結果を返す。
 func serveToken(loginFn func(context.Context, string, string) (string, string, error), body string) *httptest.ResponseRecorder {
 	e := newTestEcho()
-	h := NewAuthHandler(&mockAuthService{loginFn: loginFn}, false)
+	h := NewAuthHandler(&mockAuthService{loginFn: loginFn}, false, mockAvatarStorage{})
 	e.POST("/api/token/", h.Token)
 	req := httptest.NewRequest(http.MethodPost, "/api/token/", strings.NewReader(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -29,7 +29,7 @@ func serveToken(loginFn func(context.Context, string, string) (string, string, e
 // serveRegister は registerFn を差し替えた AuthHandler に POST /api/auth/register/ し、結果を返す。
 func serveRegister(registerFn func(context.Context, string, string, string) (*domain.User, error), body string) *httptest.ResponseRecorder {
 	e := newTestEcho()
-	h := NewAuthHandler(&mockAuthService{registerFn: registerFn}, false)
+	h := NewAuthHandler(&mockAuthService{registerFn: registerFn}, false, mockAvatarStorage{})
 	e.POST("/api/auth/register/", h.Register)
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/register/", strings.NewReader(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -42,7 +42,7 @@ func serveRegister(registerFn func(context.Context, string, string, string) (*do
 // cookieValue が空でなければ refresh Cookie を付ける(空なら Cookie なし)。
 func serveRefresh(refreshFn func(context.Context, string) (string, error), cookieValue string) *httptest.ResponseRecorder {
 	e := newTestEcho()
-	h := NewAuthHandler(&mockAuthService{refreshFn: refreshFn}, false)
+	h := NewAuthHandler(&mockAuthService{refreshFn: refreshFn}, false, mockAvatarStorage{})
 	e.POST("/api/token/refresh/", h.Refresh)
 	req := httptest.NewRequest(http.MethodPost, "/api/token/refresh/", nil)
 	if cookieValue != "" {
@@ -56,7 +56,7 @@ func serveRefresh(refreshFn func(context.Context, string) (string, error), cooki
 // serveLogout は AuthHandler に POST /api/auth/logout/ する。
 func serveLogout() *httptest.ResponseRecorder {
 	e := newTestEcho()
-	h := NewAuthHandler(&mockAuthService{}, false)
+	h := NewAuthHandler(&mockAuthService{}, false, mockAvatarStorage{})
 	e.POST("/api/auth/logout/", h.Logout)
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout/", nil)
 	rec := httptest.NewRecorder()

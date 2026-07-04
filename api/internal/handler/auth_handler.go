@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"recipe-backend/internal/domain"
 	"recipe-backend/internal/dto/request"
 	"recipe-backend/internal/dto/response"
 	"recipe-backend/internal/service"
@@ -24,10 +25,12 @@ type AuthHandler struct {
 	svc service.AuthService
 	// cookieSecure は refresh Cookie に Secure を付けるか(本番 true / dev false)。
 	cookieSecure bool
+	// avatars は登録レスポンスの avatar_url 組み立てに使う(登録直後は常に未設定)。
+	avatars domain.AvatarStorage
 }
 
-func NewAuthHandler(svc service.AuthService, cookieSecure bool) *AuthHandler {
-	return &AuthHandler{svc: svc, cookieSecure: cookieSecure}
+func NewAuthHandler(svc service.AuthService, cookieSecure bool, avatars domain.AvatarStorage) *AuthHandler {
+	return &AuthHandler{svc: svc, cookieSecure: cookieSecure, avatars: avatars}
 }
 
 // refreshCookie は refresh トークン用 Cookie を組み立てる。maxAge<0 で即時失効。
@@ -102,5 +105,5 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
-	return c.JSON(http.StatusCreated, response.ToUserInfo(user))
+	return c.JSON(http.StatusCreated, response.ToUserInfo(user, h.avatars))
 }

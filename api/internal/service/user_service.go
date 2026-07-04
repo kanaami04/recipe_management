@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"log/slog"
+	"strings"
 
 	"recipe-backend/internal/domain"
+	"recipe-backend/internal/pkg/id"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,14 +25,23 @@ type UserService interface {
 	ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error
 	// DeleteAccount はユーザーと所有レシピを削除する。
 	DeleteAccount(ctx context.Context, userID string) error
+	// CreateAvatarUploadURL はプロフィール画像アップロード用の署名付き URL を発行する。
+	// 戻り値の key はアップロード後、ConfirmAvatar に渡す。
+	CreateAvatarUploadURL(ctx context.Context, userID, contentType string) (uploadURL, key string, err error)
+	// ConfirmAvatar はアップロード済みの key を自分のプロフィール画像として確定する。
+	// key が自分のもの(CreateAvatarUploadURL で発行した接頭辞)でなければ ErrForbidden。
+	ConfirmAvatar(ctx context.Context, userID, key string) (*domain.User, error)
+	// DeleteAvatar はプロフィール画像を削除する。未設定でもエラーにしない。
+	DeleteAvatar(ctx context.Context, userID string) (*domain.User, error)
 }
 
 type userService struct {
-	users domain.UserRepository
+	users   domain.UserRepository
+	avatars domain.AvatarStorage
 }
 
-func NewUserService(users domain.UserRepository) UserService {
-	return &userService{users: users}
+func NewUserService(users domain.UserRepository, avatars domain.AvatarStorage) UserService {
+	return &userService{users: users, avatars: avatars}
 }
 
 func (s *userService) GetByID(ctx context.Context, id string) (*domain.User, error) {
@@ -91,6 +103,73 @@ func (s *userService) ChangePassword(ctx context.Context, userID, currentPasswor
 
 func (s *userService) DeleteAccount(ctx context.Context, userID string) error {
 	return s.users.Delete(ctx, userID)
+}
+
+func (s *userService) CreateAvatarUploadURL(ctx context.Context, userID, contentType string) (string, string, error) {
+	key := avatarKeyPrefix(userID) + id.New()
+	uploadURL, err := s.avatars.PresignUpload(ctx, key, contentType)
+	if err != nil {
+		return "", "", err
+	}
+	return uploadURL, key, nil
+}
+
+func (s *userService) ConfirmAvatar(ctx context.Context, userID, key string) (*domain.User, error) {
+	// 自分宛てに発行した key かを確かめる(他人の key を confirm させない)。
+	if !strings.HasPrefix(key, avatarKeyPrefix(userID)) {
+		return nil, ErrForbidden
+	}
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrNotFound
+	}
+	oldKey := user.AvatarKey
+	if err := s.users.UpdateAvatarKey(ctx, userID, &key); err != nil {
+		return nil, err
+	}
+	// 差し替え前の画像削除はベストエフォート。失敗しても確定自体は成功させる
+	// (孤児オブジェクトが残るだけで、ユーザーから見た状態は正しい)。
+	// 同じ key を二重に確定したとき(oldKey == key)は現行画像を消さない。
+	if oldKey != nil && *oldKey != key {
+		if err := s.avatars.Delete(ctx, *oldKey); err != nil {
+			slog.Warn("failed to delete old avatar", "user_id", userID, "key", *oldKey, "error", err)
+		}
+	}
+	user.AvatarKey = &key
+	return user, nil
+}
+
+func (s *userService) DeleteAvatar(ctx context.Context, userID string) (*domain.User, error) {
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrNotFound
+	}
+	if user.AvatarKey != nil {
+		key := *user.AvatarKey
+		// 先に DB のキーを外し、その後ベストエフォートでオブジェクトを消す。
+		// 逆順だと「オブジェクト削除成功 → DB 更新失敗」で avatar_url が 404 を指し、
+		// 画像が割れて見える。DB を先に正しくすることでユーザーから見た状態を保つ。
+		if err := s.users.UpdateAvatarKey(ctx, userID, nil); err != nil {
+			return nil, err
+		}
+		user.AvatarKey = nil
+		if err := s.avatars.Delete(ctx, key); err != nil {
+			slog.Warn("failed to delete avatar object", "user_id", userID, "key", key, "error", err)
+		}
+	}
+	return user, nil
+}
+
+// avatarKeyPrefix は userID 配下のアバターオブジェクトキーの接頭辞。
+// ConfirmAvatar で「自分宛てに発行された key か」を確かめるのに使う。
+func avatarKeyPrefix(userID string) string {
+	return "avatars/" + userID + "/"
 }
 
 // authenticate は userID のユーザーを取得し、現在のパスワードを検証する。

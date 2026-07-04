@@ -35,7 +35,28 @@ export const zUserInfoResponse = z.object({
     id: z.uuid(),
     username: z.string(),
     email: z.string(),
-    created_at: z.string()
+    created_at: z.string(),
+    avatar_url: z.string().nullable()
+});
+
+export const zCreateAvatarUploadUrlRequest = z.object({
+    content_type: z.enum([
+        'image/jpeg',
+        'image/png',
+        'image/webp'
+    ])
+});
+
+/**
+ * アップロード先の署名付き URL。この URL へ画像本体を PUT する(Content-Type ヘッダは要求時と同じ値にする)。
+ */
+export const zAvatarUploadUrlResponse = z.object({
+    upload_url: z.string(),
+    key: z.string()
+});
+
+export const zConfirmAvatarRequest = z.object({
+    key: z.string()
 });
 
 export const zUpdateUserRequest = z.object({
@@ -207,6 +228,25 @@ export const zChangePasswordBody = zChangePasswordRequest;
  * 変更成功(本文なし)
  */
 export const zChangePasswordResponse = z.void();
+
+/**
+ * 削除成功
+ */
+export const zDeleteAvatarResponse = zUserInfoResponse;
+
+export const zCreateAvatarUploadUrlBody = zCreateAvatarUploadUrlRequest;
+
+/**
+ * 発行成功
+ */
+export const zCreateAvatarUploadUrlResponse = zAvatarUploadUrlResponse;
+
+export const zConfirmAvatarBody = zConfirmAvatarRequest;
+
+/**
+ * 確定成功
+ */
+export const zConfirmAvatarResponse = zUserInfoResponse;
 
 /**
  * 取得成功

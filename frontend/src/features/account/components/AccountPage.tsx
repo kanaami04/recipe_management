@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { AvatarForm } from '@/features/account/components/AvatarForm'
 import { PasswordForm } from '@/features/account/components/PasswordForm'
 import { ProfileForm } from '@/features/account/components/ProfileForm'
 import { deleteAccountMutation } from '@/shared/api/generated/@tanstack/react-query.gen'
@@ -49,6 +50,15 @@ export function AccountPage() {
         <p className="text-muted-foreground py-8 text-center">読み込み中...</p>
       ) : (
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-3 sm:p-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>プロフィール画像</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AvatarForm user={user} />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>プロフィール</CardTitle>
