@@ -111,6 +111,27 @@ test('スマホでアカウントへ遷移するとサイドバーが閉じる',
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
+test('スマホでアカウントへ遷移した後も画面が操作できる', async ({ page }) => {
+  // Arrange: モバイル幅でログインし、サイドバーのユーザーメニューから「アカウント」へ
+  // 遷移する。サイドバー(Sheet)の通常のクローズアニメーション(300ms)の間、
+  // Radix が開いた時に掛けた body の pointer-events:none が残り、遷移直後の
+  // 画面が一瞬操作不能になる回帰がある。
+  await page.setViewportSize({ width: 375, height: 800 })
+  await mockApi(page)
+  await login(page)
+  await page.getByRole('button', { name: 'Toggle Sidebar' }).click()
+  await page.getByText('taro', { exact: true }).click()
+
+  // Act
+  await page.getByRole('menuitem', { name: 'アカウント' }).click()
+  await expect(page).toHaveURL(/\/top\/account$/)
+
+  // Assert: body の pointer-events がロックされたままでなく、実際にボタンを押せること
+  await expect(page.locator('body')).not.toHaveCSS('pointer-events', 'none')
+  await page.getByRole('button', { name: 'メールアドレスを変更' }).click()
+  await expect(page).toHaveURL(/\/top\/account\/email$/)
+})
+
 test('プロフィール(ユーザー名)を更新できる', async ({ page }) => {
   // Arrange
   await mockApi(page)
