@@ -15,7 +15,14 @@ export type UnitConfig = {
   before?: boolean
 }
 
-const q = (unit: string, start: number, step: number, min: number, max: number, before = false): UnitConfig => ({
+const q = (
+  unit: string,
+  start: number,
+  step: number,
+  min: number,
+  max: number,
+  before = false,
+): UnitConfig => ({
   unit,
   hasQuantity: true,
   start,
@@ -96,10 +103,11 @@ export function quantityOptions(config: UnitConfig): { label: string; value: str
   return options
 }
 
-// カード等での「数量 + 単位」の表示。適量・少々は単位のみ、大さじ系は単位を前に置く。
+// カード等での「数量 + 単位」の表示。適量・少々や手入力(候補外)の単位は
+// 数量を持たないため単位テキストのみ、大さじ系は単位を前に置く。
 export function formatAmount(quantity: number, unit: string): string {
   const config = findUnit(unit)
-  if (config && !config.hasQuantity) return unit
-  if (config?.before) return `${unit}${formatQuantity(quantity)}`
+  if (!config || !config.hasQuantity) return unit
+  if (config.before) return `${unit}${formatQuantity(quantity)}`
   return `${formatQuantity(quantity)}${unit}`
 }
