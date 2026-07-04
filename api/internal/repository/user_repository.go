@@ -53,9 +53,9 @@ func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User,
 	return &u, nil
 }
 
-func (r *userRepository) FindAll(ctx context.Context) ([]domain.User, error) {
+func (r *userRepository) FindAllExcept(ctx context.Context, excludeID string) ([]domain.User, error) {
 	var users []domain.User
-	err := r.db.WithContext(ctx).Order("id").Find(&users).Error
+	err := r.db.WithContext(ctx).Where("id <> ?", excludeID).Order("id").Find(&users).Error
 	return users, err
 }
 

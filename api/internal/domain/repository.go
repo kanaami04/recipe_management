@@ -9,7 +9,8 @@ type UserRepository interface {
 	FindByUsername(ctx context.Context, username string) (*User, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id string) (*User, error)
-	FindAll(ctx context.Context) ([]User, error)
+	// FindAllExcept は excludeID を除く全ユーザーを返す（共有先候補用。自分自身を候補に出さない）。
+	FindAllExcept(ctx context.Context, excludeID string) ([]User, error)
 	Create(ctx context.Context, user *User) error
 	// Update は username / email を更新する。
 	Update(ctx context.Context, user *User) error

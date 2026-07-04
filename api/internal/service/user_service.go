@@ -13,7 +13,8 @@ import (
 
 type UserService interface {
 	GetByID(ctx context.Context, id string) (*domain.User, error)
-	List(ctx context.Context) ([]domain.User, error)
+	// List は共有先候補となるユーザー一覧を返す。呼び出しユーザー（selfID）自身は除く。
+	List(ctx context.Context, selfID string) ([]domain.User, error)
 	// UpdateProfile は username を更新する。他ユーザーと重複したら ErrUserAlreadyExists。
 	// メールは本人確認が要るため ChangeEmail で別途扱う。
 	UpdateProfile(ctx context.Context, userID, username string) (*domain.User, error)
@@ -48,8 +49,8 @@ func (s *userService) GetByID(ctx context.Context, id string) (*domain.User, err
 	return s.users.FindByID(ctx, id)
 }
 
-func (s *userService) List(ctx context.Context) ([]domain.User, error) {
-	return s.users.FindAll(ctx)
+func (s *userService) List(ctx context.Context, selfID string) ([]domain.User, error) {
+	return s.users.FindAllExcept(ctx, selfID)
 }
 
 func (s *userService) UpdateProfile(ctx context.Context, userID, username string) (*domain.User, error) {

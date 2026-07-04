@@ -72,7 +72,7 @@ func (m *mockRecipeService) SetArchived(ctx context.Context, userID, recipeID st
 
 type mockUserService struct {
 	getByIDFn       func(ctx context.Context, id string) (*domain.User, error)
-	listFn          func(ctx context.Context) ([]domain.User, error)
+	listFn          func(ctx context.Context, selfID string) ([]domain.User, error)
 	updateFn        func(ctx context.Context, userID, username string) (*domain.User, error)
 	changeEmailFn   func(ctx context.Context, userID, email, password string) (*domain.User, error)
 	changePwFn      func(ctx context.Context, userID, current, next string) error
@@ -85,8 +85,8 @@ type mockUserService struct {
 func (m *mockUserService) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	return m.getByIDFn(ctx, id)
 }
-func (m *mockUserService) List(ctx context.Context) ([]domain.User, error) {
-	return m.listFn(ctx)
+func (m *mockUserService) List(ctx context.Context, selfID string) ([]domain.User, error) {
+	return m.listFn(ctx, selfID)
 }
 func (m *mockUserService) UpdateProfile(ctx context.Context, userID, username string) (*domain.User, error) {
 	return m.updateFn(ctx, userID, username)

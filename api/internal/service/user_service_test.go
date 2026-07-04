@@ -41,8 +41,8 @@ func TestUserGetByID_NotFound(t *testing.T) {
 	assert.Nil(t, got)
 }
 
-// ユーザーが登録されている時、List で全件が返ること。
-func TestUserList_ReturnsAll(t *testing.T) {
+// 自分を含む複数ユーザーがいる時、List で自分自身を除いた一覧が返ること。
+func TestUserList_ExcludesSelf(t *testing.T) {
 	// Arrange
 	ur := &mockUserRepo{all: []domain.User{
 		*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice")),
@@ -51,11 +51,15 @@ func TestUserList_ReturnsAll(t *testing.T) {
 	svc := NewUserService(ur, &mockAvatarStorage{})
 
 	// Act
-	users, err := svc.List(context.Background())
+	users, err := svc.List(context.Background(), "u1")
 
-	// Assert
+	// Assert: 自分(u1)を除いた残りだけが返ること
 	require.NoError(t, err)
-	assert.Len(t, users, 2)
+	ids := make([]string, len(users))
+	for i, u := range users {
+		ids[i] = u.ID
+	}
+	assert.Equal(t, []string{"u2"}, ids)
 }
 
 // ユーザーが1人もいない時、List で空が返ること。
@@ -64,7 +68,7 @@ func TestUserList_Empty(t *testing.T) {
 	svc := NewUserService(&mockUserRepo{}, &mockAvatarStorage{})
 
 	// Act
-	users, err := svc.List(context.Background())
+	users, err := svc.List(context.Background(), "u1")
 
 	// Assert
 	require.NoError(t, err)

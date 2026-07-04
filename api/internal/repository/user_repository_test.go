@@ -124,27 +124,27 @@ func TestUserRepo_FindByUsername_NotFound(t *testing.T) {
 	assert.Nil(t, got)
 }
 
-// 複数ユーザーがいる時、FindAll で ID 昇順のまま全件が返ること。
-func TestUserRepo_FindAll_OrderedByID(t *testing.T) {
+// 複数ユーザーがいる時、FindAllExcept で excludeID を除いた残りが ID 昇順で返ること。
+func TestUserRepo_FindAllExcept_ExcludesID(t *testing.T) {
 	// Arrange
 	testutil.RequireIntegration(t)
 	truncateAll(t)
 	ctx := context.Background()
 	repo := NewUserRepository(testDB)
-	seedUser(t, "alice")
+	alice := seedUser(t, "alice")
 	seedUser(t, "bob")
 	seedUser(t, "carol")
 
 	// Act
-	users, err := repo.FindAll(ctx)
+	users, err := repo.FindAllExcept(ctx, alice.ID)
 
-	// Assert: ID 昇順で全件返ること
+	// Assert: alice を除き ID 昇順で返ること
 	require.NoError(t, err)
 	names := make([]string, len(users))
 	for i, u := range users {
 		names[i] = u.Username
 	}
-	assert.Equal(t, []string{"alice", "bob", "carol"}, names)
+	assert.Equal(t, []string{"bob", "carol"}, names)
 }
 
 // プロフィールを更新した時、username が保存されること。
