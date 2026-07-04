@@ -112,7 +112,7 @@ describe('toFormValues', () => {
       cooking: [],
       season: [],
       procedure: '',
-      owner: { id: 'u-taro', username: 'taro' },
+      owner: { id: 'u-taro', username: 'taro', avatar_url: null },
       shared_user: [],
       title: 'カレー',
       create_time: null,

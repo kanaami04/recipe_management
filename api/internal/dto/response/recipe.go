@@ -28,7 +28,8 @@ var jst = func() *time.Location {
 const dateLayout = "2006-01-02 15:04" // DRF の "%Y-%m-%d %H:%M" 相当
 
 // ToRecipeResponse は domain.Recipe を API 契約に合わせた DTO へ変換する。
-func ToRecipeResponse(r *domain.Recipe) RecipeResponse {
+// avatars は owner/shared_user の avatar_url 組み立てに使う。
+func ToRecipeResponse(r *domain.Recipe, avatars domain.AvatarStorage) RecipeResponse {
 	cooking := make([]CookingResponse, 0, len(r.Ingredients))
 	for i := range r.Ingredients {
 		ing := &r.Ingredients[i]
@@ -56,7 +57,7 @@ func ToRecipeResponse(r *domain.Recipe) RecipeResponse {
 
 	shared := make([]UserListItem, 0, len(r.SharedUsers))
 	for i := range r.SharedUsers {
-		shared = append(shared, UserListItem{ID: r.SharedUsers[i].ID, Username: r.SharedUsers[i].Username})
+		shared = append(shared, ToUserListItem(&r.SharedUsers[i], avatars))
 	}
 
 	return RecipeResponse{
@@ -66,7 +67,7 @@ func ToRecipeResponse(r *domain.Recipe) RecipeResponse {
 		Cooking:    cooking,
 		Season:     season,
 		Procedure:  r.Procedure,
-		Owner:      UserListItem{ID: r.Owner.ID, Username: r.Owner.Username},
+		Owner:      ToUserListItem(&r.Owner, avatars),
 		SharedUser: shared,
 		Title:      r.Title,
 		CreateTime: r.CookingTime,

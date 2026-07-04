@@ -41,7 +41,7 @@ func (h *UserHandler) List(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
-	return c.JSON(http.StatusOK, response.ToUserList(users))
+	return c.JSON(http.StatusOK, response.ToUserList(users, h.avatars))
 }
 
 // Update は PUT /api/user_info/。プロフィール(ユーザー名)を更新する。

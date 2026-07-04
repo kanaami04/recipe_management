@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"recipe-backend/internal/domain"
 	"recipe-backend/internal/dto/request"
 	"recipe-backend/internal/dto/response"
 	appmw "recipe-backend/internal/middleware"
@@ -14,11 +15,12 @@ import (
 )
 
 type RecipeHandler struct {
-	svc service.RecipeService
+	svc     service.RecipeService
+	avatars domain.AvatarStorage
 }
 
-func NewRecipeHandler(svc service.RecipeService) *RecipeHandler {
-	return &RecipeHandler{svc: svc}
+func NewRecipeHandler(svc service.RecipeService, avatars domain.AvatarStorage) *RecipeHandler {
+	return &RecipeHandler{svc: svc, avatars: avatars}
 }
 
 // List は GET /api/recipes/。自分が所有 or 共有されたレシピ一覧を返す。
@@ -30,7 +32,7 @@ func (h *RecipeHandler) List(c echo.Context) error {
 	}
 	out := make([]response.RecipeResponse, 0, len(recipes))
 	for i := range recipes {
-		out = append(out, response.ToRecipeResponse(&recipes[i]))
+		out = append(out, response.ToRecipeResponse(&recipes[i], h.avatars))
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -46,7 +48,7 @@ func (h *RecipeHandler) Create(c echo.Context) error {
 	if err != nil {
 		return mapServiceError(err)
 	}
-	return c.JSON(http.StatusCreated, response.ToRecipeResponse(recipe))
+	return c.JSON(http.StatusCreated, response.ToRecipeResponse(recipe, h.avatars))
 }
 
 // Update は PUT /api/recipes/:id/。
@@ -64,7 +66,7 @@ func (h *RecipeHandler) Update(c echo.Context) error {
 	if err != nil {
 		return mapServiceError(err)
 	}
-	return c.JSON(http.StatusOK, response.ToRecipeResponse(recipe))
+	return c.JSON(http.StatusOK, response.ToRecipeResponse(recipe, h.avatars))
 }
 
 // Delete は DELETE /api/recipes/:id/。

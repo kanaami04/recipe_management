@@ -707,7 +707,7 @@ components:
 
     UserListItem:
       type: object
-      required: [id, username]
+      required: [id, username, avatar_url]
       properties:
         id:
           type: string
@@ -716,6 +716,10 @@ components:
           x-go-type: string
         username:
           type: string
+        avatar_url:
+          type: string
+          nullable: true
+          description: プロフィール画像の URL。未設定なら null。
 
     LabelResponse:
       type: object

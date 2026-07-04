@@ -21,6 +21,6 @@ func New(s *service.Services, cookieSecure bool, avatars domain.AvatarStorage) *
 		Auth:   NewAuthHandler(s.Auth, cookieSecure, avatars),
 		User:   NewUserHandler(s.User, avatars),
 		Label:  NewLabelHandler(s.Label),
-		Recipe: NewRecipeHandler(s.Recipe),
+		Recipe: NewRecipeHandler(s.Recipe, avatars),
 	}
 }

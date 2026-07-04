@@ -78,7 +78,8 @@ export const zChangePasswordRequest = z.object({
 
 export const zUserListItem = z.object({
     id: z.uuid(),
-    username: z.string()
+    username: z.string(),
+    avatar_url: z.string().nullable()
 });
 
 export const zLabelResponse = z.object({
