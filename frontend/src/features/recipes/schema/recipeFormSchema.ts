@@ -7,7 +7,8 @@ import type { RecipeRequest, RecipeResponse } from '@/shared/api/generated/types
 const materialSchema = z.object({
   name: z.string(),
   quantity: z.number().min(0),
-  unit: z.string(),
+  // 単位は候補チップのほか手入力(その他)も許す。DB が varchar(10) のため 10 文字上限。
+  unit: z.string().max(10, '単位は10文字以内で入力してください'),
 })
 
 type Material = z.infer<typeof materialSchema>

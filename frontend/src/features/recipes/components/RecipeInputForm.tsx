@@ -37,6 +37,15 @@ type InputProps = {
 export function RecipeInputForm({ label, icon, value, onChange, units, minRows = 0 }: InputProps) {
   // 未入力(単位なし)の行を最初だけ開く。全て入力済みなら畳んだ状態で始める。
   const [expanded, setExpanded] = useState<number>(() => value.findIndex((m) => m.unit === ''))
+  // 開いている行で「その他(単位を手入力)」を選んでいるか。行を開き直すたびにリセットし、
+  // 既存の手入力値(候補外の unit)は下の isCustomUnit で復元する。
+  const [customOpen, setCustomOpen] = useState(false)
+
+  // 行を開く。開くのは常に 1 行なので、その他モードも合わせて初期化する。
+  const openRow = (index: number) => {
+    setExpanded(index)
+    setCustomOpen(false)
+  }
 
   const updateRow = (index: number, patch: Partial<Material>) => {
     onChange(value.map((row, i) => (i === index ? { ...row, ...patch } : row)))
@@ -44,18 +53,28 @@ export function RecipeInputForm({ label, icon, value, onChange, units, minRows =
 
   // 単位を選んだら、その単位の既定値に数量を合わせる(数量なし単位は 0)。
   const onSelectUnit = (index: number, config: UnitConfig) => {
+    setCustomOpen(false)
     updateRow(index, { unit: config.unit, quantity: config.hasQuantity ? config.start : 0 })
+  }
+
+  // 「その他」を選ぶ。単位を手入力に切り替える。手入力は数値も単位テキストに含めるため、
+  // 数量は持たない(適量・少々と同じ扱い)。既に手入力値がある行は消さない。
+  const onSelectCustom = (index: number) => {
+    setCustomOpen(true)
+    if (units.some((u) => u.unit === value[index].unit)) {
+      updateRow(index, { unit: '', quantity: 0 })
+    }
   }
 
   const onAddForm = () => {
     onChange([...value, emptyRow()])
-    setExpanded(value.length) // 追加した行を開く
+    openRow(value.length) // 追加した行を開く
   }
 
   const onDropForm = (index: number) => {
     if (value.length > minRows) {
       onChange(value.filter((_, i) => i !== index))
-      setExpanded(-1)
+      openRow(-1)
     }
   }
 
@@ -69,6 +88,10 @@ export function RecipeInputForm({ label, icon, value, onChange, units, minRows =
         {value.map((material, index) => {
           const selected = findUnit(material.unit)
           const isOpen = expanded === index
+          // その他(手入力)モード: この行で明示選択中か、候補外の値が既に入っている(編集時)。
+          const isCustomUnit =
+            (isOpen && customOpen) ||
+            (material.unit !== '' && !units.some((u) => u.unit === material.unit))
 
           // 畳んだ状態: 名前 + 数量のパネル。タップで開く。
           if (!isOpen) {
@@ -76,7 +99,7 @@ export function RecipeInputForm({ label, icon, value, onChange, units, minRows =
               <div key={index} className="flex gap-1">
                 <button
                   type="button"
-                  onClick={() => setExpanded(index)}
+                  onClick={() => openRow(index)}
                   className="flex flex-1 items-center gap-2 rounded-md border p-2 text-left"
                 >
                   <span className="flex-1 truncate">{material.name || '（名前未入力）'}</span>
@@ -112,7 +135,7 @@ export function RecipeInputForm({ label, icon, value, onChange, units, minRows =
                   variant="outline"
                   size="icon"
                   aria-label="閉じる"
-                  onClick={() => setExpanded(-1)}
+                  onClick={() => openRow(-1)}
                 >
                   <ChevronUp />
                 </Button>
@@ -125,7 +148,8 @@ export function RecipeInputForm({ label, icon, value, onChange, units, minRows =
                   -
                 </Button>
               </div>
-              {/* 単位はタブ(チップ)で選ぶ。選択中は塗り、未選択は枠線。 */}
+              {/* 単位はタブ(チップ)で選ぶ。選択中は塗り、未選択は枠線。
+                  末尾の「その他」で候補にない単位を手入力する。 */}
               <div className="flex flex-wrap gap-1">
                 {units.map((config) => (
                   <Button
@@ -138,26 +162,44 @@ export function RecipeInputForm({ label, icon, value, onChange, units, minRows =
                     {config.unit}
                   </Button>
                 ))}
-              </div>
-              {/* 数量は単位に応じた候補から選ぶ。数量なし単位(適量・少々)では出さない。 */}
-              {selected?.hasQuantity && (
-                <Select
-                  value={String(material.quantity)}
-                  onValueChange={(v) => updateRow(index, { quantity: Number(v) })}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={isCustomUnit ? 'default' : 'outline'}
+                  onClick={() => onSelectCustom(index)}
                 >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="数量" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {quantityOptions(selected).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                  その他
+                </Button>
+              </div>
+              {/* その他は単位を手入力(数値も単位に含める)。候補の単位は数量を候補から選ぶ。
+                  数量なし単位(適量・少々)では数量欄を出さない。 */}
+              {isCustomUnit ? (
+                <Input
+                  placeholder="単位を入力（例: 3房、ひとつまみ）"
+                  maxLength={10}
+                  value={material.unit}
+                  onChange={(e) => updateRow(index, { unit: e.target.value })}
+                />
+              ) : (
+                selected?.hasQuantity && (
+                  <Select
+                    value={String(material.quantity)}
+                    onValueChange={(v) => updateRow(index, { quantity: Number(v) })}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="数量" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {quantityOptions(selected).map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                )
               )}
             </div>
           )
