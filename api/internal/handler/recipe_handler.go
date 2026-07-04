@@ -140,6 +140,8 @@ func mapServiceError(err error) error {
 		return echo.NewHTTPError(http.StatusForbidden, "you do not have permission to perform this action")
 	case errors.Is(err, service.ErrSharedUserNotFound):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	case errors.Is(err, service.ErrDuplicate):
+		return echo.NewHTTPError(http.StatusConflict, "already exists")
 	default:
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}

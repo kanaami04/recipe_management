@@ -8,4 +8,5 @@ var (
 	ErrNotFound           = errors.New("recipe not found")
 	ErrForbidden          = errors.New("forbidden")
 	ErrSharedUserNotFound = errors.New("shared user not found")
+	ErrDuplicate          = errors.New("duplicate")
 )

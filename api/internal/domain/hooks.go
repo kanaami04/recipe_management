@@ -24,3 +24,4 @@ func (r *Recipe) BeforeCreate(*gorm.DB) error           { return assignID(&r.ID)
 func (i *RecipeIngredient) BeforeCreate(*gorm.DB) error { return assignID(&i.ID) }
 func (s *RecipeSeasoning) BeforeCreate(*gorm.DB) error  { return assignID(&s.ID) }
 func (l *RecipeLabel) BeforeCreate(*gorm.DB) error      { return assignID(&l.ID) }
+func (l *Label) BeforeCreate(*gorm.DB) error            { return assignID(&l.ID) }

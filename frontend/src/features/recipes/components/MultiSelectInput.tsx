@@ -28,7 +28,9 @@ export function MultiSelectInput({
   return (
     <div className={className}>
       {label && <Label>{label}</Label>}
-      <Popover>
+      {/* modal: Dialog 内で開くと Radix の scroll-lock が Portal 先の Popover 内スクロールを
+          止めるため、Popover 自身に scroll 管理を持たせて候補リストをスクロール可能にする。 */}
+      <Popover modal>
         <PopoverTrigger asChild>
           <Button
             variant="outline"

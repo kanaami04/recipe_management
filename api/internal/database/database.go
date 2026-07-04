@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Connect は PostgreSQL へ接続した *gorm.DB を返す。SQL ログは slog へ出力する。
@@ -45,10 +46,43 @@ func Migrate(db *gorm.DB) error {
 		&domain.RecipeLabel{},
 		&domain.RecipeOrder{},
 		&domain.RecipeArchive{},
+		&domain.Label{},
 	); err != nil {
 		return err
 	}
-	return migrateArchiveToPerUser(db)
+	if err := migrateArchiveToPerUser(db); err != nil {
+		return err
+	}
+	return seedLabelsFromRecipes(db)
+}
+
+// seedLabelsFromRecipes は既存レシピに付いていたラベル名を、その所有者の Label マスタへ
+// 一度だけ取り込む。所有者ごとに DISTINCT 名を作り、既にあるものは飛ばす(冪等)。
+// マスタ導入前から使っていたラベルを、管理画面で扱えるようにするための移行。
+// ID は他エンティティと同じ UUIDv7 にするため、生 INSERT ではなく BeforeCreate 経由で作る。
+func seedLabelsFromRecipes(db *gorm.DB) error {
+	type pair struct {
+		OwnerID string
+		Name    string
+	}
+	var pairs []pair
+	if err := db.Raw(
+		`SELECT DISTINCT r.owner_id AS owner_id, rl.name AS name
+		 FROM recipe_labels rl
+		 JOIN recipes r ON r.id = rl.recipe_id`,
+	).Scan(&pairs).Error; err != nil {
+		return err
+	}
+	for _, p := range pairs {
+		label := domain.Label{Name: p.Name, OwnerID: p.OwnerID}
+		// 既にある (owner, name) は飛ばす(冪等)。belongs-to の Owner は巻き込まない。
+		if err := db.Omit("Owner").
+			Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&label).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // migrateArchiveToPerUser は旧・レシピ単位の archived スカラー列を、ユーザー単位の

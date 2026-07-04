@@ -48,6 +48,14 @@ export type LabelResponse = {
     name: string;
 };
 
+/**
+ * ユーザーが管理するラベル(マスタ)。作成・改名・削除の対象。
+ */
+export type LabelItem = {
+    id: string;
+    name: string;
+};
+
 export type NameInput = {
     name: string;
 };
@@ -313,10 +321,127 @@ export type ListLabelsResponses = {
     /**
      * 取得成功
      */
-    200: Array<LabelResponse>;
+    200: Array<LabelItem>;
 };
 
 export type ListLabelsResponse = ListLabelsResponses[keyof ListLabelsResponses];
+
+export type CreateLabelData = {
+    body: LabelInput;
+    path?: never;
+    query?: never;
+    url: '/api/label/';
+};
+
+export type CreateLabelErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 既に存在する(ユーザー名・メール重複)
+     */
+    409: Error;
+};
+
+export type CreateLabelError = CreateLabelErrors[keyof CreateLabelErrors];
+
+export type CreateLabelResponses = {
+    /**
+     * 作成成功
+     */
+    201: LabelItem;
+};
+
+export type CreateLabelResponse = CreateLabelResponses[keyof CreateLabelResponses];
+
+export type DeleteLabelData = {
+    body?: never;
+    path: {
+        /**
+         * ラベル ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/label/{id}/';
+};
+
+export type DeleteLabelErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type DeleteLabelError = DeleteLabelErrors[keyof DeleteLabelErrors];
+
+export type DeleteLabelResponses = {
+    /**
+     * 削除成功(本文なし)
+     */
+    204: void;
+};
+
+export type DeleteLabelResponse = DeleteLabelResponses[keyof DeleteLabelResponses];
+
+export type UpdateLabelData = {
+    body: LabelInput;
+    path: {
+        /**
+         * ラベル ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/label/{id}/';
+};
+
+export type UpdateLabelErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+    /**
+     * 既に存在する(ユーザー名・メール重複)
+     */
+    409: Error;
+};
+
+export type UpdateLabelError = UpdateLabelErrors[keyof UpdateLabelErrors];
+
+export type UpdateLabelResponses = {
+    /**
+     * 更新成功
+     */
+    200: LabelItem;
+};
+
+export type UpdateLabelResponse = UpdateLabelResponses[keyof UpdateLabelResponses];
 
 export type ListRecipesData = {
     body?: never;

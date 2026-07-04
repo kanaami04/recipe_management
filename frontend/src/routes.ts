@@ -8,6 +8,7 @@ export default [
   route('top', 'routes/protected.tsx', [
     index('routes/recipes.tsx'),
     route('archive', 'routes/archive.tsx'),
+    route('labels', 'routes/labels.tsx'),
   ]),
   route('*', 'routes/catchall.tsx'),
 ] satisfies RouteConfig
