@@ -10,4 +10,5 @@ var (
 	ErrSharedUserNotFound = errors.New("shared user not found")
 	ErrDuplicate          = errors.New("duplicate")
 	ErrIncorrectPassword  = errors.New("incorrect password")
+	ErrInvalidURL         = errors.New("invalid url")
 )

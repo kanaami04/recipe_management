@@ -44,6 +44,23 @@ func TestRecipeCreate_BuildsRecipe(t *testing.T) {
 	assert.Equal(t, want, *rr.created)
 }
 
+// source_url に http(s) 以外のスキーム(javascript:)を指定した時、ErrInvalidURL が返り保存されないこと。
+func TestRecipeCreate_RejectsNonHTTPSourceURL(t *testing.T) {
+	// Arrange
+	rr := newMockRecipeRepo()
+	svc := NewRecipeService(rr, &mockUserRepo{})
+	req := request.RecipeRequest{
+		Title:     "カレー",
+		SourceUrl: "javascript:alert(1)",
+	}
+
+	// Act
+	_, err := svc.Create(context.Background(), "u1", req)
+
+	// Assert
+	assert.ErrorIs(t, err, ErrInvalidURL)
+}
+
 // 存在しないユーザーを共有先に指定した時、ErrSharedUserNotFound が返ること。
 func TestRecipeCreate_SharedUserNotFound(t *testing.T) {
 	// Arrange

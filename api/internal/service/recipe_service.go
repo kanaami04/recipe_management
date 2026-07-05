@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"recipe-backend/internal/domain"
 	"recipe-backend/internal/dto/request"
@@ -30,13 +31,34 @@ func (s *recipeService) List(ctx context.Context, userID string) ([]domain.Recip
 	return s.recipes.FindAllForUser(ctx, userID)
 }
 
+// validateExternalURLs は source_url / thumbnail_url を検証する。
+// 空文字は許容し、値があるときは http/https のスキームのみ通す
+// (javascript: 等の危険な URL が保存され <a href>・<img src> で描画されるのを防ぐ)。
+func validateExternalURLs(req request.RecipeRequest) error {
+	for _, raw := range []string{req.SourceUrl, req.ThumbnailUrl} {
+		if raw == "" {
+			continue
+		}
+		u, err := url.Parse(raw)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+			return ErrInvalidURL
+		}
+	}
+	return nil
+}
+
 func (s *recipeService) Create(ctx context.Context, userID string, req request.RecipeRequest) (*domain.Recipe, error) {
+	if err := validateExternalURLs(req); err != nil {
+		return nil, err
+	}
 	recipe := &domain.Recipe{
-		Title:       req.Title,
-		CookingTime: req.CreateTime,
-		Servings:    normalizeServings(req.CreateFor),
-		Procedure:   req.Procedure,
-		OwnerID:     userID,
+		Title:        req.Title,
+		CookingTime:  req.CreateTime,
+		Servings:     normalizeServings(req.CreateFor),
+		Procedure:    req.Procedure,
+		SourceURL:    req.SourceUrl,
+		ThumbnailURL: req.ThumbnailUrl,
+		OwnerID:      userID,
 	}
 	if err := s.buildAssociations(ctx, req, recipe); err != nil {
 		return nil, err
@@ -48,6 +70,9 @@ func (s *recipeService) Create(ctx context.Context, userID string, req request.R
 }
 
 func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error) {
+	if err := validateExternalURLs(req); err != nil {
+		return nil, err
+	}
 	existing, err := s.recipes.FindByID(ctx, recipeID)
 	if err != nil {
 		return nil, err
@@ -63,6 +88,8 @@ func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req
 	existing.CookingTime = req.CreateTime
 	existing.Servings = normalizeServings(req.CreateFor)
 	existing.Procedure = req.Procedure
+	existing.SourceURL = req.SourceUrl
+	existing.ThumbnailURL = req.ThumbnailUrl
 	// owner・アーカイブ状態は更新対象外(アーカイブは専用の SetArchived で扱う)
 	if err := s.buildAssociations(ctx, req, existing); err != nil {
 		return nil, err

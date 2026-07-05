@@ -11,6 +11,7 @@ type Handlers struct {
 	User   *UserHandler
 	Label  *LabelHandler
 	Recipe *RecipeHandler
+	Ogp    *OgpHandler
 }
 
 // New は全サービスから全ハンドラを生成する（ハンドラ層の合成）。
@@ -22,5 +23,6 @@ func New(s *service.Services, cookieSecure bool, avatars domain.AvatarStorage) *
 		User:   NewUserHandler(s.User, avatars),
 		Label:  NewLabelHandler(s.Label),
 		Recipe: NewRecipeHandler(s.Recipe, avatars),
+		Ogp:    NewOgpHandler(s.Ogp),
 	}
 }

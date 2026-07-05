@@ -139,6 +139,14 @@ export type RecipeRequest = {
      */
     create_for?: number;
     procedure?: string;
+    /**
+     * 参考にした外部レシピの URL。任意。空文字で未設定。
+     */
+    source_url?: string;
+    /**
+     * source_url の OGP 画像 URL(サムネイル)。任意。空文字で未設定。
+     */
+    thumbnail_url?: string;
     label?: Array<LabelInput>;
     shared_user?: Array<SharedUserInput>;
     cooking?: Array<CookingInput>;
@@ -157,6 +165,17 @@ export type ArchiveRequest = {
  */
 export type ReorderRequest = {
     recipe_ids: Array<string>;
+};
+
+export type OgpResponse = {
+    /**
+     * og:image の URL。取得できなければ空文字。
+     */
+    image: string;
+    /**
+     * og:title。取得できなければ空文字。
+     */
+    title: string;
 };
 
 export type NameResponse = {
@@ -188,6 +207,14 @@ export type RecipeResponse = {
     cooking: Array<CookingResponse>;
     season: Array<SeasonResponse>;
     procedure: string;
+    /**
+     * 参考にした外部レシピの URL。未設定時は空文字。
+     */
+    source_url: string;
+    /**
+     * source_url の OGP 画像 URL(サムネイル)。未設定時は空文字。
+     */
+    thumbnail_url: string;
     owner: UserListItem;
     shared_user: Array<UserListItem>;
     title: string;
@@ -747,6 +774,40 @@ export type CreateRecipeResponses = {
 };
 
 export type CreateRecipeResponse = CreateRecipeResponses[keyof CreateRecipeResponses];
+
+export type FetchOgpData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * OGP を取得する対象の URL
+         */
+        url: string;
+    };
+    url: '/api/ogp/';
+};
+
+export type FetchOgpErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+};
+
+export type FetchOgpError = FetchOgpErrors[keyof FetchOgpErrors];
+
+export type FetchOgpResponses = {
+    /**
+     * 取得成功(項目が無ければ空文字)
+     */
+    200: OgpResponse;
+};
+
+export type FetchOgpResponse = FetchOgpResponses[keyof FetchOgpResponses];
 
 export type ReorderRecipesData = {
     body: ReorderRequest;
