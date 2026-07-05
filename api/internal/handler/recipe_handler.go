@@ -156,6 +156,8 @@ func mapServiceError(err error) error {
 		return echo.NewHTTPError(http.StatusConflict, err.Error())
 	case errors.Is(err, service.ErrIncorrectPassword):
 		return echo.NewHTTPError(http.StatusBadRequest, "現在のパスワードが違います")
+	case errors.Is(err, service.ErrInvalidURL):
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid url")
 	default:
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}

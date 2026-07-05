@@ -60,5 +60,10 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 			authorized.PUT("/recipes/:id/", h.Recipe.Update)
 			authorized.DELETE("/recipes/:id/", h.Recipe.Delete)
 		}
+
+		// OGP(外部レシピ URL のサムネイル取得)
+		{
+			authorized.GET("/ogp/", h.Ogp.Fetch)
+		}
 	}
 }

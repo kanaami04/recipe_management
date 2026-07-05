@@ -123,6 +123,8 @@ export const zRecipeRequest = z.object({
     create_time: z.int().nullish(),
     create_for: z.int().optional(),
     procedure: z.string().optional(),
+    source_url: z.string().optional(),
+    thumbnail_url: z.string().optional(),
     label: z.array(zLabelInput).optional(),
     shared_user: z.array(zSharedUserInput).optional(),
     cooking: z.array(zCookingInput).optional(),
@@ -141,6 +143,11 @@ export const zArchiveRequest = z.object({
  */
 export const zReorderRequest = z.object({
     recipe_ids: z.array(z.uuid())
+});
+
+export const zOgpResponse = z.object({
+    image: z.string(),
+    title: z.string()
 });
 
 export const zNameResponse = z.object({
@@ -166,6 +173,8 @@ export const zRecipeResponse = z.object({
     cooking: z.array(zCookingResponse),
     season: z.array(zSeasonResponse),
     procedure: z.string(),
+    source_url: z.string(),
+    thumbnail_url: z.string(),
     owner: zUserListItem,
     shared_user: z.array(zUserListItem),
     title: z.string(),
@@ -297,6 +306,15 @@ export const zCreateRecipeBody = zRecipeRequest;
  * 作成成功
  */
 export const zCreateRecipeResponse = zRecipeResponse;
+
+export const zFetchOgpQuery = z.object({
+    url: z.string()
+});
+
+/**
+ * 取得成功(項目が無ければ空文字)
+ */
+export const zFetchOgpResponse = zOgpResponse;
 
 export const zReorderRecipesBody = zReorderRequest;
 

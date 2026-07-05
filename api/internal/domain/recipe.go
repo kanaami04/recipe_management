@@ -11,6 +11,10 @@ type Recipe struct {
 	Servings    int    `gorm:"not null;default:1"` // 何人前
 	Procedure   string `gorm:"type:text"`
 
+	// 参考にした外部レシピ(クラシル等)の URL と、その OGP 画像 URL(サムネイル)。任意。
+	SourceURL    string `gorm:"type:text"`
+	ThumbnailURL string `gorm:"type:text"`
+
 	// Archived はレシピ本体には保持しない(列を持たない)。アーカイブは
 	// ユーザーごとの状態のため recipe_archives(RecipeArchive)を単一のソースとし、
 	// リポジトリが「リクエストしたユーザーにとってのアーカイブ状態」を詰める。

@@ -152,10 +152,12 @@ func (r *recipeRepository) Update(ctx context.Context, recipe *domain.Recipe) er
 		// アーカイブは per-user のため recipe_archives 側で扱い、ここでは触らない。
 		// cooking_time は NULL を書ける必要があるため map で更新する。
 		if err := tx.Model(&domain.Recipe{ID: recipe.ID}).Updates(map[string]any{
-			"title":        recipe.Title,
-			"cooking_time": recipe.CookingTime,
-			"servings":     recipe.Servings,
-			"procedure":    recipe.Procedure,
+			"title":         recipe.Title,
+			"cooking_time":  recipe.CookingTime,
+			"servings":      recipe.Servings,
+			"procedure":     recipe.Procedure,
+			"source_url":    recipe.SourceURL,
+			"thumbnail_url": recipe.ThumbnailURL,
 		}).Error; err != nil {
 			return err
 		}

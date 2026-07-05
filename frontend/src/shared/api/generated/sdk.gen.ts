@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
+import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -245,6 +245,20 @@ export const createRecipe = <ThrowOnError extends boolean = false>(options: Opti
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * 指定 URL の OGP メタデータ(サムネイル画像・タイトル)を取得
+ *
+ * 外部レシピ URL を貼り付けたときに、サムネイル表示用の og:image と og:title を返す。
+ * SSRF 対策として http/https のみ・プライベート宛先は拒否する。取得できない項目は空文字。
+ *
+ */
+export const fetchOgp = <ThrowOnError extends boolean = false>(options: Options<FetchOgpData, ThrowOnError>): RequestResult<FetchOgpResponses, FetchOgpErrors, ThrowOnError> => (options.client ?? client).get<FetchOgpResponses, FetchOgpErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/ogp/',
+    ...options
 });
 
 /**

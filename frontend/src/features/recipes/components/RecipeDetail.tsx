@@ -6,6 +6,8 @@ import { formatAmount } from '@/features/recipes/units'
 import type { RecipeResponse } from '@/shared/api/generated/types.gen'
 import { Badge } from '@/shared/ui/badge'
 
+import { RecipeSourceLink } from './RecipeSourceLink'
+
 // 詳細ダイアログの本文。画像を持たないテキスト中心のレシピを、
 // メタ情報チップ・右揃えの分量・番号付き手順で読みやすく組む(レシピ投稿アプリの定番構成)。
 export function RecipeDetail({ recipe }: { recipe: RecipeResponse }) {
@@ -13,6 +15,15 @@ export function RecipeDetail({ recipe }: { recipe: RecipeResponse }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* 参考にした外部レシピへのリンク。画像があればサムネ、無ければテキストリンク。 */}
+      {recipe.source_url !== '' && (
+        <RecipeSourceLink
+          sourceUrl={recipe.source_url}
+          thumbnail={recipe.thumbnail_url}
+          label="元レシピを開く"
+        />
+      )}
+
       {/* クイックファクト。人数・調理時間・材料数をチップで一望させる。 */}
       <div className="flex flex-wrap gap-2">
         <MetaChip icon={<Users className="size-3.5" />}>{recipe.create_for}人前</MetaChip>

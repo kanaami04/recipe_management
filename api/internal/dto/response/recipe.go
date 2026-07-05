@@ -14,6 +14,7 @@ type (
 	CookingResponse = apigen.CookingResponse
 	SeasonResponse  = apigen.SeasonResponse
 	RecipeResponse  = apigen.RecipeResponse
+	OgpResponse     = apigen.OgpResponse
 )
 
 // jst は created_at/updated_at の整形に使うタイムゾーン。
@@ -61,18 +62,20 @@ func ToRecipeResponse(r *domain.Recipe, avatars domain.AvatarStorage) RecipeResp
 	}
 
 	return RecipeResponse{
-		ID:         r.ID,
-		CreatedAt:  r.CreatedAt.In(jst).Format(dateLayout),
-		UpdatedAt:  r.UpdatedAt.In(jst).Format(dateLayout),
-		Cooking:    cooking,
-		Season:     season,
-		Procedure:  r.Procedure,
-		Owner:      ToUserListItem(&r.Owner, avatars),
-		SharedUser: shared,
-		Title:      r.Title,
-		CreateTime: r.CookingTime,
-		CreateFor:  r.Servings,
-		ArchiveFlg: r.Archived,
-		Label:      labels,
+		ID:           r.ID,
+		CreatedAt:    r.CreatedAt.In(jst).Format(dateLayout),
+		UpdatedAt:    r.UpdatedAt.In(jst).Format(dateLayout),
+		Cooking:      cooking,
+		Season:       season,
+		Procedure:    r.Procedure,
+		SourceUrl:    r.SourceURL,
+		ThumbnailUrl: r.ThumbnailURL,
+		Owner:        ToUserListItem(&r.Owner, avatars),
+		SharedUser:   shared,
+		Title:        r.Title,
+		CreateTime:   r.CookingTime,
+		CreateFor:    r.Servings,
+		ArchiveFlg:   r.Archived,
+		Label:        labels,
 	}
 }

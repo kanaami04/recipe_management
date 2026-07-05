@@ -11,6 +11,7 @@ type Services struct {
 	User   UserService
 	Label  LabelService
 	Recipe RecipeService
+	Ogp    OgpService
 }
 
 // New はリポジトリ（domain interface）から全サービスを生成する（サービス層の合成）。
@@ -26,5 +27,6 @@ func New(
 		User:   NewUserService(userRepo, avatars),
 		Label:  NewLabelService(labelRepo),
 		Recipe: NewRecipeService(recipeRepo, userRepo),
+		Ogp:    NewOgpService(),
 	}
 }

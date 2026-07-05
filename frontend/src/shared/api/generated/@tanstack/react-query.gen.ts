@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { archiveRecipe, changeEmail, changePassword, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe, updateUserInfo } from '../sdk.gen';
-import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
+import { archiveRecipe, changeEmail, changePassword, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, fetchOgp, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe, updateUserInfo } from '../sdk.gen';
+import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, FetchOgpData, FetchOgpError, FetchOgpResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -376,6 +376,28 @@ export const createRecipeMutation = (options?: Partial<Options<CreateRecipeData>
     };
     return mutationOptions;
 };
+
+export const fetchOgpQueryKey = (options: Options<FetchOgpData>) => createQueryKey('fetchOgp', options);
+
+/**
+ * 指定 URL の OGP メタデータ(サムネイル画像・タイトル)を取得
+ *
+ * 外部レシピ URL を貼り付けたときに、サムネイル表示用の og:image と og:title を返す。
+ * SSRF 対策として http/https のみ・プライベート宛先は拒否する。取得できない項目は空文字。
+ *
+ */
+export const fetchOgpOptions = (options: Options<FetchOgpData>) => queryOptions<FetchOgpResponse, AxiosError<FetchOgpError>, FetchOgpResponse, ReturnType<typeof fetchOgpQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await fetchOgp({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: fetchOgpQueryKey(options)
+});
 
 /**
  * レシピの並び順を更新(ユーザーごと。他ユーザーには影響しない)

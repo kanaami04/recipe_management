@@ -110,6 +110,15 @@ type NameResponse struct {
 	Name string `json:"name"`
 }
 
+// OgpResponse defines model for OgpResponse.
+type OgpResponse struct {
+	// Image og:image の URL。取得できなければ空文字。
+	Image string `json:"image"`
+
+	// Title og:title。取得できなければ空文字。
+	Title string `json:"title"`
+}
+
 // RecipeRequest defines model for RecipeRequest.
 type RecipeRequest struct {
 	Cooking []CookingInput `json:"cooking,omitempty"`
@@ -123,7 +132,13 @@ type RecipeRequest struct {
 	Procedure  string            `json:"procedure,omitempty"`
 	Season     []SeasonInput     `json:"season,omitempty"`
 	SharedUser []SharedUserInput `json:"shared_user,omitempty"`
-	Title      string            `json:"title" validate:"required"`
+
+	// SourceUrl 参考にした外部レシピの URL。任意。空文字で未設定。
+	SourceUrl string `json:"source_url,omitempty"`
+
+	// ThumbnailUrl source_url の OGP 画像 URL(サムネイル)。任意。空文字で未設定。
+	ThumbnailUrl string `json:"thumbnail_url,omitempty"`
+	Title        string `json:"title" validate:"required"`
 }
 
 // RecipeResponse defines model for RecipeResponse.
@@ -143,7 +158,13 @@ type RecipeResponse struct {
 	Procedure  string           `json:"procedure"`
 	Season     []SeasonResponse `json:"season"`
 	SharedUser []UserListItem   `json:"shared_user"`
-	Title      string           `json:"title"`
+
+	// SourceUrl 参考にした外部レシピの URL。未設定時は空文字。
+	SourceUrl string `json:"source_url"`
+
+	// ThumbnailUrl source_url の OGP 画像 URL(サムネイル)。未設定時は空文字。
+	ThumbnailUrl string `json:"thumbnail_url"`
+	Title        string `json:"title"`
 
 	// UpdatedAt JST。形式: YYYY-MM-DD HH:mm
 	UpdatedAt string `json:"updated_at"`
@@ -238,6 +259,12 @@ type Unauthorized = Error
 
 // bearerAuthContextKey is the context key for bearerAuth security scheme
 type bearerAuthContextKey string
+
+// FetchOgpParams defines parameters for FetchOgp.
+type FetchOgpParams struct {
+	// Url OGP を取得する対象の URL
+	Url string `form:"url" json:"url"`
+}
 
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest

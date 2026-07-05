@@ -406,6 +406,33 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/ogp/:
+    get:
+      tags: [recipes]
+      summary: 指定 URL の OGP メタデータ(サムネイル画像・タイトル)を取得
+      description: |
+        外部レシピ URL を貼り付けたときに、サムネイル表示用の og:image と og:title を返す。
+        SSRF 対策として http/https のみ・プライベート宛先は拒否する。取得できない項目は空文字。
+      operationId: fetchOgp
+      parameters:
+        - name: url
+          in: query
+          required: true
+          description: OGP を取得する対象の URL
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 取得成功(項目が無ければ空文字)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OgpResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/recipes/reorder/:
     put:
       tags: [recipes]
@@ -810,6 +837,14 @@ components:
         procedure:
           type: string
           x-go-type-skip-optional-pointer: true
+        source_url:
+          type: string
+          description: 参考にした外部レシピの URL。任意。空文字で未設定。
+          x-go-type-skip-optional-pointer: true
+        thumbnail_url:
+          type: string
+          description: source_url の OGP 画像 URL(サムネイル)。任意。空文字で未設定。
+          x-go-type-skip-optional-pointer: true
         label:
           type: array
           items:
@@ -855,6 +890,17 @@ components:
           x-go-type-skip-optional-pointer: true
           x-oapi-codegen-extra-tags:
             validate: required,dive,uuid
+
+    OgpResponse:
+      type: object
+      required: [image, title]
+      properties:
+        image:
+          type: string
+          description: og:image の URL。取得できなければ空文字。
+        title:
+          type: string
+          description: og:title。取得できなければ空文字。
 
     NameResponse:
       type: object
@@ -903,6 +949,8 @@ components:
         - create_for
         - archive_flg
         - label
+        - source_url
+        - thumbnail_url
       properties:
         id:
           type: string
@@ -927,6 +975,12 @@ components:
             $ref: '#/components/schemas/SeasonResponse'
         procedure:
           type: string
+        source_url:
+          type: string
+          description: 参考にした外部レシピの URL。未設定時は空文字。
+        thumbnail_url:
+          type: string
+          description: source_url の OGP 画像 URL(サムネイル)。未設定時は空文字。
         owner:
           $ref: '#/components/schemas/UserListItem'
         shared_user:
