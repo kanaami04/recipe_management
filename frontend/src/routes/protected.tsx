@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router'
+import { useEffect, useRef } from 'react'
+import { Outlet, useLocation } from 'react-router'
 
 import { requireAuth } from '@/shared/auth/requireAuth'
 import { AppSidebar } from '@/shared/components/sidebar/AppSidebar'
@@ -10,8 +11,17 @@ export const clientLoader = requireAuth
 
 // 保護レイアウト。認証は clientLoader で担保済み。
 export default function ProtectedLayout() {
+  // スクロールは main が担う(window ではない)ため React Router の ScrollRestoration が
+  // 効かない。main はレイアウト維持で子ルート跨ぎでも同一ノードのため、遷移で先頭へ戻す。
+  const mainRef = useRef<HTMLElement>(null)
+  const { pathname } = useLocation()
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0)
+  }, [pathname])
+
   return (
     <SidebarProvider
+      className="h-svh"
       style={
         {
           '--sidebar-width': 'calc(var(--spacing) * 72)',
@@ -20,8 +30,8 @@ export default function ProtectedLayout() {
       }
     >
       <AppSidebar variant="inset" />
-      <SidebarInset>
-        <main className="h-full">
+      <SidebarInset className="overflow-hidden">
+        <main ref={mainRef} className="h-full overflow-y-auto overscroll-none">
           <Outlet />
         </main>
       </SidebarInset>

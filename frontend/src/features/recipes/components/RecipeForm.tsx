@@ -66,7 +66,7 @@ export function RecipeForm({ mode, initialData, onSubmit, labelData }: Props) {
     <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col gap-4">
       {/* overflow-auto は子の box-shadow を切り落とすため、左右対称の余白(px-1)で
           タイトル等の Input の影が片側だけ欠けないようにする。 */}
-      <div className="scrollbar-none grid gap-4 overflow-auto px-1">
+      <div className="grid gap-4 overflow-auto px-1">
         <ModeToggle value={inputMode} onChange={changeMode} />
 
         {inputMode === 'url' ? (

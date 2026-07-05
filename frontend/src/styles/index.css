@@ -3,15 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* スクロールは残しつつスクロールバーだけ隠すユーティリティ。 */
-@utility scrollbar-none {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* 旧 Edge/IE */
-  &::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
-  }
-}
-
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -125,5 +116,14 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* このアプリはスクロールバーを表示しない方針。スクロール自体は残したまま
+     全要素でバーだけ隠す。新規のスクロール領域も追加設定なしで非表示になる。 */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* 旧 Edge/IE */
+  }
+  *::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
   }
 }
