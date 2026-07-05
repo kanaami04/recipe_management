@@ -20,6 +20,8 @@ tags:
     description: レシピ
   - name: labels
     description: ラベル
+  - name: shopping-list
+    description: 買い物リスト
 
 paths:
   /api/token/:
@@ -533,6 +535,215 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/shopping_list/:
+    get:
+      tags: [shopping-list]
+      summary: 自分の買い物リストを取得(無ければ作成して返す)
+      description: |
+        1 ユーザー 1 リストを使い回す。共有されたリストがあればそれを優先して返し、
+        無ければ自分が所有するリストを返す。どちらも無ければ空のリストを作成して返す。
+      operationId: getShoppingList
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/shopping_list/{id}/shares/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 買い物リスト ID
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [shopping-list]
+      summary: 買い物リストの共有相手を更新する
+      operationId: updateShoppingListShares
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingListSharesRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/shopping_list/{id}/items/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 買い物リスト ID
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [shopping-list]
+      summary: 買い物リストに項目を追加する
+      operationId: addShoppingListItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingListItemInput'
+      responses:
+        '200':
+          description: 追加成功(更新後のリスト全体を返す)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/shopping_list/{id}/items/checked/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 買い物リスト ID
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [shopping-list]
+      summary: チェック済みの項目をまとめて削除する
+      operationId: clearCheckedShoppingListItems
+      responses:
+        '200':
+          description: 削除成功(更新後のリスト全体を返す)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/shopping_list/{id}/items/reorder/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 買い物リスト ID
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [shopping-list]
+      summary: 項目の並び順を更新する(共有相手全員に反映)
+      operationId: reorderShoppingListItems
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingListReorderRequest'
+      responses:
+        '200':
+          description: 更新成功(更新後のリスト全体を返す)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/shopping_list/{id}/items/{item_id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: 買い物リスト ID
+        schema:
+          type: string
+          format: uuid
+      - name: item_id
+        in: path
+        required: true
+        description: 項目 ID
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [shopping-list]
+      summary: 項目のチェック状態を更新する
+      operationId: updateShoppingListItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingListItemUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功(更新後のリスト全体を返す)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [shopping-list]
+      summary: 項目を削除する
+      operationId: deleteShoppingListItem
+      responses:
+        '200':
+          description: 削除成功(更新後のリスト全体を返す)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1001,6 +1212,86 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LabelResponse'
+
+    ShoppingListItemInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          x-oapi-codegen-extra-tags:
+            validate: required,max=50
+
+    ShoppingListItemUpdateRequest:
+      type: object
+      description: 項目のチェック状態。true でチェック済み、false で未チェック。
+      required: [checked]
+      properties:
+        # boolean に validate:required は付けない(false がゼロ値扱いで弾かれるため)。
+        checked:
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+
+    ShoppingListReorderRequest:
+      type: object
+      description: 表示したい順に項目 ID を並べた配列(先頭 = 一番上)
+      required: [item_ids]
+      properties:
+        item_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+            x-go-type: string
+          x-go-type-skip-optional-pointer: true
+          x-oapi-codegen-extra-tags:
+            validate: required,dive,uuid
+
+    ShoppingListSharesRequest:
+      type: object
+      required: [shared_user]
+      properties:
+        shared_user:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedUserInput'
+          x-go-type-skip-optional-pointer: true
+
+    ShoppingListItemResponse:
+      type: object
+      required: [id, name, checked]
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-name: ID
+          x-go-type: string
+        name:
+          type: string
+        checked:
+          type: boolean
+
+    ShoppingListResponse:
+      type: object
+      description: 買い物リスト。項目はチェック済みが末尾、同グループ内は追加順。
+      required: [id, owner, shared_user, items]
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-name: ID
+          x-go-type: string
+        owner:
+          $ref: '#/components/schemas/UserListItem'
+        shared_user:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserListItem'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShoppingListItemResponse'
 
 security:
   - bearerAuth: []

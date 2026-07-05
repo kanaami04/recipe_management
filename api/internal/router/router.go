@@ -61,6 +61,18 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 			authorized.DELETE("/recipes/:id/", h.Recipe.Delete)
 		}
 
+		// 買い物リスト
+		{
+			authorized.GET("/shopping_list/", h.ShoppingList.Get)
+			authorized.PUT("/shopping_list/:id/shares/", h.ShoppingList.UpdateShares)
+			authorized.POST("/shopping_list/:id/items/", h.ShoppingList.AddItem)
+			// checked / reorder は静的パス。:item_id より先に登録して曖昧さを避ける。
+			authorized.DELETE("/shopping_list/:id/items/checked/", h.ShoppingList.ClearChecked)
+			authorized.PUT("/shopping_list/:id/items/reorder/", h.ShoppingList.Reorder)
+			authorized.PUT("/shopping_list/:id/items/:item_id/", h.ShoppingList.UpdateItem)
+			authorized.DELETE("/shopping_list/:id/items/:item_id/", h.ShoppingList.DeleteItem)
+		}
+
 		// OGP(外部レシピ URL のサムネイル取得)
 		{
 			authorized.GET("/ogp/", h.Ogp.Fetch)

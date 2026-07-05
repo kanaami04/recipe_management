@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
+import type { AddShoppingListItemData, AddShoppingListItemErrors, AddShoppingListItemResponses, ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsErrors, ClearCheckedShoppingListItemsResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteShoppingListItemData, DeleteShoppingListItemErrors, DeleteShoppingListItemResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetShoppingListData, GetShoppingListErrors, GetShoppingListResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, ReorderShoppingListItemsData, ReorderShoppingListItemsErrors, ReorderShoppingListItemsResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateShoppingListItemData, UpdateShoppingListItemErrors, UpdateShoppingListItemResponses, UpdateShoppingListSharesData, UpdateShoppingListSharesErrors, UpdateShoppingListSharesResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -303,6 +303,96 @@ export const updateRecipe = <ThrowOnError extends boolean = false>(options: Opti
     responseType: 'json',
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/recipes/{id}/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 自分の買い物リストを取得(無ければ作成して返す)
+ *
+ * 1 ユーザー 1 リストを使い回す。共有されたリストがあればそれを優先して返し、
+ * 無ければ自分が所有するリストを返す。どちらも無ければ空のリストを作成して返す。
+ *
+ */
+export const getShoppingList = <ThrowOnError extends boolean = false>(options?: Options<GetShoppingListData, ThrowOnError>): RequestResult<GetShoppingListResponses, GetShoppingListErrors, ThrowOnError> => (options?.client ?? client).get<GetShoppingListResponses, GetShoppingListErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/',
+    ...options
+});
+
+/**
+ * 買い物リストの共有相手を更新する
+ */
+export const updateShoppingListShares = <ThrowOnError extends boolean = false>(options: Options<UpdateShoppingListSharesData, ThrowOnError>): RequestResult<UpdateShoppingListSharesResponses, UpdateShoppingListSharesErrors, ThrowOnError> => (options.client ?? client).put<UpdateShoppingListSharesResponses, UpdateShoppingListSharesErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/{id}/shares/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 買い物リストに項目を追加する
+ */
+export const addShoppingListItem = <ThrowOnError extends boolean = false>(options: Options<AddShoppingListItemData, ThrowOnError>): RequestResult<AddShoppingListItemResponses, AddShoppingListItemErrors, ThrowOnError> => (options.client ?? client).post<AddShoppingListItemResponses, AddShoppingListItemErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/{id}/items/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * チェック済みの項目をまとめて削除する
+ */
+export const clearCheckedShoppingListItems = <ThrowOnError extends boolean = false>(options: Options<ClearCheckedShoppingListItemsData, ThrowOnError>): RequestResult<ClearCheckedShoppingListItemsResponses, ClearCheckedShoppingListItemsErrors, ThrowOnError> => (options.client ?? client).delete<ClearCheckedShoppingListItemsResponses, ClearCheckedShoppingListItemsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/{id}/items/checked/',
+    ...options
+});
+
+/**
+ * 項目の並び順を更新する(共有相手全員に反映)
+ */
+export const reorderShoppingListItems = <ThrowOnError extends boolean = false>(options: Options<ReorderShoppingListItemsData, ThrowOnError>): RequestResult<ReorderShoppingListItemsResponses, ReorderShoppingListItemsErrors, ThrowOnError> => (options.client ?? client).put<ReorderShoppingListItemsResponses, ReorderShoppingListItemsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/{id}/items/reorder/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 項目を削除する
+ */
+export const deleteShoppingListItem = <ThrowOnError extends boolean = false>(options: Options<DeleteShoppingListItemData, ThrowOnError>): RequestResult<DeleteShoppingListItemResponses, DeleteShoppingListItemErrors, ThrowOnError> => (options.client ?? client).delete<DeleteShoppingListItemResponses, DeleteShoppingListItemErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/{id}/items/{item_id}/',
+    ...options
+});
+
+/**
+ * 項目のチェック状態を更新する
+ */
+export const updateShoppingListItem = <ThrowOnError extends boolean = false>(options: Options<UpdateShoppingListItemData, ThrowOnError>): RequestResult<UpdateShoppingListItemResponses, UpdateShoppingListItemErrors, ThrowOnError> => (options.client ?? client).put<UpdateShoppingListItemResponses, UpdateShoppingListItemErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/{id}/items/{item_id}/',
     ...options,
     headers: {
         'Content-Type': 'application/json',

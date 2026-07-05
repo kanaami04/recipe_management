@@ -67,3 +67,25 @@ type RecipeRepository interface {
 	// IsArchived は userID にとって recipeID がアーカイブ済みかを返す。
 	IsArchived(ctx context.Context, userID, recipeID string) (bool, error)
 }
+
+type ShoppingListRepository interface {
+	// FindForUser は userID が見るべき買い物リストを返す(無ければ nil)。
+	// 共有されたリストがあればそれを優先し、無ければ userID が所有するリストを返す。
+	FindForUser(ctx context.Context, userID string) (*ShoppingList, error)
+	// FindByID は id のリストを返す(無ければ nil)。所有・共有チェック用。
+	FindByID(ctx context.Context, id string) (*ShoppingList, error)
+	// Create は空の買い物リストを 1 件作る。
+	Create(ctx context.Context, list *ShoppingList) error
+	// ReplaceSharedUsers はリストの共有先を list.SharedUsers で置き換える。
+	ReplaceSharedUsers(ctx context.Context, list *ShoppingList) error
+	// AddItem はリストに項目を 1 件追加する。
+	AddItem(ctx context.Context, item *ShoppingListItem) error
+	// SetItemChecked は項目のチェック状態を更新する。
+	SetItemChecked(ctx context.Context, itemID string, checked bool) error
+	// DeleteItem は項目を 1 件削除する。
+	DeleteItem(ctx context.Context, itemID string) error
+	// DeleteCheckedItems は listID のチェック済み項目をまとめて削除する。
+	DeleteCheckedItems(ctx context.Context, listID string) error
+	// Reorder は listID の項目の表示順を itemIDs の並び(先頭 = position 0)で保存する。
+	Reorder(ctx context.Context, listID string, itemIDs []string) error
+}

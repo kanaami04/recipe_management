@@ -206,6 +206,41 @@ type SharedUserInput struct {
 	Username string `json:"username" validate:"required"`
 }
 
+// ShoppingListItemInput defines model for ShoppingListItemInput.
+type ShoppingListItemInput struct {
+	Name string `json:"name" validate:"required,max=50"`
+}
+
+// ShoppingListItemResponse defines model for ShoppingListItemResponse.
+type ShoppingListItemResponse struct {
+	Checked bool   `json:"checked"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+}
+
+// ShoppingListItemUpdateRequest 項目のチェック状態。true でチェック済み、false で未チェック。
+type ShoppingListItemUpdateRequest struct {
+	Checked bool `json:"checked"`
+}
+
+// ShoppingListReorderRequest 表示したい順に項目 ID を並べた配列(先頭 = 一番上)
+type ShoppingListReorderRequest struct {
+	ItemIds []string `json:"item_ids" validate:"required,dive,uuid"`
+}
+
+// ShoppingListResponse 買い物リスト。項目はチェック済みが末尾、同グループ内は追加順。
+type ShoppingListResponse struct {
+	ID         string                     `json:"id"`
+	Items      []ShoppingListItemResponse `json:"items"`
+	Owner      UserListItem               `json:"owner"`
+	SharedUser []UserListItem             `json:"shared_user"`
+}
+
+// ShoppingListSharesRequest defines model for ShoppingListSharesRequest.
+type ShoppingListSharesRequest struct {
+	SharedUser []SharedUserInput `json:"shared_user"`
+}
+
 // TokenRequest defines model for TokenRequest.
 type TokenRequest struct {
 	Email    string `json:"email" validate:"required,email"`
@@ -286,6 +321,18 @@ type UpdateRecipeJSONRequestBody = RecipeRequest
 
 // ArchiveRecipeJSONRequestBody defines body for ArchiveRecipe for application/json ContentType.
 type ArchiveRecipeJSONRequestBody = ArchiveRequest
+
+// AddShoppingListItemJSONRequestBody defines body for AddShoppingListItem for application/json ContentType.
+type AddShoppingListItemJSONRequestBody = ShoppingListItemInput
+
+// ReorderShoppingListItemsJSONRequestBody defines body for ReorderShoppingListItems for application/json ContentType.
+type ReorderShoppingListItemsJSONRequestBody = ShoppingListReorderRequest
+
+// UpdateShoppingListItemJSONRequestBody defines body for UpdateShoppingListItem for application/json ContentType.
+type UpdateShoppingListItemJSONRequestBody = ShoppingListItemUpdateRequest
+
+// UpdateShoppingListSharesJSONRequestBody defines body for UpdateShoppingListShares for application/json ContentType.
+type UpdateShoppingListSharesJSONRequestBody = ShoppingListSharesRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = TokenRequest

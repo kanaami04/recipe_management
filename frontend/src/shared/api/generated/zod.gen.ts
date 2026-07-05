@@ -184,6 +184,44 @@ export const zRecipeResponse = z.object({
     label: z.array(zLabelResponse)
 });
 
+export const zShoppingListItemInput = z.object({
+    name: z.string().max(50)
+});
+
+/**
+ * 項目のチェック状態。true でチェック済み、false で未チェック。
+ */
+export const zShoppingListItemUpdateRequest = z.object({
+    checked: z.boolean()
+});
+
+/**
+ * 表示したい順に項目 ID を並べた配列(先頭 = 一番上)
+ */
+export const zShoppingListReorderRequest = z.object({
+    item_ids: z.array(z.uuid())
+});
+
+export const zShoppingListSharesRequest = z.object({
+    shared_user: z.array(zSharedUserInput)
+});
+
+export const zShoppingListItemResponse = z.object({
+    id: z.uuid(),
+    name: z.string(),
+    checked: z.boolean()
+});
+
+/**
+ * 買い物リスト。項目はチェック済みが末尾、同グループ内は追加順。
+ */
+export const zShoppingListResponse = z.object({
+    id: z.uuid(),
+    owner: zUserListItem,
+    shared_user: z.array(zUserListItem),
+    items: z.array(zShoppingListItemResponse)
+});
+
 export const zLoginBody = zTokenRequest;
 
 /**
@@ -353,3 +391,72 @@ export const zUpdateRecipePath = z.object({
  * 更新成功
  */
 export const zUpdateRecipeResponse = zRecipeResponse;
+
+/**
+ * 取得成功
+ */
+export const zGetShoppingListResponse = zShoppingListResponse;
+
+export const zUpdateShoppingListSharesBody = zShoppingListSharesRequest;
+
+export const zUpdateShoppingListSharesPath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 更新成功
+ */
+export const zUpdateShoppingListSharesResponse = zShoppingListResponse;
+
+export const zAddShoppingListItemBody = zShoppingListItemInput;
+
+export const zAddShoppingListItemPath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 追加成功(更新後のリスト全体を返す)
+ */
+export const zAddShoppingListItemResponse = zShoppingListResponse;
+
+export const zClearCheckedShoppingListItemsPath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 削除成功(更新後のリスト全体を返す)
+ */
+export const zClearCheckedShoppingListItemsResponse = zShoppingListResponse;
+
+export const zReorderShoppingListItemsBody = zShoppingListReorderRequest;
+
+export const zReorderShoppingListItemsPath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 更新成功(更新後のリスト全体を返す)
+ */
+export const zReorderShoppingListItemsResponse = zShoppingListResponse;
+
+export const zDeleteShoppingListItemPath = z.object({
+    id: z.uuid(),
+    item_id: z.uuid()
+});
+
+/**
+ * 削除成功(更新後のリスト全体を返す)
+ */
+export const zDeleteShoppingListItemResponse = zShoppingListResponse;
+
+export const zUpdateShoppingListItemBody = zShoppingListItemUpdateRequest;
+
+export const zUpdateShoppingListItemPath = z.object({
+    id: z.uuid(),
+    item_id: z.uuid()
+});
+
+/**
+ * 更新成功(更新後のリスト全体を返す)
+ */
+export const zUpdateShoppingListItemResponse = zShoppingListResponse;

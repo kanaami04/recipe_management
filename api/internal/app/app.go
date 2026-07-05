@@ -28,7 +28,7 @@ func New(cfg *config.Config, db *gorm.DB, s3Client *s3.Client, logger *slog.Logg
 
 	// 各層をそれぞれの New で配線（下位層 → 上位層）。
 	repos := repository.New(db)
-	services := service.New(repos.User, repos.Label, repos.Recipe, avatars, jwtManager)
+	services := service.New(repos.User, repos.Label, repos.Recipe, repos.ShoppingList, avatars, jwtManager)
 	handlers := handler.New(services, cfg.CookieSecure, avatars)
 
 	e := echo.New()
