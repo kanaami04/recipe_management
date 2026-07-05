@@ -7,6 +7,7 @@ export default [
   route('signup', 'routes/signup.tsx'),
   route('top', 'routes/protected.tsx', [
     index('routes/recipes.tsx'),
+    route('shopping-list', 'routes/shopping-list.tsx'),
     route('archive', 'routes/archive.tsx'),
     route('labels', 'routes/labels.tsx'),
     route('account', 'routes/account.tsx'),

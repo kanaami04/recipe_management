@@ -88,6 +88,11 @@ func (r *userRepository) Delete(ctx context.Context, userID string) error {
 		if err := tx.Where("owner_id = ?", userID).Delete(&domain.Recipe{}).Error; err != nil {
 			return err
 		}
+		// 所有する買い物リストも先に消す(shopping_lists.owner_id にも CASCADE が無い)。
+		// リストの項目・共有はリスト削除で CASCADE。
+		if err := tx.Where("owner_id = ?", userID).Delete(&domain.ShoppingList{}).Error; err != nil {
+			return err
+		}
 		// user 削除で labels / recipe_orders / recipe_archives / 共有(共有先側)は CASCADE。
 		return tx.Where("id = ?", userID).Delete(&domain.User{}).Error
 	})

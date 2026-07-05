@@ -32,6 +32,19 @@ export function NavMain() {
               <span>レシピ</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {/* 買い物リスト画面へ遷移するボタン */}
+          <SidebarMenuItem className="flex items-center gap-2">
+            <SidebarMenuButton
+              tooltip="買い物リスト"
+              className={cn(
+                'min-w-8 duration-200 ease-linear',
+                pathname === '/top/shopping-list' && activeClass,
+              )}
+              onClick={() => navigateAndClose('/top/shopping-list')}
+            >
+              <span>買い物リスト</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           {/* ラベル管理画面へ遷移するボタン */}
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton

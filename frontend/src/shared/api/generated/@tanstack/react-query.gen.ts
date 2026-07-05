@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { archiveRecipe, changeEmail, changePassword, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, fetchOgp, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, updateLabel, updateRecipe, updateUserInfo } from '../sdk.gen';
-import type { ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, FetchOgpData, FetchOgpError, FetchOgpResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
+import { addShoppingListItem, archiveRecipe, changeEmail, changePassword, clearCheckedShoppingListItems, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, deleteShoppingListItem, fetchOgp, getShoppingList, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, reorderShoppingListItems, updateLabel, updateRecipe, updateShoppingListItem, updateShoppingListShares, updateUserInfo } from '../sdk.gen';
+import type { AddShoppingListItemData, AddShoppingListItemError, AddShoppingListItemResponse, ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsError, ClearCheckedShoppingListItemsResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, DeleteShoppingListItemData, DeleteShoppingListItemError, DeleteShoppingListItemResponse, FetchOgpData, FetchOgpError, FetchOgpResponse, GetShoppingListData, GetShoppingListError, GetShoppingListResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, ReorderShoppingListItemsData, ReorderShoppingListItemsError, ReorderShoppingListItemsResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateShoppingListItemData, UpdateShoppingListItemError, UpdateShoppingListItemResponse, UpdateShoppingListSharesData, UpdateShoppingListSharesError, UpdateShoppingListSharesResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -457,6 +457,130 @@ export const updateRecipeMutation = (options?: Partial<Options<UpdateRecipeData>
     const mutationOptions: UseMutationOptions<UpdateRecipeResponse, AxiosError<UpdateRecipeError>, Options<UpdateRecipeData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await updateRecipe({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getShoppingListQueryKey = (options?: Options<GetShoppingListData>) => createQueryKey('getShoppingList', options);
+
+/**
+ * 自分の買い物リストを取得(無ければ作成して返す)
+ *
+ * 1 ユーザー 1 リストを使い回す。共有されたリストがあればそれを優先して返し、
+ * 無ければ自分が所有するリストを返す。どちらも無ければ空のリストを作成して返す。
+ *
+ */
+export const getShoppingListOptions = (options?: Options<GetShoppingListData>) => queryOptions<GetShoppingListResponse, AxiosError<GetShoppingListError>, GetShoppingListResponse, ReturnType<typeof getShoppingListQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getShoppingList({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getShoppingListQueryKey(options)
+});
+
+/**
+ * 買い物リストの共有相手を更新する
+ */
+export const updateShoppingListSharesMutation = (options?: Partial<Options<UpdateShoppingListSharesData>>): UseMutationOptions<UpdateShoppingListSharesResponse, AxiosError<UpdateShoppingListSharesError>, Options<UpdateShoppingListSharesData>> => {
+    const mutationOptions: UseMutationOptions<UpdateShoppingListSharesResponse, AxiosError<UpdateShoppingListSharesError>, Options<UpdateShoppingListSharesData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateShoppingListShares({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 買い物リストに項目を追加する
+ */
+export const addShoppingListItemMutation = (options?: Partial<Options<AddShoppingListItemData>>): UseMutationOptions<AddShoppingListItemResponse, AxiosError<AddShoppingListItemError>, Options<AddShoppingListItemData>> => {
+    const mutationOptions: UseMutationOptions<AddShoppingListItemResponse, AxiosError<AddShoppingListItemError>, Options<AddShoppingListItemData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await addShoppingListItem({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * チェック済みの項目をまとめて削除する
+ */
+export const clearCheckedShoppingListItemsMutation = (options?: Partial<Options<ClearCheckedShoppingListItemsData>>): UseMutationOptions<ClearCheckedShoppingListItemsResponse, AxiosError<ClearCheckedShoppingListItemsError>, Options<ClearCheckedShoppingListItemsData>> => {
+    const mutationOptions: UseMutationOptions<ClearCheckedShoppingListItemsResponse, AxiosError<ClearCheckedShoppingListItemsError>, Options<ClearCheckedShoppingListItemsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await clearCheckedShoppingListItems({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 項目の並び順を更新する(共有相手全員に反映)
+ */
+export const reorderShoppingListItemsMutation = (options?: Partial<Options<ReorderShoppingListItemsData>>): UseMutationOptions<ReorderShoppingListItemsResponse, AxiosError<ReorderShoppingListItemsError>, Options<ReorderShoppingListItemsData>> => {
+    const mutationOptions: UseMutationOptions<ReorderShoppingListItemsResponse, AxiosError<ReorderShoppingListItemsError>, Options<ReorderShoppingListItemsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await reorderShoppingListItems({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 項目を削除する
+ */
+export const deleteShoppingListItemMutation = (options?: Partial<Options<DeleteShoppingListItemData>>): UseMutationOptions<DeleteShoppingListItemResponse, AxiosError<DeleteShoppingListItemError>, Options<DeleteShoppingListItemData>> => {
+    const mutationOptions: UseMutationOptions<DeleteShoppingListItemResponse, AxiosError<DeleteShoppingListItemError>, Options<DeleteShoppingListItemData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteShoppingListItem({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 項目のチェック状態を更新する
+ */
+export const updateShoppingListItemMutation = (options?: Partial<Options<UpdateShoppingListItemData>>): UseMutationOptions<UpdateShoppingListItemResponse, AxiosError<UpdateShoppingListItemError>, Options<UpdateShoppingListItemData>> => {
+    const mutationOptions: UseMutationOptions<UpdateShoppingListItemResponse, AxiosError<UpdateShoppingListItemError>, Options<UpdateShoppingListItemData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateShoppingListItem({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

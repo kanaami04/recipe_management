@@ -141,3 +141,37 @@ func (m *mockLabelService) Rename(ctx context.Context, ownerID, id, name string)
 func (m *mockLabelService) Delete(ctx context.Context, ownerID, id string) error {
 	return m.deleteFn(ctx, ownerID, id)
 }
+
+// --- ShoppingListService のモック ---
+
+type mockShoppingListService struct {
+	getFn          func(ctx context.Context, userID string) (*domain.ShoppingList, error)
+	addItemFn      func(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error)
+	setCheckedFn   func(ctx context.Context, userID, listID, itemID string, checked bool) (*domain.ShoppingList, error)
+	deleteItemFn   func(ctx context.Context, userID, listID, itemID string) (*domain.ShoppingList, error)
+	clearCheckedFn func(ctx context.Context, userID, listID string) (*domain.ShoppingList, error)
+	reorderFn      func(ctx context.Context, userID, listID string, itemIDs []string) (*domain.ShoppingList, error)
+	updateSharesFn func(ctx context.Context, userID, listID string, sharedUsers []request.SharedUserInput) (*domain.ShoppingList, error)
+}
+
+func (m *mockShoppingListService) Get(ctx context.Context, userID string) (*domain.ShoppingList, error) {
+	return m.getFn(ctx, userID)
+}
+func (m *mockShoppingListService) AddItem(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error) {
+	return m.addItemFn(ctx, userID, listID, name)
+}
+func (m *mockShoppingListService) SetItemChecked(ctx context.Context, userID, listID, itemID string, checked bool) (*domain.ShoppingList, error) {
+	return m.setCheckedFn(ctx, userID, listID, itemID, checked)
+}
+func (m *mockShoppingListService) DeleteItem(ctx context.Context, userID, listID, itemID string) (*domain.ShoppingList, error) {
+	return m.deleteItemFn(ctx, userID, listID, itemID)
+}
+func (m *mockShoppingListService) ClearChecked(ctx context.Context, userID, listID string) (*domain.ShoppingList, error) {
+	return m.clearCheckedFn(ctx, userID, listID)
+}
+func (m *mockShoppingListService) Reorder(ctx context.Context, userID, listID string, itemIDs []string) (*domain.ShoppingList, error) {
+	return m.reorderFn(ctx, userID, listID, itemIDs)
+}
+func (m *mockShoppingListService) UpdateShares(ctx context.Context, userID, listID string, sharedUsers []request.SharedUserInput) (*domain.ShoppingList, error) {
+	return m.updateSharesFn(ctx, userID, listID, sharedUsers)
+}

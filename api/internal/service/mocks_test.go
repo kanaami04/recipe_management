@@ -209,6 +209,114 @@ func (m *mockLabelRepo) Delete(_ context.Context, label *domain.Label) error {
 	return nil
 }
 
+// --- ShoppingListRepository のモック ---
+
+type mockShoppingListRepo struct {
+	store         map[string]*domain.ShoppingList // id -> list
+	created       *domain.ShoppingList
+	sharesReplace *domain.ShoppingList
+	addedItem     *domain.ShoppingListItem
+	checkedItems  map[string]bool // itemID -> checked
+	deletedItems  []string
+	clearedLists  []string
+	reorderedIDs  []string
+}
+
+func newMockShoppingListRepo() *mockShoppingListRepo {
+	return &mockShoppingListRepo{store: map[string]*domain.ShoppingList{}, checkedItems: map[string]bool{}}
+}
+
+func (m *mockShoppingListRepo) FindForUser(_ context.Context, userID string) (*domain.ShoppingList, error) {
+	// 共有されたリストを優先し、無ければ所有リストを返す(本実装と同じ優先順位)。
+	for _, l := range m.store {
+		for i := range l.SharedUsers {
+			if l.SharedUsers[i].ID == userID {
+				return l, nil
+			}
+		}
+	}
+	for _, l := range m.store {
+		if l.OwnerID == userID {
+			return l, nil
+		}
+	}
+	return nil, nil
+}
+func (m *mockShoppingListRepo) FindByID(_ context.Context, id string) (*domain.ShoppingList, error) {
+	l, ok := m.store[id]
+	if !ok {
+		return nil, nil
+	}
+	return l, nil
+}
+func (m *mockShoppingListRepo) Create(_ context.Context, list *domain.ShoppingList) error {
+	if list.ID == "" {
+		list.ID = id.New()
+	}
+	cp := *list
+	m.store[list.ID] = &cp
+	m.created = &cp
+	return nil
+}
+func (m *mockShoppingListRepo) ReplaceSharedUsers(_ context.Context, list *domain.ShoppingList) error {
+	if l, ok := m.store[list.ID]; ok {
+		l.SharedUsers = list.SharedUsers
+	}
+	m.sharesReplace = list
+	return nil
+}
+func (m *mockShoppingListRepo) AddItem(_ context.Context, item *domain.ShoppingListItem) error {
+	if item.ID == "" {
+		item.ID = id.New()
+	}
+	if l, ok := m.store[item.ShoppingListID]; ok {
+		l.Items = append(l.Items, *item)
+	}
+	m.addedItem = item
+	return nil
+}
+func (m *mockShoppingListRepo) SetItemChecked(_ context.Context, itemID string, checked bool) error {
+	m.checkedItems[itemID] = checked
+	for _, l := range m.store {
+		for i := range l.Items {
+			if l.Items[i].ID == itemID {
+				l.Items[i].Checked = checked
+			}
+		}
+	}
+	return nil
+}
+func (m *mockShoppingListRepo) DeleteItem(_ context.Context, itemID string) error {
+	m.deletedItems = append(m.deletedItems, itemID)
+	for _, l := range m.store {
+		kept := l.Items[:0]
+		for i := range l.Items {
+			if l.Items[i].ID != itemID {
+				kept = append(kept, l.Items[i])
+			}
+		}
+		l.Items = kept
+	}
+	return nil
+}
+func (m *mockShoppingListRepo) Reorder(_ context.Context, _ string, itemIDs []string) error {
+	m.reorderedIDs = itemIDs
+	return nil
+}
+func (m *mockShoppingListRepo) DeleteCheckedItems(_ context.Context, listID string) error {
+	m.clearedLists = append(m.clearedLists, listID)
+	if l, ok := m.store[listID]; ok {
+		kept := l.Items[:0]
+		for i := range l.Items {
+			if !l.Items[i].Checked {
+				kept = append(kept, l.Items[i])
+			}
+		}
+		l.Items = kept
+	}
+	return nil
+}
+
 // --- AvatarStorage のモック ---
 
 type mockAvatarStorage struct {

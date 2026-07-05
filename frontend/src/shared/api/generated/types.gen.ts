@@ -227,6 +227,44 @@ export type RecipeResponse = {
     label: Array<LabelResponse>;
 };
 
+export type ShoppingListItemInput = {
+    name: string;
+};
+
+/**
+ * 項目のチェック状態。true でチェック済み、false で未チェック。
+ */
+export type ShoppingListItemUpdateRequest = {
+    checked: boolean;
+};
+
+/**
+ * 表示したい順に項目 ID を並べた配列(先頭 = 一番上)
+ */
+export type ShoppingListReorderRequest = {
+    item_ids: Array<string>;
+};
+
+export type ShoppingListSharesRequest = {
+    shared_user: Array<SharedUserInput>;
+};
+
+export type ShoppingListItemResponse = {
+    id: string;
+    name: string;
+    checked: boolean;
+};
+
+/**
+ * 買い物リスト。項目はチェック済みが末尾、同グループ内は追加順。
+ */
+export type ShoppingListResponse = {
+    id: string;
+    owner: UserListItem;
+    shared_user: Array<UserListItem>;
+    items: Array<ShoppingListItemResponse>;
+};
+
 export type LoginData = {
     body: TokenRequest;
     path?: never;
@@ -963,3 +1001,280 @@ export type UpdateRecipeResponses = {
 };
 
 export type UpdateRecipeResponse = UpdateRecipeResponses[keyof UpdateRecipeResponses];
+
+export type GetShoppingListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/shopping_list/';
+};
+
+export type GetShoppingListErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+};
+
+export type GetShoppingListError = GetShoppingListErrors[keyof GetShoppingListErrors];
+
+export type GetShoppingListResponses = {
+    /**
+     * 取得成功
+     */
+    200: ShoppingListResponse;
+};
+
+export type GetShoppingListResponse = GetShoppingListResponses[keyof GetShoppingListResponses];
+
+export type UpdateShoppingListSharesData = {
+    body: ShoppingListSharesRequest;
+    path: {
+        /**
+         * 買い物リスト ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/shopping_list/{id}/shares/';
+};
+
+export type UpdateShoppingListSharesErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type UpdateShoppingListSharesError = UpdateShoppingListSharesErrors[keyof UpdateShoppingListSharesErrors];
+
+export type UpdateShoppingListSharesResponses = {
+    /**
+     * 更新成功
+     */
+    200: ShoppingListResponse;
+};
+
+export type UpdateShoppingListSharesResponse = UpdateShoppingListSharesResponses[keyof UpdateShoppingListSharesResponses];
+
+export type AddShoppingListItemData = {
+    body: ShoppingListItemInput;
+    path: {
+        /**
+         * 買い物リスト ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/shopping_list/{id}/items/';
+};
+
+export type AddShoppingListItemErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type AddShoppingListItemError = AddShoppingListItemErrors[keyof AddShoppingListItemErrors];
+
+export type AddShoppingListItemResponses = {
+    /**
+     * 追加成功(更新後のリスト全体を返す)
+     */
+    200: ShoppingListResponse;
+};
+
+export type AddShoppingListItemResponse = AddShoppingListItemResponses[keyof AddShoppingListItemResponses];
+
+export type ClearCheckedShoppingListItemsData = {
+    body?: never;
+    path: {
+        /**
+         * 買い物リスト ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/shopping_list/{id}/items/checked/';
+};
+
+export type ClearCheckedShoppingListItemsErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type ClearCheckedShoppingListItemsError = ClearCheckedShoppingListItemsErrors[keyof ClearCheckedShoppingListItemsErrors];
+
+export type ClearCheckedShoppingListItemsResponses = {
+    /**
+     * 削除成功(更新後のリスト全体を返す)
+     */
+    200: ShoppingListResponse;
+};
+
+export type ClearCheckedShoppingListItemsResponse = ClearCheckedShoppingListItemsResponses[keyof ClearCheckedShoppingListItemsResponses];
+
+export type ReorderShoppingListItemsData = {
+    body: ShoppingListReorderRequest;
+    path: {
+        /**
+         * 買い物リスト ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/shopping_list/{id}/items/reorder/';
+};
+
+export type ReorderShoppingListItemsErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type ReorderShoppingListItemsError = ReorderShoppingListItemsErrors[keyof ReorderShoppingListItemsErrors];
+
+export type ReorderShoppingListItemsResponses = {
+    /**
+     * 更新成功(更新後のリスト全体を返す)
+     */
+    200: ShoppingListResponse;
+};
+
+export type ReorderShoppingListItemsResponse = ReorderShoppingListItemsResponses[keyof ReorderShoppingListItemsResponses];
+
+export type DeleteShoppingListItemData = {
+    body?: never;
+    path: {
+        /**
+         * 買い物リスト ID
+         */
+        id: string;
+        /**
+         * 項目 ID
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/api/shopping_list/{id}/items/{item_id}/';
+};
+
+export type DeleteShoppingListItemErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type DeleteShoppingListItemError = DeleteShoppingListItemErrors[keyof DeleteShoppingListItemErrors];
+
+export type DeleteShoppingListItemResponses = {
+    /**
+     * 削除成功(更新後のリスト全体を返す)
+     */
+    200: ShoppingListResponse;
+};
+
+export type DeleteShoppingListItemResponse = DeleteShoppingListItemResponses[keyof DeleteShoppingListItemResponses];
+
+export type UpdateShoppingListItemData = {
+    body: ShoppingListItemUpdateRequest;
+    path: {
+        /**
+         * 買い物リスト ID
+         */
+        id: string;
+        /**
+         * 項目 ID
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/api/shopping_list/{id}/items/{item_id}/';
+};
+
+export type UpdateShoppingListItemErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type UpdateShoppingListItemError = UpdateShoppingListItemErrors[keyof UpdateShoppingListItemErrors];
+
+export type UpdateShoppingListItemResponses = {
+    /**
+     * 更新成功(更新後のリスト全体を返す)
+     */
+    200: ShoppingListResponse;
+};
+
+export type UpdateShoppingListItemResponse = UpdateShoppingListItemResponses[keyof UpdateShoppingListItemResponses];
