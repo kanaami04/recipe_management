@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddShoppingListItemData, AddShoppingListItemErrors, AddShoppingListItemResponses, ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsErrors, ClearCheckedShoppingListItemsResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteShoppingListItemData, DeleteShoppingListItemErrors, DeleteShoppingListItemResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetShoppingListData, GetShoppingListErrors, GetShoppingListResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, ReorderShoppingListItemsData, ReorderShoppingListItemsErrors, ReorderShoppingListItemsResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateShoppingListItemData, UpdateShoppingListItemErrors, UpdateShoppingListItemResponses, UpdateShoppingListSharesData, UpdateShoppingListSharesErrors, UpdateShoppingListSharesResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
+import type { AddShoppingListItemData, AddShoppingListItemErrors, AddShoppingListItemResponses, ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsErrors, ClearCheckedShoppingListItemsResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateShareGroupData, CreateShareGroupErrors, CreateShareGroupResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteShoppingListItemData, DeleteShoppingListItemErrors, DeleteShoppingListItemResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetShareGroupData, GetShareGroupErrors, GetShareGroupResponses, GetShoppingListData, GetShoppingListErrors, GetShoppingListResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, JoinShareGroupData, JoinShareGroupErrors, JoinShareGroupResponses, LeaveShareGroupData, LeaveShareGroupErrors, LeaveShareGroupResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegenerateInviteCodeData, RegenerateInviteCodeErrors, RegenerateInviteCodeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveShareGroupMemberData, RemoveShareGroupMemberErrors, RemoveShareGroupMemberResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, ReorderShoppingListItemsData, ReorderShoppingListItemsErrors, ReorderShoppingListItemsResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateShoppingListItemData, UpdateShoppingListItemErrors, UpdateShoppingListItemResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -167,16 +167,6 @@ export const confirmAvatar = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
- * 全ユーザー一覧(共有先の選択用)
- */
-export const listUsers = <ThrowOnError extends boolean = false>(options?: Options<ListUsersData, ThrowOnError>): RequestResult<ListUsersResponses, ListUsersErrors, ThrowOnError> => (options?.client ?? client).get<ListUsersResponses, ListUsersErrors, ThrowOnError>({
-    responseType: 'json',
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/users/',
-    ...options
-});
-
-/**
  * 自分が管理するラベル一覧
  */
 export const listLabels = <ThrowOnError extends boolean = false>(options?: Options<ListLabelsData, ThrowOnError>): RequestResult<ListLabelsResponses, ListLabelsErrors, ThrowOnError> => (options?.client ?? client).get<ListLabelsResponses, ListLabelsErrors, ThrowOnError>({
@@ -325,20 +315,6 @@ export const getShoppingList = <ThrowOnError extends boolean = false>(options?: 
 });
 
 /**
- * 買い物リストの共有相手を更新する
- */
-export const updateShoppingListShares = <ThrowOnError extends boolean = false>(options: Options<UpdateShoppingListSharesData, ThrowOnError>): RequestResult<UpdateShoppingListSharesResponses, UpdateShoppingListSharesErrors, ThrowOnError> => (options.client ?? client).put<UpdateShoppingListSharesResponses, UpdateShoppingListSharesErrors, ThrowOnError>({
-    responseType: 'json',
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/shopping_list/{id}/shares/',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
  * 買い物リストに項目を追加する
  */
 export const addShoppingListItem = <ThrowOnError extends boolean = false>(options: Options<AddShoppingListItemData, ThrowOnError>): RequestResult<AddShoppingListItemResponses, AddShoppingListItemErrors, ThrowOnError> => (options.client ?? client).post<AddShoppingListItemResponses, AddShoppingListItemErrors, ThrowOnError>({
@@ -398,4 +374,72 @@ export const updateShoppingListItem = <ThrowOnError extends boolean = false>(opt
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * 自分が所属するシェアグループを取得する
+ *
+ * グループ未所属のときは 404 を返す。
+ */
+export const getShareGroup = <ThrowOnError extends boolean = false>(options?: Options<GetShareGroupData, ThrowOnError>): RequestResult<GetShareGroupResponses, GetShareGroupErrors, ThrowOnError> => (options?.client ?? client).get<GetShareGroupResponses, GetShareGroupErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/share_group/',
+    ...options
+});
+
+/**
+ * シェアグループを作成する(作成者が所有者になる)
+ */
+export const createShareGroup = <ThrowOnError extends boolean = false>(options: Options<CreateShareGroupData, ThrowOnError>): RequestResult<CreateShareGroupResponses, CreateShareGroupErrors, ThrowOnError> => (options.client ?? client).post<CreateShareGroupResponses, CreateShareGroupErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/share_group/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 招待コードでシェアグループに参加する
+ */
+export const joinShareGroup = <ThrowOnError extends boolean = false>(options: Options<JoinShareGroupData, ThrowOnError>): RequestResult<JoinShareGroupResponses, JoinShareGroupErrors, ThrowOnError> => (options.client ?? client).post<JoinShareGroupResponses, JoinShareGroupErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/share_group/join/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * シェアグループを抜ける(所有者が抜けると解散)
+ */
+export const leaveShareGroup = <ThrowOnError extends boolean = false>(options?: Options<LeaveShareGroupData, ThrowOnError>): RequestResult<LeaveShareGroupResponses, LeaveShareGroupErrors, ThrowOnError> => (options?.client ?? client).post<LeaveShareGroupResponses, LeaveShareGroupErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/share_group/leave/',
+    ...options
+});
+
+/**
+ * 招待コードを再発行する(所有者のみ。旧コードは失効)
+ */
+export const regenerateInviteCode = <ThrowOnError extends boolean = false>(options?: Options<RegenerateInviteCodeData, ThrowOnError>): RequestResult<RegenerateInviteCodeResponses, RegenerateInviteCodeErrors, ThrowOnError> => (options?.client ?? client).post<RegenerateInviteCodeResponses, RegenerateInviteCodeErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/share_group/invite_code/',
+    ...options
+});
+
+/**
+ * メンバーを外す(所有者のみ)
+ */
+export const removeShareGroupMember = <ThrowOnError extends boolean = false>(options: Options<RemoveShareGroupMemberData, ThrowOnError>): RequestResult<RemoveShareGroupMemberResponses, RemoveShareGroupMemberErrors, ThrowOnError> => (options.client ?? client).delete<RemoveShareGroupMemberResponses, RemoveShareGroupMemberErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/share_group/members/{user_id}/',
+    ...options
 });

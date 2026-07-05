@@ -7,5 +7,4 @@ type (
 	ShoppingListItemInput         = apigen.ShoppingListItemInput
 	ShoppingListItemUpdateRequest = apigen.ShoppingListItemUpdateRequest
 	ShoppingListReorderRequest    = apigen.ShoppingListReorderRequest
-	ShoppingListSharesRequest     = apigen.ShoppingListSharesRequest
 )

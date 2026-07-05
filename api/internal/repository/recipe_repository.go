@@ -19,31 +19,34 @@ func NewRecipeRepository(db *gorm.DB) domain.RecipeRepository {
 }
 
 // preloadAll は関連を全て eager load するためのスコープ。
+// SharedUsers はシェアグループのメンバーから service が詰める計算値のため preload しない。
 func preloadAll(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("Owner").
 		Preload("Labels").
-		Preload("SharedUsers").
 		Preload("Ingredients").
 		Preload("Seasonings")
 }
 
-// sharedRecipeIDs は共有先に userID を含むレシピ ID のサブクエリを返す。
-func sharedRecipeIDs(db *gorm.DB, userID string) *gorm.DB {
-	return db.Table("recipe_shares").
-		Select("recipe_id").
-		Where("user_id = ?", userID)
+// sameGroupOwnerIDs は userID と同じシェアグループに属する全ユーザー ID のサブクエリを返す
+// (自分を含む)。どのグループにも属さなければ空。レシピの可視範囲の算出に使う。
+func sameGroupOwnerIDs(db *gorm.DB, userID string) *gorm.DB {
+	return db.Table("share_group_members AS m2").
+		Select("m2.user_id").
+		Joins("JOIN share_group_members AS m1 ON m1.group_id = m2.group_id").
+		Where("m1.user_id = ?", userID)
 }
 
 func (r *recipeRepository) FindAllForUser(ctx context.Context, userID string) ([]domain.Recipe, error) {
 	var recipes []domain.Recipe
 	db := r.db.WithContext(ctx)
+	// 可視範囲は「自分が所有」または「同じシェアグループのメンバーが所有」するレシピ。
 	// そのユーザーの recipe_orders を LEFT JOIN し、position 昇順で並べる。
 	// 並べ替え未設定(position が NULL)のレシピは末尾へ回し、id で安定させる。
 	err := preloadAll(db).
 		Joins("LEFT JOIN recipe_orders ON recipe_orders.recipe_id = recipes.id AND recipe_orders.user_id = ?", userID).
 		Where("recipes.owner_id = ?", userID).
-		Or("recipes.id IN (?)", sharedRecipeIDs(db, userID)).
+		Or("recipes.owner_id IN (?)", sameGroupOwnerIDs(db, userID)).
 		Order("recipe_orders.position ASC NULLS LAST").
 		Order("recipes.id ASC").
 		Find(&recipes).Error
@@ -136,14 +139,9 @@ func (r *recipeRepository) FindByID(ctx context.Context, id string) (*domain.Rec
 }
 
 func (r *recipeRepository) Create(ctx context.Context, recipe *domain.Recipe) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 子テーブル(Labels/Ingredients/Seasonings)は本体と一緒に insert される。
-		// SharedUsers(m2m)は既存ユーザーへの参照のため Replace で中間テーブルのみ操作する。
-		if err := tx.Omit("Owner", "SharedUsers").Create(recipe).Error; err != nil {
-			return err
-		}
-		return tx.Model(recipe).Association("SharedUsers").Replace(recipe.SharedUsers)
-	})
+	// 子テーブル(Labels/Ingredients/Seasonings)は本体と一緒に insert される。
+	// 共有はシェアグループで管理するため、レシピ側は owner のみ持つ。
+	return r.db.WithContext(ctx).Omit("Owner").Create(recipe).Error
 }
 
 func (r *recipeRepository) Update(ctx context.Context, recipe *domain.Recipe) error {
@@ -162,11 +160,8 @@ func (r *recipeRepository) Update(ctx context.Context, recipe *domain.Recipe) er
 			return err
 		}
 
-		// 子テーブルは全置換（差分更新はしない）。
-		if err := replaceChildren(tx, recipe); err != nil {
-			return err
-		}
-		return tx.Model(recipe).Association("SharedUsers").Replace(recipe.SharedUsers)
+		// 子テーブルは全置換（差分更新はしない）。共有はグループ管理のため触らない。
+		return replaceChildren(tx, recipe)
 	})
 }
 
@@ -213,6 +208,6 @@ func replaceChildren(tx *gorm.DB, recipe *domain.Recipe) error {
 }
 
 func (r *recipeRepository) Delete(ctx context.Context, recipe *domain.Recipe) error {
-	// 子テーブル・中間テーブル(recipe_shares)は FK の ON DELETE CASCADE で削除される。
+	// 子テーブル(材料・調味料・ラベル)は FK の ON DELETE CASCADE で削除される。
 	return r.db.WithContext(ctx).Delete(recipe).Error
 }

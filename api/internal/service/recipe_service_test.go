@@ -16,7 +16,7 @@ import (
 func TestRecipeCreate_BuildsRecipe(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 	req := request.RecipeRequest{
 		Title: "カレー",
 		// create_for 未指定 → 1 に正規化される想定
@@ -37,7 +37,6 @@ func TestRecipeCreate_BuildsRecipe(t *testing.T) {
 		Servings:    1, // 未指定はデフォルト1
 		OwnerID:     "u42",
 		Labels:      []domain.RecipeLabel{{Name: "夕食"}},
-		SharedUsers: []domain.User{},
 		Ingredients: []domain.RecipeIngredient{{Name: "玉ねぎ", Quantity: 2, Unit: "個"}},
 		Seasonings:  []domain.RecipeSeasoning{{Name: "塩", Quantity: 1, Unit: "g"}},
 	}
@@ -48,7 +47,7 @@ func TestRecipeCreate_BuildsRecipe(t *testing.T) {
 func TestRecipeCreate_RejectsNonHTTPSourceURL(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 	req := request.RecipeRequest{
 		Title:     "カレー",
 		SourceUrl: "javascript:alert(1)",
@@ -61,21 +60,21 @@ func TestRecipeCreate_RejectsNonHTTPSourceURL(t *testing.T) {
 	assert.ErrorIs(t, err, ErrInvalidURL)
 }
 
-// 存在しないユーザーを共有先に指定した時、ErrSharedUserNotFound が返ること。
-func TestRecipeCreate_SharedUserNotFound(t *testing.T) {
-	// Arrange
+// グループ所属ユーザーが作成した時、レスポンスの SharedUser にグループの他メンバーが入ること。
+func TestRecipeCreate_FillsSharedFromGroup(t *testing.T) {
+	// Arrange: u1 と u2 が同じグループ(所有者 u1)
 	rr := newMockRecipeRepo()
-	svc := NewRecipeService(rr, &mockUserRepo{})
-	req := request.RecipeRequest{
-		Title:      "親子丼",
-		SharedUser: []request.SharedUserInput{{Username: "ghost"}},
-	}
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "u1", "u2")
+	svc := NewRecipeService(rr, gr)
 
 	// Act
-	_, err := svc.Create(context.Background(), "u1", req)
+	recipe, err := svc.Create(context.Background(), "u1", request.RecipeRequest{Title: "カレー"})
 
-	// Assert
-	assert.ErrorIs(t, err, ErrSharedUserNotFound)
+	// Assert: owner(u1)を除くメンバー u2 が共有相手として返る
+	require.NoError(t, err)
+	require.Len(t, recipe.SharedUsers, 1)
+	assert.Equal(t, "u2", recipe.SharedUsers[0].ID)
 }
 
 // 自分のレシピがある時、List でそのレシピが返ること。
@@ -83,7 +82,7 @@ func TestRecipeList_ReturnsRecipes(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	recipes, err := svc.List(context.Background(), "u5")
@@ -93,12 +92,12 @@ func TestRecipeList_ReturnsRecipes(t *testing.T) {
 	assert.Len(t, recipes, 1)
 }
 
-// owner でも共有先でもないユーザーが更新する時、ErrForbidden が返ること。
-func TestRecipeUpdate_ForbiddenForNonOwnerNonShared(t *testing.T) {
+// グループ外(所有でも同グループでもない)ユーザーが更新する時、ErrForbidden が返ること。
+func TestRecipeUpdate_ForbiddenForOutsider(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u100")) // 所有者は u100
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	_, err := svc.Update(context.Background(), "u999", "r1", request.RecipeRequest{Title: "x"}) // 別人 u999
@@ -107,19 +106,17 @@ func TestRecipeUpdate_ForbiddenForNonOwnerNonShared(t *testing.T) {
 	assert.ErrorIs(t, err, ErrForbidden)
 }
 
-// 共有先ユーザーが更新した時、タイトルが変わり owner は保持されたレシピになること。
-func TestRecipeUpdate_SharedUserUpdatesRecipe(t *testing.T) {
-	// Arrange
+// 同じグループのメンバーが更新した時、タイトルが変わり owner は保持されたレシピになること。
+func TestRecipeUpdate_GroupMemberUpdatesRecipe(t *testing.T) {
+	// Arrange: r1 は u100 所有。u7 は u100 と同じグループ。
 	rr := newMockRecipeRepo()
-	rr.store["r1"] = factory.NewRecipe(
-		factory.WithRecipeID("r1"),
-		factory.WithOwnerID("u100"),
-		factory.WithSharedUsers(*factory.NewUser(factory.WithID("u7"))),
-	)
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u100"))
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "u100", "u7")
+	svc := NewRecipeService(rr, gr)
 
 	// Act
-	_, err := svc.Update(context.Background(), "u7", "r1", request.RecipeRequest{Title: "更新"}) // 共有先 u7 は許可
+	_, err := svc.Update(context.Background(), "u7", "r1", request.RecipeRequest{Title: "更新"})
 
 	// Assert
 	require.NoError(t, err)
@@ -130,7 +127,6 @@ func TestRecipeUpdate_SharedUserUpdatesRecipe(t *testing.T) {
 		Servings:    1,
 		OwnerID:     "u100", // owner は変更されない
 		Labels:      []domain.RecipeLabel{},
-		SharedUsers: []domain.User{},
 		Ingredients: []domain.RecipeIngredient{},
 		Seasonings:  []domain.RecipeSeasoning{},
 	}
@@ -142,7 +138,7 @@ func TestRecipeDelete_Success(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	err := svc.Delete(context.Background(), "u5", "r1")
@@ -156,7 +152,7 @@ func TestRecipeDelete_Success(t *testing.T) {
 func TestRecipeDelete_NotFound(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	err := svc.Delete(context.Background(), "u1", "no-such-recipe")
@@ -171,7 +167,7 @@ func TestRecipeReorder_PassesOrderToRepo(t *testing.T) {
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
 	rr.store["r2"] = factory.NewRecipe(factory.WithRecipeID("r2"), factory.WithOwnerID("u5"))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	err := svc.Reorder(context.Background(), "u5", []string{"r2", "r1"})
@@ -187,7 +183,7 @@ func TestRecipeReorder_DedupesRecipeIDs(t *testing.T) {
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
 	rr.store["r2"] = factory.NewRecipe(factory.WithRecipeID("r2"), factory.WithOwnerID("u5"))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act: r1 が重複
 	err := svc.Reorder(context.Background(), "u5", []string{"r1", "r2", "r1"})
@@ -202,7 +198,7 @@ func TestRecipeReorder_ForbiddenForInvisibleRecipe(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act: r1 は見えるが r-other は見えない
 	err := svc.Reorder(context.Background(), "u5", []string{"r1", "r-other"})
@@ -216,7 +212,7 @@ func TestRecipeSetArchived_OwnerSaves(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	err := svc.SetArchived(context.Background(), "u5", "r1", true)
@@ -226,16 +222,14 @@ func TestRecipeSetArchived_OwnerSaves(t *testing.T) {
 	assert.True(t, rr.archived["u5"]["r1"])
 }
 
-// 共有先ユーザーは、共有されたレシピを自分の状態としてアーカイブできること。
-func TestRecipeSetArchived_SharedUserAllowed(t *testing.T) {
-	// Arrange: r1 は u5 所有、u9 に共有
+// 同じグループのメンバーは、共有されたレシピを自分の状態としてアーカイブできること。
+func TestRecipeSetArchived_GroupMemberAllowed(t *testing.T) {
+	// Arrange: r1 は u5 所有。u9 は u5 と同じグループ。
 	rr := newMockRecipeRepo()
-	rr.store["r1"] = factory.NewRecipe(
-		factory.WithRecipeID("r1"),
-		factory.WithOwnerID("u5"),
-		factory.WithSharedUsers(*factory.NewUser(factory.WithID("u9"))),
-	)
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "u5", "u9")
+	svc := NewRecipeService(rr, gr)
 
 	// Act
 	err := svc.SetArchived(context.Background(), "u9", "r1", true)
@@ -245,12 +239,12 @@ func TestRecipeSetArchived_SharedUserAllowed(t *testing.T) {
 	assert.True(t, rr.archived["u9"]["r1"])
 }
 
-// 閲覧できないユーザーがアーカイブしようとした時、ErrForbidden が返り保存されないこと。
-func TestRecipeSetArchived_ForbiddenForInvisibleRecipe(t *testing.T) {
-	// Arrange: r1 は u5 所有・共有なし。u9 からは見えない
+// グループ外ユーザーがアーカイブしようとした時、ErrForbidden が返り保存されないこと。
+func TestRecipeSetArchived_ForbiddenForOutsider(t *testing.T) {
+	// Arrange: r1 は u5 所有・グループなし。u9 からは見えない
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	err := svc.SetArchived(context.Background(), "u9", "r1", true)
@@ -263,7 +257,7 @@ func TestRecipeSetArchived_ForbiddenForInvisibleRecipe(t *testing.T) {
 func TestRecipeSetArchived_NotFound(t *testing.T) {
 	// Arrange
 	rr := newMockRecipeRepo()
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	err := svc.SetArchived(context.Background(), "u1", "no-such-recipe", true)
@@ -278,7 +272,7 @@ func TestRecipeUpdate_ReflectsPerUserArchived(t *testing.T) {
 	rr := newMockRecipeRepo()
 	rr.store["r1"] = factory.NewRecipe(factory.WithRecipeID("r1"), factory.WithOwnerID("u5"))
 	require.NoError(t, rr.SetArchived(context.Background(), "u5", "r1", true))
-	svc := NewRecipeService(rr, &mockUserRepo{})
+	svc := NewRecipeService(rr, newMockShareGroupRepo())
 
 	// Act
 	updated, err := svc.Update(context.Background(), "u5", "r1", request.RecipeRequest{Title: "肉じゃが"})

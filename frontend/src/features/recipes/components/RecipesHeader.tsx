@@ -7,7 +7,6 @@ import {
   createRecipeMutation,
   listLabelsOptions,
   listRecipesQueryKey,
-  listUsersOptions,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { RecipeRequest } from '@/shared/api/generated/types.gen'
 import { Button } from '@/shared/ui/button'
@@ -25,7 +24,6 @@ import { SidebarTrigger } from '@/shared/ui/sidebar'
 
 export function RecipesHeader() {
   const queryClient = useQueryClient()
-  const { data: sharedUserData } = useQuery(listUsersOptions())
   const { data: labelData } = useQuery(listLabelsOptions())
 
   const [isOpen, setIsOpen] = useState(false)
@@ -65,12 +63,7 @@ export function RecipesHeader() {
                 <DialogTitle>レシピを新規作成</DialogTitle>
                 <DialogDescription>新しいレシピを登録します</DialogDescription>
               </DialogHeader>
-              <RecipeForm
-                mode="create"
-                onSubmit={handleCreate}
-                labelData={labelData}
-                sharedUserData={sharedUserData}
-              />
+              <RecipeForm mode="create" onSubmit={handleCreate} labelData={labelData} />
             </DialogContent>
           </Dialog>
         </div>

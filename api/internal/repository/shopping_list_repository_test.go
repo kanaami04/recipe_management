@@ -24,13 +24,13 @@ func arrangeShoppingList(t *testing.T) (context.Context, domain.ShoppingListRepo
 	return ctx, repo, owner, list.ID
 }
 
-// 所有する買い物リストがある時、FindForUser でそれが返ること。
-func TestShoppingListRepo_FindForUser_ReturnsOwned(t *testing.T) {
+// 所有する買い物リストがある時、FindByOwnerID でそれが返ること。
+func TestShoppingListRepo_FindByOwnerID_ReturnsOwned(t *testing.T) {
 	// Arrange
 	ctx, repo, owner, id := arrangeShoppingList(t)
 
 	// Act
-	got, err := repo.FindForUser(ctx, owner.ID)
+	got, err := repo.FindByOwnerID(ctx, owner.ID)
 
 	// Assert
 	require.NoError(t, err)
@@ -38,35 +38,8 @@ func TestShoppingListRepo_FindForUser_ReturnsOwned(t *testing.T) {
 	assert.Equal(t, id, got.ID)
 }
 
-// 共有されたリストと自分の所有リストが両方ある時、共有された方が優先して返ること。
-func TestShoppingListRepo_FindForUser_PrefersShared(t *testing.T) {
-	// Arrange
-	testutil.RequireIntegration(t)
-	truncateAll(t)
-	ctx := context.Background()
-	repo := NewShoppingListRepository(testDB)
-	me := seedUser(t, "me")
-	other := seedUser(t, "other")
-	// 自分が所有する空リスト。
-	own := &domain.ShoppingList{OwnerID: me.ID}
-	require.NoError(t, repo.Create(ctx, own))
-	// other が所有し、自分に共有したリスト。
-	shared := &domain.ShoppingList{OwnerID: other.ID}
-	require.NoError(t, repo.Create(ctx, shared))
-	shared.SharedUsers = []domain.User{*me}
-	require.NoError(t, repo.ReplaceSharedUsers(ctx, shared))
-
-	// Act
-	got, err := repo.FindForUser(ctx, me.ID)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, got)
-	assert.Equal(t, shared.ID, got.ID)
-}
-
-// 見えるリストが無い時、FindForUser が nil を返すこと。
-func TestShoppingListRepo_FindForUser_NoneReturnsNil(t *testing.T) {
+// 所有リストが無い時、FindByOwnerID が nil を返すこと。
+func TestShoppingListRepo_FindByOwnerID_NoneReturnsNil(t *testing.T) {
 	// Arrange
 	testutil.RequireIntegration(t)
 	truncateAll(t)
@@ -75,7 +48,7 @@ func TestShoppingListRepo_FindForUser_NoneReturnsNil(t *testing.T) {
 	stranger := seedUser(t, "stranger")
 
 	// Act
-	got, err := repo.FindForUser(ctx, stranger.ID)
+	got, err := repo.FindByOwnerID(ctx, stranger.ID)
 
 	// Assert
 	require.NoError(t, err)

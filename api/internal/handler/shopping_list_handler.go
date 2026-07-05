@@ -122,24 +122,6 @@ func (h *ShoppingListHandler) Reorder(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.ToShoppingListResponse(list, h.avatars))
 }
 
-// UpdateShares は PUT /api/shopping_list/:id/shares/。共有相手を更新する。
-func (h *ShoppingListHandler) UpdateShares(c echo.Context) error {
-	userID := appmw.UserIDFromContext(c)
-	id, err := parseID(c)
-	if err != nil {
-		return err
-	}
-	var req request.ShoppingListSharesRequest
-	if err := bindAndValidate(c, &req); err != nil {
-		return err
-	}
-	list, err := h.svc.UpdateShares(c.Request().Context(), userID, id, req.SharedUser)
-	if err != nil {
-		return mapServiceError(err)
-	}
-	return c.JSON(http.StatusOK, response.ToShoppingListResponse(list, h.avatars))
-}
-
 func parseItemID(c echo.Context) (string, error) {
 	itemID := c.Param("item_id")
 	if _, err := uuid.Parse(itemID); err != nil {

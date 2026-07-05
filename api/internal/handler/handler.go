@@ -12,6 +12,7 @@ type Handlers struct {
 	Label        *LabelHandler
 	Recipe       *RecipeHandler
 	ShoppingList *ShoppingListHandler
+	ShareGroup   *ShareGroupHandler
 	Ogp          *OgpHandler
 }
 
@@ -25,6 +26,7 @@ func New(s *service.Services, cookieSecure bool, avatars domain.AvatarStorage) *
 		Label:        NewLabelHandler(s.Label),
 		Recipe:       NewRecipeHandler(s.Recipe, avatars),
 		ShoppingList: NewShoppingListHandler(s.ShoppingList, avatars),
+		ShareGroup:   NewShareGroupHandler(s.ShareGroup, avatars),
 		Ogp:          NewOgpHandler(s.Ogp),
 	}
 }

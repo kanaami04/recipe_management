@@ -37,11 +37,6 @@ func WithTitle(title string) RecipeOption {
 	return func(r *domain.Recipe) { r.Title = title }
 }
 
-// WithSharedUsers は共有先ユーザーを指定する。
-func WithSharedUsers(users ...domain.User) RecipeOption {
-	return func(r *domain.Recipe) { r.SharedUsers = users }
-}
-
 // NewRecipeLabel はテスト用の RecipeLabel を生成する。
 func NewRecipeLabel(name string) domain.RecipeLabel {
 	return domain.RecipeLabel{Name: name}

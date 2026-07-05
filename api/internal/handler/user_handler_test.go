@@ -27,18 +27,6 @@ func serveUserInfo(t *testing.T, getByIDFn func(context.Context, string) (*domai
 	return rec
 }
 
-// serveUserList は listFn を差し替えた UserHandler に、認証付きで GET /api/users/ し結果を返す。
-func serveUserList(t *testing.T, listFn func(context.Context, string) ([]domain.User, error)) *httptest.ResponseRecorder {
-	t.Helper()
-	jm := jwtpkg.NewManager("secret")
-	e := newTestEcho()
-	h := NewUserHandler(&mockUserService{listFn: listFn}, mockAvatarStorage{})
-	e.GET("/api/users/", h.List, appmw.JWT(jm))
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, authedRequest(t, jm, http.MethodGet, "/api/users/", ""))
-	return rec
-}
-
 // infoUser は testUserID の有効ユーザーを返す getByIDFn。
 func infoUser(_ context.Context, _ string) (*domain.User, error) {
 	return factory.NewUser(factory.WithID(testUserID), factory.WithUsername("alice")), nil
@@ -90,52 +78,6 @@ func TestUserHandler_Info_NotFound(t *testing.T) {
 func TestUserHandler_Info_InternalError(t *testing.T) {
 	// Arrange & Act
 	rec := serveUserInfo(t, func(_ context.Context, _ string) (*domain.User, error) {
-		return nil, assert.AnError
-	})
-
-	// Assert
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-}
-
-// ユーザー一覧を取得した時、200 が返ること。
-func TestUserHandler_List_Returns200(t *testing.T) {
-	// Arrange & Act
-	rec := serveUserList(t, func(_ context.Context, _ string) ([]domain.User, error) {
-		return []domain.User{*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice"))}, nil
-	})
-
-	// Assert
-	assert.Equal(t, http.StatusOK, rec.Code)
-}
-
-// ユーザー一覧を取得した時、レスポンスにユーザー名が含まれること。
-func TestUserHandler_List_ReturnsUsersInBody(t *testing.T) {
-	// Arrange & Act
-	rec := serveUserList(t, func(_ context.Context, _ string) ([]domain.User, error) {
-		return []domain.User{*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice"))}, nil
-	})
-
-	// Assert
-	assert.Contains(t, rec.Body.String(), "alice")
-}
-
-// ユーザー一覧を取得した時、JWT のユーザーIDがサービスに渡されること(自分を除外する材料)。
-func TestUserHandler_List_ForwardsUserID(t *testing.T) {
-	// Arrange & Act
-	var gotID string
-	serveUserList(t, func(_ context.Context, selfID string) ([]domain.User, error) {
-		gotID = selfID
-		return nil, nil
-	})
-
-	// Assert
-	assert.Equal(t, testUserID, gotID)
-}
-
-// サービスがエラーを返した時、500 が返ること。
-func TestUserHandler_List_InternalError(t *testing.T) {
-	// Arrange & Act
-	rec := serveUserList(t, func(_ context.Context, _ string) ([]domain.User, error) {
 		return nil, assert.AnError
 	})
 

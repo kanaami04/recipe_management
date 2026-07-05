@@ -79,9 +79,19 @@ type CreateAvatarUploadUrlRequest struct {
 // CreateAvatarUploadUrlRequestContentType defines model for CreateAvatarUploadUrlRequest.ContentType.
 type CreateAvatarUploadUrlRequestContentType string
 
+// CreateShareGroupRequest グループ作成。name は任意(空なら既定名)。
+type CreateShareGroupRequest struct {
+	Name string `json:"name,omitempty" validate:"max=50"`
+}
+
 // Error Echo の既定エラー形式
 type Error struct {
 	Message string `json:"message"`
+}
+
+// JoinShareGroupRequest defines model for JoinShareGroupRequest.
+type JoinShareGroupRequest struct {
+	InviteCode string `json:"invite_code" validate:"required"`
 }
 
 // LabelInput defines model for LabelInput.
@@ -127,11 +137,10 @@ type RecipeRequest struct {
 	CreateFor int `json:"create_for,omitempty"`
 
 	// CreateTime 調理時間(分)。任意。
-	CreateTime *int              `json:"create_time,omitempty"`
-	Label      []LabelInput      `json:"label,omitempty"`
-	Procedure  string            `json:"procedure,omitempty"`
-	Season     []SeasonInput     `json:"season,omitempty"`
-	SharedUser []SharedUserInput `json:"shared_user,omitempty"`
+	CreateTime *int          `json:"create_time,omitempty"`
+	Label      []LabelInput  `json:"label,omitempty"`
+	Procedure  string        `json:"procedure,omitempty"`
+	Season     []SeasonInput `json:"season,omitempty"`
 
 	// SourceUrl 参考にした外部レシピの URL。任意。空文字で未設定。
 	SourceUrl string `json:"source_url,omitempty"`
@@ -201,9 +210,17 @@ type SeasonResponse struct {
 	Unit      string       `json:"unit"`
 }
 
-// SharedUserInput defines model for SharedUserInput.
-type SharedUserInput struct {
-	Username string `json:"username" validate:"required"`
+// ShareGroupResponse シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
+type ShareGroupResponse struct {
+	ID         string `json:"id"`
+	InviteCode string `json:"invite_code"`
+
+	// InviteCodeExpiresAt JST。形式: YYYY-MM-DD HH:mm
+	InviteCodeExpiresAt string         `json:"invite_code_expires_at"`
+	IsOwner             bool           `json:"is_owner"`
+	Members             []UserListItem `json:"members"`
+	Name                string         `json:"name"`
+	Owner               UserListItem   `json:"owner"`
 }
 
 // ShoppingListItemInput defines model for ShoppingListItemInput.
@@ -234,11 +251,6 @@ type ShoppingListResponse struct {
 	Items      []ShoppingListItemResponse `json:"items"`
 	Owner      UserListItem               `json:"owner"`
 	SharedUser []UserListItem             `json:"shared_user"`
-}
-
-// ShoppingListSharesRequest defines model for ShoppingListSharesRequest.
-type ShoppingListSharesRequest struct {
-	SharedUser []SharedUserInput `json:"shared_user"`
 }
 
 // TokenRequest defines model for TokenRequest.
@@ -322,6 +334,12 @@ type UpdateRecipeJSONRequestBody = RecipeRequest
 // ArchiveRecipeJSONRequestBody defines body for ArchiveRecipe for application/json ContentType.
 type ArchiveRecipeJSONRequestBody = ArchiveRequest
 
+// CreateShareGroupJSONRequestBody defines body for CreateShareGroup for application/json ContentType.
+type CreateShareGroupJSONRequestBody = CreateShareGroupRequest
+
+// JoinShareGroupJSONRequestBody defines body for JoinShareGroup for application/json ContentType.
+type JoinShareGroupJSONRequestBody = JoinShareGroupRequest
+
 // AddShoppingListItemJSONRequestBody defines body for AddShoppingListItem for application/json ContentType.
 type AddShoppingListItemJSONRequestBody = ShoppingListItemInput
 
@@ -330,9 +348,6 @@ type ReorderShoppingListItemsJSONRequestBody = ShoppingListReorderRequest
 
 // UpdateShoppingListItemJSONRequestBody defines body for UpdateShoppingListItem for application/json ContentType.
 type UpdateShoppingListItemJSONRequestBody = ShoppingListItemUpdateRequest
-
-// UpdateShoppingListSharesJSONRequestBody defines body for UpdateShoppingListShares for application/json ContentType.
-type UpdateShoppingListSharesJSONRequestBody = ShoppingListSharesRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = TokenRequest

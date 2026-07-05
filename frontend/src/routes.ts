@@ -10,6 +10,7 @@ export default [
     route('shopping-list', 'routes/shopping-list.tsx'),
     route('archive', 'routes/archive.tsx'),
     route('labels', 'routes/labels.tsx'),
+    route('share-group', 'routes/share-group.tsx'),
     route('account', 'routes/account.tsx'),
     route('account/email', 'routes/account-email.tsx'),
   ]),

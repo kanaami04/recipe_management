@@ -11,7 +11,6 @@ const validValues = {
   sourceUrl: '',
   thumbnailUrl: '',
   label: ['夕食'],
-  sharedUser: ['taro'],
   ingredients: [{ name: '玉ねぎ', quantity: 1, unit: '個' }],
   seasoning: [],
 }

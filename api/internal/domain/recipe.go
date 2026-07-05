@@ -27,8 +27,10 @@ type Recipe struct {
 	Seasonings  []RecipeSeasoning  `gorm:"constraint:OnDelete:CASCADE"`
 	Labels      []RecipeLabel      `gorm:"constraint:OnDelete:CASCADE"`
 
-	// レシピとユーザーの多対多(共有)。ここだけは中間テーブル(recipe_shares)が必要。
-	SharedUsers []User `gorm:"many2many:recipe_shares;constraint:OnDelete:CASCADE"`
+	// SharedUsers は「このレシピを共有している相手」= owner が所属するシェアグループの
+	// メンバー(owner 以外)。個別共有は廃止したため永続化せず(gorm:"-")、リポジトリ/サービスが
+	// グループメンバーから詰める計算値。レスポンスの shared_user と、認可判定の材料になる。
+	SharedUsers []User `gorm:"-"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

@@ -70,6 +70,16 @@ export function NavMain() {
               <span>アーカイブ</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {/* 共有グループ管理画面へ遷移するボタン */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="共有グループ"
+              className={cn(pathname === '/top/share-group' && activeClass)}
+              onClick={() => navigateAndClose('/top/share-group')}
+            >
+              <span>共有グループ</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

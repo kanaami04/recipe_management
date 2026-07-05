@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"recipe-backend/internal/domain"
-	"recipe-backend/internal/dto/request"
 	"recipe-backend/internal/service"
 
 	"github.com/stretchr/testify/assert"
@@ -253,36 +252,4 @@ func TestShoppingListHandler_Reorder_NotFound(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusNotFound, rec.Code)
-}
-
-// serveUpdateShares は updateSharesFn を差し替えたハンドラに PUT .../shares/ し結果を返す。
-func serveUpdateShares(updateSharesFn func(context.Context, string, string, []request.SharedUserInput) (*domain.ShoppingList, error), idParam, body string) *httptest.ResponseRecorder {
-	e := newTestEcho()
-	h := newShoppingListHandler(&mockShoppingListService{updateSharesFn: updateSharesFn})
-	e.PUT("/api/shopping_list/:id/shares/", h.UpdateShares)
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, jsonRequest(http.MethodPut, "/api/shopping_list/"+idParam+"/shares/", body))
-	return rec
-}
-
-// 共有相手を更新した時、200 が返ること。
-func TestShoppingListHandler_UpdateShares_Returns200(t *testing.T) {
-	// Arrange & Act
-	rec := serveUpdateShares(func(_ context.Context, _, _ string, _ []request.SharedUserInput) (*domain.ShoppingList, error) {
-		return &domain.ShoppingList{ID: testListID}, nil
-	}, testListID, `{"shared_user":[{"username":"partner"}]}`)
-
-	// Assert
-	assert.Equal(t, http.StatusOK, rec.Code)
-}
-
-// 共有相手に存在しない username を指定しサービスが ErrSharedUserNotFound を返した時、400 が返ること。
-func TestShoppingListHandler_UpdateShares_SharedUserNotFound(t *testing.T) {
-	// Arrange & Act
-	rec := serveUpdateShares(func(_ context.Context, _, _ string, _ []request.SharedUserInput) (*domain.ShoppingList, error) {
-		return nil, service.ErrSharedUserNotFound
-	}, testListID, `{"shared_user":[{"username":"ghost"}]}`)
-
-	// Assert
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }

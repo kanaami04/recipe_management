@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { addShoppingListItem, archiveRecipe, changeEmail, changePassword, clearCheckedShoppingListItems, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, deleteShoppingListItem, fetchOgp, getShoppingList, getUserInfo, listLabels, listRecipes, listUsers, login, logout, type Options, refreshToken, register, reorderRecipes, reorderShoppingListItems, updateLabel, updateRecipe, updateShoppingListItem, updateShoppingListShares, updateUserInfo } from '../sdk.gen';
-import type { AddShoppingListItemData, AddShoppingListItemError, AddShoppingListItemResponse, ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsError, ClearCheckedShoppingListItemsResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, DeleteShoppingListItemData, DeleteShoppingListItemError, DeleteShoppingListItemResponse, FetchOgpData, FetchOgpError, FetchOgpResponse, GetShoppingListData, GetShoppingListError, GetShoppingListResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, ListUsersData, ListUsersError, ListUsersResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegisterData, RegisterError, RegisterResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, ReorderShoppingListItemsData, ReorderShoppingListItemsError, ReorderShoppingListItemsResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateShoppingListItemData, UpdateShoppingListItemError, UpdateShoppingListItemResponse, UpdateShoppingListSharesData, UpdateShoppingListSharesError, UpdateShoppingListSharesResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
+import { addShoppingListItem, archiveRecipe, changeEmail, changePassword, clearCheckedShoppingListItems, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, createShareGroup, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, deleteShoppingListItem, fetchOgp, getShareGroup, getShoppingList, getUserInfo, joinShareGroup, leaveShareGroup, listLabels, listRecipes, login, logout, type Options, refreshToken, regenerateInviteCode, register, removeShareGroupMember, reorderRecipes, reorderShoppingListItems, updateLabel, updateRecipe, updateShoppingListItem, updateUserInfo } from '../sdk.gen';
+import type { AddShoppingListItemData, AddShoppingListItemError, AddShoppingListItemResponse, ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsError, ClearCheckedShoppingListItemsResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, CreateShareGroupData, CreateShareGroupError, CreateShareGroupResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, DeleteShoppingListItemData, DeleteShoppingListItemError, DeleteShoppingListItemResponse, FetchOgpData, FetchOgpError, FetchOgpResponse, GetShareGroupData, GetShareGroupError, GetShareGroupResponse, GetShoppingListData, GetShoppingListError, GetShoppingListResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, JoinShareGroupData, JoinShareGroupError, JoinShareGroupResponse, LeaveShareGroupData, LeaveShareGroupError, LeaveShareGroupResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegenerateInviteCodeData, RegenerateInviteCodeError, RegenerateInviteCodeResponse, RegisterData, RegisterError, RegisterResponse, RemoveShareGroupMemberData, RemoveShareGroupMemberError, RemoveShareGroupMemberResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, ReorderShoppingListItemsData, ReorderShoppingListItemsError, ReorderShoppingListItemsResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateShoppingListItemData, UpdateShoppingListItemError, UpdateShoppingListItemResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -255,24 +255,6 @@ export const confirmAvatarMutation = (options?: Partial<Options<ConfirmAvatarDat
     return mutationOptions;
 };
 
-export const listUsersQueryKey = (options?: Options<ListUsersData>) => createQueryKey('listUsers', options);
-
-/**
- * 全ユーザー一覧(共有先の選択用)
- */
-export const listUsersOptions = (options?: Options<ListUsersData>) => queryOptions<ListUsersResponse, AxiosError<ListUsersError>, ListUsersResponse, ReturnType<typeof listUsersQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listUsers({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: listUsersQueryKey(options)
-});
-
 export const listLabelsQueryKey = (options?: Options<ListLabelsData>) => createQueryKey('listLabels', options);
 
 /**
@@ -490,23 +472,6 @@ export const getShoppingListOptions = (options?: Options<GetShoppingListData>) =
 });
 
 /**
- * 買い物リストの共有相手を更新する
- */
-export const updateShoppingListSharesMutation = (options?: Partial<Options<UpdateShoppingListSharesData>>): UseMutationOptions<UpdateShoppingListSharesResponse, AxiosError<UpdateShoppingListSharesError>, Options<UpdateShoppingListSharesData>> => {
-    const mutationOptions: UseMutationOptions<UpdateShoppingListSharesResponse, AxiosError<UpdateShoppingListSharesError>, Options<UpdateShoppingListSharesData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await updateShoppingListShares({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
  * 買い物リストに項目を追加する
  */
 export const addShoppingListItemMutation = (options?: Partial<Options<AddShoppingListItemData>>): UseMutationOptions<AddShoppingListItemResponse, AxiosError<AddShoppingListItemError>, Options<AddShoppingListItemData>> => {
@@ -581,6 +546,111 @@ export const updateShoppingListItemMutation = (options?: Partial<Options<UpdateS
     const mutationOptions: UseMutationOptions<UpdateShoppingListItemResponse, AxiosError<UpdateShoppingListItemError>, Options<UpdateShoppingListItemData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await updateShoppingListItem({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getShareGroupQueryKey = (options?: Options<GetShareGroupData>) => createQueryKey('getShareGroup', options);
+
+/**
+ * 自分が所属するシェアグループを取得する
+ *
+ * グループ未所属のときは 404 を返す。
+ */
+export const getShareGroupOptions = (options?: Options<GetShareGroupData>) => queryOptions<GetShareGroupResponse, AxiosError<GetShareGroupError>, GetShareGroupResponse, ReturnType<typeof getShareGroupQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getShareGroup({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getShareGroupQueryKey(options)
+});
+
+/**
+ * シェアグループを作成する(作成者が所有者になる)
+ */
+export const createShareGroupMutation = (options?: Partial<Options<CreateShareGroupData>>): UseMutationOptions<CreateShareGroupResponse, AxiosError<CreateShareGroupError>, Options<CreateShareGroupData>> => {
+    const mutationOptions: UseMutationOptions<CreateShareGroupResponse, AxiosError<CreateShareGroupError>, Options<CreateShareGroupData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createShareGroup({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 招待コードでシェアグループに参加する
+ */
+export const joinShareGroupMutation = (options?: Partial<Options<JoinShareGroupData>>): UseMutationOptions<JoinShareGroupResponse, AxiosError<JoinShareGroupError>, Options<JoinShareGroupData>> => {
+    const mutationOptions: UseMutationOptions<JoinShareGroupResponse, AxiosError<JoinShareGroupError>, Options<JoinShareGroupData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await joinShareGroup({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * シェアグループを抜ける(所有者が抜けると解散)
+ */
+export const leaveShareGroupMutation = (options?: Partial<Options<LeaveShareGroupData>>): UseMutationOptions<LeaveShareGroupResponse, AxiosError<LeaveShareGroupError>, Options<LeaveShareGroupData>> => {
+    const mutationOptions: UseMutationOptions<LeaveShareGroupResponse, AxiosError<LeaveShareGroupError>, Options<LeaveShareGroupData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await leaveShareGroup({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 招待コードを再発行する(所有者のみ。旧コードは失効)
+ */
+export const regenerateInviteCodeMutation = (options?: Partial<Options<RegenerateInviteCodeData>>): UseMutationOptions<RegenerateInviteCodeResponse, AxiosError<RegenerateInviteCodeError>, Options<RegenerateInviteCodeData>> => {
+    const mutationOptions: UseMutationOptions<RegenerateInviteCodeResponse, AxiosError<RegenerateInviteCodeError>, Options<RegenerateInviteCodeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await regenerateInviteCode({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * メンバーを外す(所有者のみ)
+ */
+export const removeShareGroupMemberMutation = (options?: Partial<Options<RemoveShareGroupMemberData>>): UseMutationOptions<RemoveShareGroupMemberResponse, AxiosError<RemoveShareGroupMemberError>, Options<RemoveShareGroupMemberData>> => {
+    const mutationOptions: UseMutationOptions<RemoveShareGroupMemberResponse, AxiosError<RemoveShareGroupMemberError>, Options<RemoveShareGroupMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeShareGroupMember({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

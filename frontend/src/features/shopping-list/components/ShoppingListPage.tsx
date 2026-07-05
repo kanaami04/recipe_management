@@ -13,7 +13,7 @@ import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { ShoppingListShareDialog } from '@/features/shopping-list/components/ShoppingListShareDialog'
+import { RecipeSharedAvatars } from '@/features/recipes/components/RecipeSharedAvatars'
 import { SortableShoppingListItem } from '@/features/shopping-list/components/SortableShoppingListItem'
 import {
   addShoppingListItemMutation,
@@ -161,9 +161,10 @@ export function ShoppingListPage() {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
           <h1 className="text-base font-medium">買い物リスト</h1>
-          {list && (
+          {/* 共有中はグループメンバーのアバターを表示(共有の管理は共有グループ画面で行う)。 */}
+          {list && list.shared_user.length > 0 && (
             <div className="ml-auto">
-              <ShoppingListShareDialog listId={list.id} sharedUsers={list.shared_user} />
+              <RecipeSharedAvatars users={list.shared_user} />
             </div>
           )}
         </div>

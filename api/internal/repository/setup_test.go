@@ -7,9 +7,11 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"recipe-backend/internal/database"
 	"recipe-backend/internal/domain"
+	"recipe-backend/internal/pkg/invite"
 	"recipe-backend/internal/testutil"
 	"recipe-backend/internal/testutil/factory"
 
@@ -63,8 +65,9 @@ func TestMain(m *testing.M) {
 func truncateAll(t *testing.T) {
 	t.Helper()
 	const stmt = `TRUNCATE recipes, recipe_labels, recipe_ingredients, recipe_seasonings,
-		recipe_shares, recipe_orders, recipe_archives, labels,
-		shopping_lists, shopping_list_items, shopping_list_shares, users RESTART IDENTITY CASCADE`
+		recipe_orders, recipe_archives, labels,
+		shopping_lists, shopping_list_items,
+		share_groups, share_group_members, users RESTART IDENTITY CASCADE`
 	if err := testDB.Exec(stmt).Error; err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
@@ -78,4 +81,30 @@ func seedUser(t *testing.T, username string) *domain.User {
 		t.Fatalf("seed user %q: %v", username, err)
 	}
 	return u
+}
+
+// seedShareGroup は owner を所有者、members を追加メンバーとするシェアグループを作成する。
+// これにより owner と members は互いの共有物を見られるようになる。
+func seedShareGroup(t *testing.T, owner *domain.User, members ...*domain.User) *domain.ShareGroup {
+	t.Helper()
+	repo := NewShareGroupRepository(testDB)
+	code, err := invite.Code()
+	if err != nil {
+		t.Fatalf("invite code: %v", err)
+	}
+	g := &domain.ShareGroup{
+		Name:                "テストグループ",
+		OwnerID:             owner.ID,
+		InviteCode:          code,
+		InviteCodeExpiresAt: time.Now().Add(time.Hour),
+	}
+	if err := repo.Create(context.Background(), g); err != nil {
+		t.Fatalf("seed group: %v", err)
+	}
+	for _, m := range members {
+		if err := repo.AddMember(context.Background(), g.ID, m.ID); err != nil {
+			t.Fatalf("add member %q: %v", m.Username, err)
+		}
+	}
+	return g
 }

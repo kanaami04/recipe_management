@@ -19,41 +19,19 @@ func NewShoppingListRepository(db *gorm.DB) domain.ShoppingListRepository {
 
 // preloadList は関連を全て eager load する。項目はチェック済みを末尾へ回し、
 // 同グループ内は手動並び順(position)→ 採番順(id)で安定させる。
+// SharedUsers はグループメンバーから service が詰める計算値のため preload しない。
 func preloadList(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("Owner").
-		Preload("SharedUsers").
 		Preload("Items", func(db *gorm.DB) *gorm.DB {
 			return db.Order("checked ASC").Order("position ASC").Order("id ASC")
 		})
 }
 
-// sharedListIDs は共有先に userID を含むリスト ID のサブクエリを返す。
-func sharedListIDs(db *gorm.DB, userID string) *gorm.DB {
-	return db.Table("shopping_list_shares").
-		Select("shopping_list_id").
-		Where("user_id = ?", userID)
-}
-
-func (r *shoppingListRepository) FindForUser(ctx context.Context, userID string) (*domain.ShoppingList, error) {
-	db := r.db.WithContext(ctx)
-	// 共有されたリストを優先する(世帯で 1 つのリストを共有する運用のため、
-	// 共有相手のページには共有元のリストを見せる)。同点は id で安定させる。
+func (r *shoppingListRepository) FindByOwnerID(ctx context.Context, ownerID string) (*domain.ShoppingList, error) {
 	var list domain.ShoppingList
-	err := preloadList(db).
-		Where("id IN (?)", sharedListIDs(db, userID)).
-		Order("id ASC").
-		First(&list).Error
-	if err == nil {
-		return &list, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-	// 共有が無ければ自分が所有するリストを返す。
-	err = preloadList(db).
-		Where("owner_id = ?", userID).
-		Order("id ASC").
+	err := preloadList(r.db.WithContext(ctx)).
+		Where("owner_id = ?", ownerID).
 		First(&list).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
@@ -78,12 +56,7 @@ func (r *shoppingListRepository) FindByID(ctx context.Context, id string) (*doma
 
 func (r *shoppingListRepository) Create(ctx context.Context, list *domain.ShoppingList) error {
 	// 空のリストを作る。belongs-to(Owner)は FK 定義用で書き込みでは巻き込まない。
-	return r.db.WithContext(ctx).Omit("Owner", "SharedUsers").Create(list).Error
-}
-
-func (r *shoppingListRepository) ReplaceSharedUsers(ctx context.Context, list *domain.ShoppingList) error {
-	// SharedUsers(m2m)は既存ユーザーへの参照のため Replace で中間テーブルのみ操作する。
-	return r.db.WithContext(ctx).Model(list).Association("SharedUsers").Replace(list.SharedUsers)
+	return r.db.WithContext(ctx).Omit("Owner").Create(list).Error
 }
 
 func (r *shoppingListRepository) AddItem(ctx context.Context, item *domain.ShoppingListItem) error {
