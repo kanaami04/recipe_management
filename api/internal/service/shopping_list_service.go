@@ -2,51 +2,63 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"recipe-backend/internal/domain"
-	"recipe-backend/internal/dto/request"
 )
 
 type ShoppingListService interface {
 	// Get は userID が見るべき買い物リストを返す。無ければ空のリストを作成して返す。
+	// グループ所属時はグループの 1 リスト(= グループ所有者のリスト)を全員で共同編集する。
 	Get(ctx context.Context, userID string) (*domain.ShoppingList, error)
 	AddItem(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error)
 	SetItemChecked(ctx context.Context, userID, listID, itemID string, checked bool) (*domain.ShoppingList, error)
 	DeleteItem(ctx context.Context, userID, listID, itemID string) (*domain.ShoppingList, error)
 	ClearChecked(ctx context.Context, userID, listID string) (*domain.ShoppingList, error)
 	Reorder(ctx context.Context, userID, listID string, itemIDs []string) (*domain.ShoppingList, error)
-	UpdateShares(ctx context.Context, userID, listID string, sharedUsers []request.SharedUserInput) (*domain.ShoppingList, error)
 }
 
 type shoppingListService struct {
-	lists domain.ShoppingListRepository
-	users domain.UserRepository
+	lists  domain.ShoppingListRepository
+	groups domain.ShareGroupRepository
 }
 
-func NewShoppingListService(lists domain.ShoppingListRepository, users domain.UserRepository) ShoppingListService {
-	return &shoppingListService{lists: lists, users: users}
+func NewShoppingListService(lists domain.ShoppingListRepository, groups domain.ShareGroupRepository) ShoppingListService {
+	return &shoppingListService{lists: lists, groups: groups}
 }
 
 func (s *shoppingListService) Get(ctx context.Context, userID string) (*domain.ShoppingList, error) {
-	existing, err := s.lists.FindForUser(ctx, userID)
+	// グループはここで一度だけ解決し、リスト所有者の決定と SharedUsers 詰めの両方に使う。
+	group, err := s.groups.FindByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	ownerID := userID
+	if group != nil {
+		// グループ所属時はグループ所有者のリストを「グループの 1 リスト」として使い回す。
+		ownerID = group.OwnerID
+	}
+	existing, err := s.lists.FindByOwnerID(ctx, ownerID)
 	if err != nil {
 		return nil, err
 	}
 	if existing != nil {
-		return existing, nil
+		return applyShared(group, existing), nil
 	}
-	// 見えるリストがまだ無ければ、自分が所有する空のリストを作って返す。
-	list := &domain.ShoppingList{OwnerID: userID}
+	// リストがまだ無ければ、対象所有者の空のリストを作って返す。
+	list := &domain.ShoppingList{OwnerID: ownerID}
 	if err := s.lists.Create(ctx, list); err != nil {
 		// 別リクエストが同時に作成した場合は owner_id の一意制約で弾かれる。
 		// その勝者を読み直して返す(二重作成を避ける)。
-		if again, ferr := s.lists.FindForUser(ctx, userID); ferr == nil && again != nil {
-			return again, nil
+		if again, ferr := s.lists.FindByOwnerID(ctx, ownerID); ferr == nil && again != nil {
+			return applyShared(group, again), nil
 		}
 		return nil, err
 	}
-	return s.lists.FindByID(ctx, list.ID)
+	created, err := s.lists.FindByID(ctx, list.ID)
+	if err != nil {
+		return nil, err
+	}
+	return applyShared(group, created), nil
 }
 
 func (s *shoppingListService) AddItem(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error) {
@@ -57,7 +69,7 @@ func (s *shoppingListService) AddItem(ctx context.Context, userID, listID, name 
 	if err := s.lists.AddItem(ctx, item); err != nil {
 		return nil, err
 	}
-	return s.lists.FindByID(ctx, listID)
+	return s.reload(ctx, userID, listID)
 }
 
 func (s *shoppingListService) SetItemChecked(ctx context.Context, userID, listID, itemID string, checked bool) (*domain.ShoppingList, error) {
@@ -71,7 +83,7 @@ func (s *shoppingListService) SetItemChecked(ctx context.Context, userID, listID
 	if err := s.lists.SetItemChecked(ctx, itemID, checked); err != nil {
 		return nil, err
 	}
-	return s.lists.FindByID(ctx, listID)
+	return s.reload(ctx, userID, listID)
 }
 
 func (s *shoppingListService) DeleteItem(ctx context.Context, userID, listID, itemID string) (*domain.ShoppingList, error) {
@@ -85,7 +97,7 @@ func (s *shoppingListService) DeleteItem(ctx context.Context, userID, listID, it
 	if err := s.lists.DeleteItem(ctx, itemID); err != nil {
 		return nil, err
 	}
-	return s.lists.FindByID(ctx, listID)
+	return s.reload(ctx, userID, listID)
 }
 
 func (s *shoppingListService) ClearChecked(ctx context.Context, userID, listID string) (*domain.ShoppingList, error) {
@@ -95,7 +107,7 @@ func (s *shoppingListService) ClearChecked(ctx context.Context, userID, listID s
 	if err := s.lists.DeleteCheckedItems(ctx, listID); err != nil {
 		return nil, err
 	}
-	return s.lists.FindByID(ctx, listID)
+	return s.reload(ctx, userID, listID)
 }
 
 // Reorder は listID の項目表示順を itemIDs の並びで保存する。指定 ID は全てこのリストの
@@ -125,34 +137,36 @@ func (s *shoppingListService) Reorder(ctx context.Context, userID, listID string
 	if err := s.lists.Reorder(ctx, listID, deduped); err != nil {
 		return nil, err
 	}
-	return s.lists.FindByID(ctx, listID)
+	return s.reload(ctx, userID, listID)
 }
 
-func (s *shoppingListService) UpdateShares(ctx context.Context, userID, listID string, sharedUsers []request.SharedUserInput) (*domain.ShoppingList, error) {
-	list, err := s.authorize(ctx, userID, listID)
+// reload は listID のリストを読み直し、SharedUsers を詰めて返す。
+func (s *shoppingListService) reload(ctx context.Context, userID, listID string) (*domain.ShoppingList, error) {
+	list, err := s.lists.FindByID(ctx, listID)
 	if err != nil {
 		return nil, err
 	}
-	shared := make([]domain.User, 0, len(sharedUsers))
-	for _, su := range sharedUsers {
-		u, err := s.users.FindByUsername(ctx, su.Username)
-		if err != nil {
-			return nil, err
-		}
-		if u == nil {
-			return nil, fmt.Errorf("%w: %s", ErrSharedUserNotFound, su.Username)
-		}
-		shared = append(shared, *u)
+	if list == nil {
+		return nil, ErrNotFound
 	}
-	list.SharedUsers = shared
-	if err := s.lists.ReplaceSharedUsers(ctx, list); err != nil {
+	group, err := s.groups.FindByUserID(ctx, userID)
+	if err != nil {
 		return nil, err
 	}
-	return s.lists.FindByID(ctx, listID)
+	return applyShared(group, list), nil
 }
 
-// authorize は listID のリストを取り出し、userID が操作できる(所有 or 共有先)か検証する。
-// 見つからなければ ErrNotFound、権限が無ければ ErrForbidden。
+// applyShared はリストの SharedUsers に「group のメンバー(owner を除く)」を詰めて返す。
+// group が nil(グループ未所属)なら空のまま。
+func applyShared(group *domain.ShareGroup, list *domain.ShoppingList) *domain.ShoppingList {
+	if group != nil {
+		list.SharedUsers = membersExcept(group.Members, list.OwnerID)
+	}
+	return list
+}
+
+// authorize は listID のリストを取り出し、userID が操作できる(所有者、または owner と同じ
+// シェアグループのメンバー)か検証する。見つからなければ ErrNotFound、権限が無ければ ErrForbidden。
 func (s *shoppingListService) authorize(ctx context.Context, userID, listID string) (*domain.ShoppingList, error) {
 	list, err := s.lists.FindByID(ctx, listID)
 	if err != nil {
@@ -161,23 +175,32 @@ func (s *shoppingListService) authorize(ctx context.Context, userID, listID stri
 	if list == nil {
 		return nil, ErrNotFound
 	}
-	if !canModifyList(list, userID) {
+	ok, err := s.canModifyList(ctx, list, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
 		return nil, ErrForbidden
 	}
 	return list, nil
 }
 
-// canModifyList は owner もしくは共有先ユーザーであれば true(recipe の canModify 相当)。
-func canModifyList(l *domain.ShoppingList, userID string) bool {
+// canModifyList は userID が list を編集できる(所有者、または owner と同じグループのメンバー)
+// かを返す。
+func (s *shoppingListService) canModifyList(ctx context.Context, l *domain.ShoppingList, userID string) (bool, error) {
 	if l.OwnerID == userID {
-		return true
+		return true, nil
 	}
-	for i := range l.SharedUsers {
-		if l.SharedUsers[i].ID == userID {
-			return true
+	memberIDs, err := s.groups.MemberIDs(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	for _, id := range memberIDs {
+		if id == l.OwnerID {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func itemBelongsToList(l *domain.ShoppingList, itemID string) bool {

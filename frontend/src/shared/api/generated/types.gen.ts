@@ -112,10 +112,6 @@ export type LabelInput = {
     name: string;
 };
 
-export type SharedUserInput = {
-    username: string;
-};
-
 export type CookingInput = {
     ingredients: NameInput;
     quantity: number;
@@ -148,7 +144,6 @@ export type RecipeRequest = {
      */
     thumbnail_url?: string;
     label?: Array<LabelInput>;
-    shared_user?: Array<SharedUserInput>;
     cooking?: Array<CookingInput>;
     season?: Array<SeasonInput>;
 };
@@ -245,10 +240,6 @@ export type ShoppingListReorderRequest = {
     item_ids: Array<string>;
 };
 
-export type ShoppingListSharesRequest = {
-    shared_user: Array<SharedUserInput>;
-};
-
 export type ShoppingListItemResponse = {
     id: string;
     name: string;
@@ -263,6 +254,33 @@ export type ShoppingListResponse = {
     owner: UserListItem;
     shared_user: Array<UserListItem>;
     items: Array<ShoppingListItemResponse>;
+};
+
+/**
+ * グループ作成。name は任意(空なら既定名)。
+ */
+export type CreateShareGroupRequest = {
+    name?: string;
+};
+
+export type JoinShareGroupRequest = {
+    invite_code: string;
+};
+
+/**
+ * シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
+ */
+export type ShareGroupResponse = {
+    id: string;
+    name: string;
+    owner: UserListItem;
+    members: Array<UserListItem>;
+    invite_code: string;
+    /**
+     * JST。形式: YYYY-MM-DD HH:mm
+     */
+    invite_code_expires_at: string;
+    is_owner: boolean;
 };
 
 export type LoginData = {
@@ -591,31 +609,6 @@ export type ConfirmAvatarResponses = {
 };
 
 export type ConfirmAvatarResponse = ConfirmAvatarResponses[keyof ConfirmAvatarResponses];
-
-export type ListUsersData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/users/';
-};
-
-export type ListUsersErrors = {
-    /**
-     * 未認証・トークン無効/期限切れ・クレデンシャル不正
-     */
-    401: Error;
-};
-
-export type ListUsersError = ListUsersErrors[keyof ListUsersErrors];
-
-export type ListUsersResponses = {
-    /**
-     * 取得成功
-     */
-    200: Array<UserListItem>;
-};
-
-export type ListUsersResponse = ListUsersResponses[keyof ListUsersResponses];
 
 export type ListLabelsData = {
     body?: never;
@@ -1027,48 +1020,6 @@ export type GetShoppingListResponses = {
 
 export type GetShoppingListResponse = GetShoppingListResponses[keyof GetShoppingListResponses];
 
-export type UpdateShoppingListSharesData = {
-    body: ShoppingListSharesRequest;
-    path: {
-        /**
-         * 買い物リスト ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/shopping_list/{id}/shares/';
-};
-
-export type UpdateShoppingListSharesErrors = {
-    /**
-     * リクエスト不正・バリデーション失敗
-     */
-    400: Error;
-    /**
-     * 未認証・トークン無効/期限切れ・クレデンシャル不正
-     */
-    401: Error;
-    /**
-     * 権限なし(他ユーザーのレシピ操作など)
-     */
-    403: Error;
-    /**
-     * 対象が存在しない
-     */
-    404: Error;
-};
-
-export type UpdateShoppingListSharesError = UpdateShoppingListSharesErrors[keyof UpdateShoppingListSharesErrors];
-
-export type UpdateShoppingListSharesResponses = {
-    /**
-     * 更新成功
-     */
-    200: ShoppingListResponse;
-};
-
-export type UpdateShoppingListSharesResponse = UpdateShoppingListSharesResponses[keyof UpdateShoppingListSharesResponses];
-
 export type AddShoppingListItemData = {
     body: ShoppingListItemInput;
     path: {
@@ -1278,3 +1229,198 @@ export type UpdateShoppingListItemResponses = {
 };
 
 export type UpdateShoppingListItemResponse = UpdateShoppingListItemResponses[keyof UpdateShoppingListItemResponses];
+
+export type GetShareGroupData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/share_group/';
+};
+
+export type GetShareGroupErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type GetShareGroupError = GetShareGroupErrors[keyof GetShareGroupErrors];
+
+export type GetShareGroupResponses = {
+    /**
+     * 取得成功
+     */
+    200: ShareGroupResponse;
+};
+
+export type GetShareGroupResponse = GetShareGroupResponses[keyof GetShareGroupResponses];
+
+export type CreateShareGroupData = {
+    body: CreateShareGroupRequest;
+    path?: never;
+    query?: never;
+    url: '/api/share_group/';
+};
+
+export type CreateShareGroupErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 既に存在する(ユーザー名・メール重複)
+     */
+    409: Error;
+};
+
+export type CreateShareGroupError = CreateShareGroupErrors[keyof CreateShareGroupErrors];
+
+export type CreateShareGroupResponses = {
+    /**
+     * 作成成功
+     */
+    201: ShareGroupResponse;
+};
+
+export type CreateShareGroupResponse = CreateShareGroupResponses[keyof CreateShareGroupResponses];
+
+export type JoinShareGroupData = {
+    body: JoinShareGroupRequest;
+    path?: never;
+    query?: never;
+    url: '/api/share_group/join/';
+};
+
+export type JoinShareGroupErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 既に存在する(ユーザー名・メール重複)
+     */
+    409: Error;
+};
+
+export type JoinShareGroupError = JoinShareGroupErrors[keyof JoinShareGroupErrors];
+
+export type JoinShareGroupResponses = {
+    /**
+     * 参加成功
+     */
+    200: ShareGroupResponse;
+};
+
+export type JoinShareGroupResponse = JoinShareGroupResponses[keyof JoinShareGroupResponses];
+
+export type LeaveShareGroupData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/share_group/leave/';
+};
+
+export type LeaveShareGroupErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type LeaveShareGroupError = LeaveShareGroupErrors[keyof LeaveShareGroupErrors];
+
+export type LeaveShareGroupResponses = {
+    /**
+     * 成功(本文なし)
+     */
+    204: void;
+};
+
+export type LeaveShareGroupResponse = LeaveShareGroupResponses[keyof LeaveShareGroupResponses];
+
+export type RegenerateInviteCodeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/share_group/invite_code/';
+};
+
+export type RegenerateInviteCodeErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type RegenerateInviteCodeError = RegenerateInviteCodeErrors[keyof RegenerateInviteCodeErrors];
+
+export type RegenerateInviteCodeResponses = {
+    /**
+     * 再発行成功
+     */
+    200: ShareGroupResponse;
+};
+
+export type RegenerateInviteCodeResponse = RegenerateInviteCodeResponses[keyof RegenerateInviteCodeResponses];
+
+export type RemoveShareGroupMemberData = {
+    body?: never;
+    path: {
+        /**
+         * 外すメンバーのユーザー ID
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/share_group/members/{user_id}/';
+};
+
+export type RemoveShareGroupMemberErrors = {
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type RemoveShareGroupMemberError = RemoveShareGroupMemberErrors[keyof RemoveShareGroupMemberErrors];
+
+export type RemoveShareGroupMemberResponses = {
+    /**
+     * 成功(本文なし)
+     */
+    204: void;
+};
+
+export type RemoveShareGroupMemberResponse = RemoveShareGroupMemberResponses[keyof RemoveShareGroupMemberResponses];

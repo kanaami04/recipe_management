@@ -10,12 +10,7 @@ import {
   toRecipeRequest,
 } from '@/features/recipes/schema/recipeFormSchema'
 import { INGREDIENT_UNITS, SEASONING_UNITS } from '@/features/recipes/units'
-import type {
-  LabelItem,
-  RecipeRequest,
-  RecipeResponse,
-  UserListItem,
-} from '@/shared/api/generated/types.gen'
+import type { LabelItem, RecipeRequest, RecipeResponse } from '@/shared/api/generated/types.gen'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { DialogFooter } from '@/shared/ui/dialog'
@@ -34,10 +29,9 @@ type Props = {
   initialData?: RecipeResponse
   onSubmit: (payload: RecipeRequest) => Promise<void>
   labelData?: LabelItem[]
-  sharedUserData?: UserListItem[]
 }
 
-export function RecipeForm({ mode, initialData, onSubmit, labelData, sharedUserData }: Props) {
+export function RecipeForm({ mode, initialData, onSubmit, labelData }: Props) {
   // フォーム状態は RHF + zod で一元管理する。
   // 検証は「作成/更新」ボタン押下時(onSubmit)に行い、必須項目の警告もそこで出す。
   // 一度送信した後は onChange で再検証され、入力を直すと警告が即座に消える(RHF 既定)。
@@ -247,21 +241,6 @@ export function RecipeForm({ mode, initialData, onSubmit, labelData, sharedUserD
                   value={field.value}
                   onChange={field.onChange}
                   options={labelData.map((l) => ({ label: l.name, value: l.name }))}
-                />
-              )}
-            />
-          )}
-          {sharedUserData && (
-            <Controller
-              control={control}
-              name="sharedUser"
-              render={({ field }) => (
-                <MultiSelectInput
-                  className="grid flex-1 gap-2"
-                  label="共有ユーザー"
-                  value={field.value}
-                  onChange={field.onChange}
-                  options={sharedUserData.map((u) => ({ label: u.username, value: u.username }))}
                 />
               )}
             />

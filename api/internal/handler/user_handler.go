@@ -34,16 +34,6 @@ func (h *UserHandler) Info(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.ToUserInfo(u, h.avatars))
 }
 
-// List は GET /api/users/。共有先選択用のユーザー一覧を返す（自分自身は除く）。
-func (h *UserHandler) List(c echo.Context) error {
-	userID := appmw.UserIDFromContext(c)
-	users, err := h.svc.List(c.Request().Context(), userID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
-	}
-	return c.JSON(http.StatusOK, response.ToUserList(users, h.avatars))
-}
-
 // Update は PUT /api/user_info/。プロフィール(ユーザー名)を更新する。
 func (h *UserHandler) Update(c echo.Context) error {
 	userID := appmw.UserIDFromContext(c)

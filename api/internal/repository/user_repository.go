@@ -53,12 +53,6 @@ func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User,
 	return &u, nil
 }
 
-func (r *userRepository) FindAllExcept(ctx context.Context, excludeID string) ([]domain.User, error) {
-	var users []domain.User
-	err := r.db.WithContext(ctx).Where("id <> ?", excludeID).Order("id").Find(&users).Error
-	return users, err
-}
-
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
@@ -93,7 +87,12 @@ func (r *userRepository) Delete(ctx context.Context, userID string) error {
 		if err := tx.Where("owner_id = ?", userID).Delete(&domain.ShoppingList{}).Error; err != nil {
 			return err
 		}
-		// user 削除で labels / recipe_orders / recipe_archives / 共有(共有先側)は CASCADE。
+		// 所有するシェアグループも先に解散する(share_groups.owner_id に CASCADE が無い)。
+		// メンバー行はグループ削除で CASCADE。自分のメンバー行は user 削除で CASCADE。
+		if err := tx.Where("owner_id = ?", userID).Delete(&domain.ShareGroup{}).Error; err != nil {
+			return err
+		}
+		// user 削除で labels / recipe_orders / recipe_archives / メンバー行は CASCADE。
 		return tx.Where("id = ?", userID).Delete(&domain.User{}).Error
 	})
 }

@@ -102,10 +102,6 @@ export const zLabelInput = z.object({
     name: z.string()
 });
 
-export const zSharedUserInput = z.object({
-    username: z.string()
-});
-
 export const zCookingInput = z.object({
     ingredients: zNameInput,
     quantity: z.number(),
@@ -126,7 +122,6 @@ export const zRecipeRequest = z.object({
     source_url: z.string().optional(),
     thumbnail_url: z.string().optional(),
     label: z.array(zLabelInput).optional(),
-    shared_user: z.array(zSharedUserInput).optional(),
     cooking: z.array(zCookingInput).optional(),
     season: z.array(zSeasonInput).optional()
 });
@@ -202,10 +197,6 @@ export const zShoppingListReorderRequest = z.object({
     item_ids: z.array(z.uuid())
 });
 
-export const zShoppingListSharesRequest = z.object({
-    shared_user: z.array(zSharedUserInput)
-});
-
 export const zShoppingListItemResponse = z.object({
     id: z.uuid(),
     name: z.string(),
@@ -220,6 +211,30 @@ export const zShoppingListResponse = z.object({
     owner: zUserListItem,
     shared_user: z.array(zUserListItem),
     items: z.array(zShoppingListItemResponse)
+});
+
+/**
+ * グループ作成。name は任意(空なら既定名)。
+ */
+export const zCreateShareGroupRequest = z.object({
+    name: z.string().max(50).optional()
+});
+
+export const zJoinShareGroupRequest = z.object({
+    invite_code: z.string()
+});
+
+/**
+ * シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
+ */
+export const zShareGroupResponse = z.object({
+    id: z.uuid(),
+    name: z.string(),
+    owner: zUserListItem,
+    members: z.array(zUserListItem),
+    invite_code: z.string(),
+    invite_code_expires_at: z.string(),
+    is_owner: z.boolean()
 });
 
 export const zLoginBody = zTokenRequest;
@@ -295,11 +310,6 @@ export const zConfirmAvatarBody = zConfirmAvatarRequest;
  * 確定成功
  */
 export const zConfirmAvatarResponse = zUserInfoResponse;
-
-/**
- * 取得成功
- */
-export const zListUsersResponse = z.array(zUserListItem);
 
 /**
  * 取得成功
@@ -397,17 +407,6 @@ export const zUpdateRecipeResponse = zRecipeResponse;
  */
 export const zGetShoppingListResponse = zShoppingListResponse;
 
-export const zUpdateShoppingListSharesBody = zShoppingListSharesRequest;
-
-export const zUpdateShoppingListSharesPath = z.object({
-    id: z.uuid()
-});
-
-/**
- * 更新成功
- */
-export const zUpdateShoppingListSharesResponse = zShoppingListResponse;
-
 export const zAddShoppingListItemBody = zShoppingListItemInput;
 
 export const zAddShoppingListItemPath = z.object({
@@ -460,3 +459,41 @@ export const zUpdateShoppingListItemPath = z.object({
  * 更新成功(更新後のリスト全体を返す)
  */
 export const zUpdateShoppingListItemResponse = zShoppingListResponse;
+
+/**
+ * 取得成功
+ */
+export const zGetShareGroupResponse = zShareGroupResponse;
+
+export const zCreateShareGroupBody = zCreateShareGroupRequest;
+
+/**
+ * 作成成功
+ */
+export const zCreateShareGroupResponse = zShareGroupResponse;
+
+export const zJoinShareGroupBody = zJoinShareGroupRequest;
+
+/**
+ * 参加成功
+ */
+export const zJoinShareGroupResponse = zShareGroupResponse;
+
+/**
+ * 成功(本文なし)
+ */
+export const zLeaveShareGroupResponse = z.void();
+
+/**
+ * 再発行成功
+ */
+export const zRegenerateInviteCodeResponse = zShareGroupResponse;
+
+export const zRemoveShareGroupMemberPath = z.object({
+    user_id: z.uuid()
+});
+
+/**
+ * 成功(本文なし)
+ */
+export const zRemoveShareGroupMemberResponse = z.void();

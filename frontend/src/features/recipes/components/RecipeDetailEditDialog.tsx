@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import {
   listLabelsOptions,
   listRecipesQueryKey,
-  listUsersOptions,
   updateRecipeMutation,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { RecipeRequest, RecipeResponse } from '@/shared/api/generated/types.gen'
@@ -26,7 +25,6 @@ type EditDialog = {
 
 export function RecipeDetailEditDialog({ recipe, open, onOpenChange }: EditDialog) {
   const queryClient = useQueryClient()
-  const { data: sharedUserData } = useQuery(listUsersOptions())
   const { data: labelData } = useQuery(listLabelsOptions())
 
   // 更新は生成 mutation + 一覧 query の無効化に集約する。
@@ -51,13 +49,7 @@ export function RecipeDetailEditDialog({ recipe, open, onOpenChange }: EditDialo
           <DialogTitle>レシピ編集</DialogTitle>
           <DialogDescription>レシピを編集します</DialogDescription>
         </DialogHeader>
-        <RecipeForm
-          mode="edit"
-          initialData={recipe}
-          onSubmit={handleEdit}
-          labelData={labelData}
-          sharedUserData={sharedUserData}
-        />
+        <RecipeForm mode="edit" initialData={recipe} onSubmit={handleEdit} labelData={labelData} />
       </DialogContent>
     </Dialog>
   )

@@ -12,6 +12,7 @@ type Services struct {
 	Label        LabelService
 	Recipe       RecipeService
 	ShoppingList ShoppingListService
+	ShareGroup   ShareGroupService
 	Ogp          OgpService
 }
 
@@ -21,6 +22,7 @@ func New(
 	labelRepo domain.LabelRepository,
 	recipeRepo domain.RecipeRepository,
 	shoppingListRepo domain.ShoppingListRepository,
+	shareGroupRepo domain.ShareGroupRepository,
 	avatars domain.AvatarStorage,
 	jwt *jwtpkg.Manager,
 ) *Services {
@@ -28,8 +30,9 @@ func New(
 		Auth:         NewAuthService(userRepo, jwt),
 		User:         NewUserService(userRepo, avatars),
 		Label:        NewLabelService(labelRepo),
-		Recipe:       NewRecipeService(recipeRepo, userRepo),
-		ShoppingList: NewShoppingListService(shoppingListRepo, userRepo),
+		Recipe:       NewRecipeService(recipeRepo, shareGroupRepo),
+		ShoppingList: NewShoppingListService(shoppingListRepo, shareGroupRepo),
+		ShareGroup:   NewShareGroupService(shareGroupRepo),
 		Ogp:          NewOgpService(),
 	}
 }

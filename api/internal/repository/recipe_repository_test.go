@@ -30,11 +30,9 @@ func arrangeRecipeWithRelations(t *testing.T) (context.Context, domain.RecipeRep
 	ctx := context.Background()
 	repo := NewRecipeRepository(testDB)
 	owner := seedUser(t, "owner")
-	friend := seedUser(t, "friend")
 	r := factory.NewRecipe(
 		factory.WithTitle("肉じゃが"),
 		factory.WithOwnerID(owner.ID),
-		factory.WithSharedUsers(*friend),
 	)
 	r.Servings = 2
 	r.Labels = []domain.RecipeLabel{{Name: "和食"}}
@@ -70,19 +68,6 @@ func TestRecipeRepo_FindByID_LoadsLabels(t *testing.T) {
 	assert.Equal(t, got.ID, got.Labels[0].RecipeID)
 }
 
-// 関連付きレシピを作成した時、FindByID で共有先ユーザーが読み込まれること。
-func TestRecipeRepo_FindByID_LoadsSharedUsers(t *testing.T) {
-	// Arrange
-	ctx, repo, id := arrangeRecipeWithRelations(t)
-
-	// Act
-	got := mustFindRecipe(t, ctx, repo, id)
-
-	// Assert
-	require.Len(t, got.SharedUsers, 1)
-	assert.Equal(t, "friend", got.SharedUsers[0].Username)
-}
-
 // 関連付きレシピを作成した時、FindByID で食材が構造体ごと読み込まれること。
 func TestRecipeRepo_FindByID_LoadsIngredients(t *testing.T) {
 	// Arrange
@@ -115,8 +100,8 @@ func TestRecipeRepo_FindByID_LoadsSeasonings(t *testing.T) {
 	assert.Equal(t, "大さじ", got.Seasonings[0].Unit)
 }
 
-// arrangeSharedRecipe は owner が持ち friend に共有したレシピを1件作成し、
-// owner / friend / stranger の3ユーザーを返す。
+// arrangeSharedRecipe は owner が持つレシピを1件作成し、owner と friend を同じシェアグループに
+// 入れる。owner / friend / stranger の3ユーザーを返す(friend は共有で見え、stranger は見えない)。
 func arrangeSharedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, *domain.User, *domain.User, *domain.User) {
 	t.Helper()
 	testutil.RequireIntegration(t)
@@ -126,10 +111,10 @@ func arrangeSharedRecipe(t *testing.T) (context.Context, domain.RecipeRepository
 	owner := seedUser(t, "owner")
 	friend := seedUser(t, "friend")
 	stranger := seedUser(t, "stranger")
+	seedShareGroup(t, owner, friend)
 	r := factory.NewRecipe(
 		factory.WithTitle("共有レシピ"),
 		factory.WithOwnerID(owner.ID),
-		factory.WithSharedUsers(*friend),
 	)
 	require.NoError(t, repo.Create(ctx, r))
 	return ctx, repo, owner, friend, stranger
@@ -148,8 +133,8 @@ func TestRecipeRepo_FindAllForUser_OwnerSees(t *testing.T) {
 	assert.Len(t, list, 1)
 }
 
-// 共有レシピがある時、共有先の FindAllForUser でそのレシピが返ること。
-func TestRecipeRepo_FindAllForUser_SharedUserSees(t *testing.T) {
+// 共有レシピがある時、同じグループのメンバーの FindAllForUser でそのレシピが返ること。
+func TestRecipeRepo_FindAllForUser_GroupMemberSees(t *testing.T) {
 	// Arrange
 	ctx, repo, _, friend, _ := arrangeSharedRecipe(t)
 
@@ -161,7 +146,7 @@ func TestRecipeRepo_FindAllForUser_SharedUserSees(t *testing.T) {
 	assert.Len(t, list, 1)
 }
 
-// 共有レシピがある時、無関係なユーザーの FindAllForUser では空が返ること。
+// 共有レシピがある時、グループ外ユーザーの FindAllForUser では空が返ること。
 func TestRecipeRepo_FindAllForUser_StrangerDoesNotSee(t *testing.T) {
 	// Arrange
 	ctx, repo, _, _, stranger := arrangeSharedRecipe(t)
@@ -217,8 +202,9 @@ func TestRecipeRepo_Reorder_IsolatedPerUser(t *testing.T) {
 	repo := NewRecipeRepository(testDB)
 	owner := seedUser(t, "owner")
 	friend := seedUser(t, "friend")
-	a := factory.NewRecipe(factory.WithOwnerID(owner.ID), factory.WithSharedUsers(*friend))
-	b := factory.NewRecipe(factory.WithOwnerID(owner.ID), factory.WithSharedUsers(*friend))
+	seedShareGroup(t, owner, friend)
+	a := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	b := factory.NewRecipe(factory.WithOwnerID(owner.ID))
 	require.NoError(t, repo.Create(ctx, a))
 	require.NoError(t, repo.Create(ctx, b))
 
@@ -431,7 +417,7 @@ func TestRecipeRepo_Update_ReplacesLabels(t *testing.T) {
 	assert.Equal(t, "夕食", got.Labels[0].Name)
 }
 
-// arrangeDeletedRecipe は子テーブル(食材)と共有先を持つレシピを作成後 Delete を実行し、その ID を返す。
+// arrangeDeletedRecipe は子テーブル(食材)を持つレシピを作成後 Delete を実行し、その ID を返す。
 func arrangeDeletedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, string) {
 	t.Helper()
 	testutil.RequireIntegration(t)
@@ -439,11 +425,9 @@ func arrangeDeletedRecipe(t *testing.T) (context.Context, domain.RecipeRepositor
 	ctx := context.Background()
 	repo := NewRecipeRepository(testDB)
 	owner := seedUser(t, "owner")
-	friend := seedUser(t, "friend")
 	r := factory.NewRecipe(
 		factory.WithTitle("削除対象"),
 		factory.WithOwnerID(owner.ID),
-		factory.WithSharedUsers(*friend),
 	)
 	r.Ingredients = []domain.RecipeIngredient{{Name: "卵", Quantity: 2, Unit: "個"}}
 	require.NoError(t, repo.Create(ctx, r))
@@ -472,19 +456,6 @@ func TestRecipeRepo_Delete_CascadesIngredientRows(t *testing.T) {
 	// Act
 	var count int64
 	testDB.Model(&domain.RecipeIngredient{}).Where("recipe_id = ?", id).Count(&count)
-
-	// Assert
-	assert.Zero(t, count)
-}
-
-// レシピを削除した時、中間テーブル(recipe_shares)も FK CASCADE で消えること。
-func TestRecipeRepo_Delete_CascadesShareRows(t *testing.T) {
-	// Arrange
-	_, _, id := arrangeDeletedRecipe(t)
-
-	// Act
-	var count int64
-	testDB.Table("recipe_shares").Where("recipe_id = ?", id).Count(&count)
 
 	// Assert
 	assert.Zero(t, count)

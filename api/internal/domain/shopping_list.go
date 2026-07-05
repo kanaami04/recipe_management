@@ -14,9 +14,9 @@ type ShoppingList struct {
 
 	Items []ShoppingListItem `gorm:"constraint:OnDelete:CASCADE"`
 
-	// リストとユーザーの多対多(共有)。中間テーブル shopping_list_shares は
-	// many2many 定義から自動生成される(recipe_shares と同型)。
-	SharedUsers []User `gorm:"many2many:shopping_list_shares;constraint:OnDelete:CASCADE"`
+	// SharedUsers は「このリストを共有している相手」= グループのメンバー(owner 以外)。
+	// 個別共有は廃止したため永続化せず(gorm:"-")、サービスがグループメンバーから詰める計算値。
+	SharedUsers []User `gorm:"-"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

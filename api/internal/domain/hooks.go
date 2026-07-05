@@ -27,3 +27,4 @@ func (l *RecipeLabel) BeforeCreate(*gorm.DB) error      { return assignID(&l.ID)
 func (l *Label) BeforeCreate(*gorm.DB) error            { return assignID(&l.ID) }
 func (l *ShoppingList) BeforeCreate(*gorm.DB) error     { return assignID(&l.ID) }
 func (i *ShoppingListItem) BeforeCreate(*gorm.DB) error { return assignID(&i.ID) }
+func (g *ShareGroup) BeforeCreate(*gorm.DB) error       { return assignID(&g.ID) }

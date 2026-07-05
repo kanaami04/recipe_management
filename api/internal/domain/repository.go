@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // リポジトリ層のインターフェース。サービス層はこれらに依存する（依存方向を内側へ）。
 // 第一引数の context はリクエスト由来の値（request_id 等）を下位層・GORM ログまで伝播させる。
@@ -9,8 +12,6 @@ type UserRepository interface {
 	FindByUsername(ctx context.Context, username string) (*User, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id string) (*User, error)
-	// FindAllExcept は excludeID を除く全ユーザーを返す（共有先候補用。自分自身を候補に出さない）。
-	FindAllExcept(ctx context.Context, excludeID string) ([]User, error)
 	Create(ctx context.Context, user *User) error
 	// Update は username / email を更新する。
 	Update(ctx context.Context, user *User) error
@@ -69,15 +70,13 @@ type RecipeRepository interface {
 }
 
 type ShoppingListRepository interface {
-	// FindForUser は userID が見るべき買い物リストを返す(無ければ nil)。
-	// 共有されたリストがあればそれを優先し、無ければ userID が所有するリストを返す。
-	FindForUser(ctx context.Context, userID string) (*ShoppingList, error)
-	// FindByID は id のリストを返す(無ければ nil)。所有・共有チェック用。
+	// FindByOwnerID は ownerID が所有する買い物リストを返す(無ければ nil)。
+	// グループ所属時はグループ所有者の ID を渡すことで「グループの 1 リスト」を解決する。
+	FindByOwnerID(ctx context.Context, ownerID string) (*ShoppingList, error)
+	// FindByID は id のリストを返す(無ければ nil)。所有・認可チェック用。
 	FindByID(ctx context.Context, id string) (*ShoppingList, error)
 	// Create は空の買い物リストを 1 件作る。
 	Create(ctx context.Context, list *ShoppingList) error
-	// ReplaceSharedUsers はリストの共有先を list.SharedUsers で置き換える。
-	ReplaceSharedUsers(ctx context.Context, list *ShoppingList) error
 	// AddItem はリストに項目を 1 件追加する。
 	AddItem(ctx context.Context, item *ShoppingListItem) error
 	// SetItemChecked は項目のチェック状態を更新する。
@@ -88,4 +87,26 @@ type ShoppingListRepository interface {
 	DeleteCheckedItems(ctx context.Context, listID string) error
 	// Reorder は listID の項目の表示順を itemIDs の並び(先頭 = position 0)で保存する。
 	Reorder(ctx context.Context, listID string, itemIDs []string) error
+}
+
+type ShareGroupRepository interface {
+	// Create はグループを作成し、所有者をメンバーに加える(トランザクション)。
+	Create(ctx context.Context, group *ShareGroup) error
+	// FindByUserID は userID が所属するグループを返す(無ければ nil)。Members を詰める。
+	FindByUserID(ctx context.Context, userID string) (*ShareGroup, error)
+	// FindByID は id のグループを返す(無ければ nil)。Members を詰める。
+	FindByID(ctx context.Context, id string) (*ShareGroup, error)
+	// FindByInviteCode は招待コードのグループを返す(無ければ nil)。有効期限は service で判定する。
+	FindByInviteCode(ctx context.Context, code string) (*ShareGroup, error)
+	// MemberIDs は userID と同じグループに属する全ユーザー ID(自分を含む)を返す。
+	// どのグループにも属さないときは空スライスを返す。可視性・認可判定に使う。
+	MemberIDs(ctx context.Context, userID string) ([]string, error)
+	// AddMember は userID を groupID のメンバーに加える。
+	AddMember(ctx context.Context, groupID, userID string) error
+	// RemoveMember は userID を groupID のメンバーから外す。
+	RemoveMember(ctx context.Context, groupID, userID string) error
+	// UpdateInviteCode は招待コードと有効期限を差し替える(旧コードを失効させる)。
+	UpdateInviteCode(ctx context.Context, groupID, code string, expiresAt time.Time) error
+	// Delete はグループを解散する(メンバー行は FK CASCADE で消える)。
+	Delete(ctx context.Context, groupID string) error
 }

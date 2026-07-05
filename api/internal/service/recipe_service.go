@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"recipe-backend/internal/domain"
@@ -20,15 +19,22 @@ type RecipeService interface {
 
 type recipeService struct {
 	recipes domain.RecipeRepository
-	users   domain.UserRepository
+	groups  domain.ShareGroupRepository
 }
 
-func NewRecipeService(recipes domain.RecipeRepository, users domain.UserRepository) RecipeService {
-	return &recipeService{recipes: recipes, users: users}
+func NewRecipeService(recipes domain.RecipeRepository, groups domain.ShareGroupRepository) RecipeService {
+	return &recipeService{recipes: recipes, groups: groups}
 }
 
 func (s *recipeService) List(ctx context.Context, userID string) ([]domain.Recipe, error) {
-	return s.recipes.FindAllForUser(ctx, userID)
+	recipes, err := s.recipes.FindAllForUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.fillSharedUsers(ctx, userID, recipes); err != nil {
+		return nil, err
+	}
+	return recipes, nil
 }
 
 // validateExternalURLs は source_url / thumbnail_url を検証する。
@@ -60,13 +66,18 @@ func (s *recipeService) Create(ctx context.Context, userID string, req request.R
 		ThumbnailURL: req.ThumbnailUrl,
 		OwnerID:      userID,
 	}
-	if err := s.buildAssociations(ctx, req, recipe); err != nil {
-		return nil, err
-	}
+	buildAssociations(req, recipe)
 	if err := s.recipes.Create(ctx, recipe); err != nil {
 		return nil, err
 	}
-	return s.recipes.FindByID(ctx, recipe.ID)
+	created, err := s.recipes.FindByID(ctx, recipe.ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.fillSharedUsersOne(ctx, userID, created); err != nil {
+		return nil, err
+	}
+	return created, nil
 }
 
 func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req request.RecipeRequest) (*domain.Recipe, error) {
@@ -80,7 +91,9 @@ func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req
 	if existing == nil {
 		return nil, ErrNotFound
 	}
-	if !canModify(existing, userID) {
+	if ok, err := s.canModify(ctx, existing, userID); err != nil {
+		return nil, err
+	} else if !ok {
 		return nil, ErrForbidden
 	}
 
@@ -91,9 +104,7 @@ func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req
 	existing.SourceURL = req.SourceUrl
 	existing.ThumbnailURL = req.ThumbnailUrl
 	// owner・アーカイブ状態は更新対象外(アーカイブは専用の SetArchived で扱う)
-	if err := s.buildAssociations(ctx, req, existing); err != nil {
-		return nil, err
-	}
+	buildAssociations(req, existing)
 	if err := s.recipes.Update(ctx, existing); err != nil {
 		return nil, err
 	}
@@ -107,6 +118,9 @@ func (s *recipeService) Update(ctx context.Context, userID, recipeID string, req
 		return nil, err
 	}
 	updated.Archived = archived
+	if err := s.fillSharedUsersOne(ctx, userID, updated); err != nil {
+		return nil, err
+	}
 	return updated, nil
 }
 
@@ -120,7 +134,9 @@ func (s *recipeService) SetArchived(ctx context.Context, userID, recipeID string
 	if existing == nil {
 		return ErrNotFound
 	}
-	if !canModify(existing, userID) {
+	if ok, err := s.canModify(ctx, existing, userID); err != nil {
+		return err
+	} else if !ok {
 		return ErrForbidden
 	}
 	return s.recipes.SetArchived(ctx, userID, recipeID, archived)
@@ -134,7 +150,9 @@ func (s *recipeService) Delete(ctx context.Context, userID, recipeID string) err
 	if existing == nil {
 		return ErrNotFound
 	}
-	if !canModify(existing, userID) {
+	if ok, err := s.canModify(ctx, existing, userID); err != nil {
+		return err
+	} else if !ok {
 		return ErrForbidden
 	}
 	return s.recipes.Delete(ctx, existing)
@@ -169,28 +187,15 @@ func (s *recipeService) Reorder(ctx context.Context, userID string, recipeIDs []
 	return s.recipes.Reorder(ctx, userID, deduped)
 }
 
-// buildAssociations はリクエストから label/shared_user/cooking/season を解決し recipe に詰める。
-// label/ingredient/seasoning はレシピ従属の子レコードとして名前をそのまま持つ。
-// shared_user のみ username でユーザーを検索する（無ければエラー）。
-func (s *recipeService) buildAssociations(ctx context.Context, req request.RecipeRequest, recipe *domain.Recipe) error {
+// buildAssociations はリクエストから label/cooking/season を解決し recipe に詰める。
+// いずれもレシピ従属の子レコードとして名前をそのまま持つ。共有はシェアグループで管理するため
+// ここでは扱わない。
+func buildAssociations(req request.RecipeRequest, recipe *domain.Recipe) {
 	labels := make([]domain.RecipeLabel, 0, len(req.Label))
 	for _, l := range req.Label {
 		labels = append(labels, domain.RecipeLabel{Name: l.Name})
 	}
 	recipe.Labels = labels
-
-	shared := make([]domain.User, 0, len(req.SharedUser))
-	for _, su := range req.SharedUser {
-		u, err := s.users.FindByUsername(ctx, su.Username)
-		if err != nil {
-			return err
-		}
-		if u == nil {
-			return fmt.Errorf("%w: %s", ErrSharedUserNotFound, su.Username)
-		}
-		shared = append(shared, *u)
-	}
-	recipe.SharedUsers = shared
 
 	ingredients := make([]domain.RecipeIngredient, 0, len(req.Cooking))
 	for _, c := range req.Cooking {
@@ -211,20 +216,64 @@ func (s *recipeService) buildAssociations(ctx context.Context, req request.Recip
 		})
 	}
 	recipe.Seasonings = seasonings
+}
+
+// canModify は userID が recipe を編集できる(所有者、または owner と同じシェアグループの
+// メンバー)かを返す。グループ内は所有物を全員で共同編集できる。
+func (s *recipeService) canModify(ctx context.Context, r *domain.Recipe, userID string) (bool, error) {
+	if r.OwnerID == userID {
+		return true, nil
+	}
+	memberIDs, err := s.groups.MemberIDs(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	for _, id := range memberIDs {
+		if id == r.OwnerID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// fillSharedUsers は各レシピの SharedUsers に「操作ユーザーのシェアグループのメンバー
+// (各レシピの owner を除く)」を詰める。グループ未所属なら空のまま。
+func (s *recipeService) fillSharedUsers(ctx context.Context, userID string, recipes []domain.Recipe) error {
+	group, err := s.groups.FindByUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if group == nil {
+		return nil
+	}
+	for i := range recipes {
+		recipes[i].SharedUsers = membersExcept(group.Members, recipes[i].OwnerID)
+	}
 	return nil
 }
 
-// canModify は owner もしくは共有先ユーザーであれば true（DRF の IsDisplay 相当）。
-func canModify(r *domain.Recipe, userID string) bool {
-	if r.OwnerID == userID {
-		return true
+// fillSharedUsersOne は 1 件のレシピについて fillSharedUsers と同じ処理を行う。
+func (s *recipeService) fillSharedUsersOne(ctx context.Context, userID string, recipe *domain.Recipe) error {
+	group, err := s.groups.FindByUserID(ctx, userID)
+	if err != nil {
+		return err
 	}
-	for i := range r.SharedUsers {
-		if r.SharedUsers[i].ID == userID {
-			return true
+	if group == nil {
+		return nil
+	}
+	recipe.SharedUsers = membersExcept(group.Members, recipe.OwnerID)
+	return nil
+}
+
+// membersExcept は members から ownerID のユーザーを除いたスライスを返す。
+func membersExcept(members []domain.User, ownerID string) []domain.User {
+	out := make([]domain.User, 0, len(members))
+	for i := range members {
+		if members[i].ID != ownerID {
+			out = append(out, members[i])
 		}
 	}
-	return false
+	return out
 }
 
 // normalizeServings は未指定(0)のとき既定の 1 人前に揃える。

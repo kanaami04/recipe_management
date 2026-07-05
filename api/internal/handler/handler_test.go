@@ -72,7 +72,6 @@ func (m *mockRecipeService) SetArchived(ctx context.Context, userID, recipeID st
 
 type mockUserService struct {
 	getByIDFn       func(ctx context.Context, id string) (*domain.User, error)
-	listFn          func(ctx context.Context, selfID string) ([]domain.User, error)
 	updateFn        func(ctx context.Context, userID, username string) (*domain.User, error)
 	changeEmailFn   func(ctx context.Context, userID, email, password string) (*domain.User, error)
 	changePwFn      func(ctx context.Context, userID, current, next string) error
@@ -84,9 +83,6 @@ type mockUserService struct {
 
 func (m *mockUserService) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	return m.getByIDFn(ctx, id)
-}
-func (m *mockUserService) List(ctx context.Context, selfID string) ([]domain.User, error) {
-	return m.listFn(ctx, selfID)
 }
 func (m *mockUserService) UpdateProfile(ctx context.Context, userID, username string) (*domain.User, error) {
 	return m.updateFn(ctx, userID, username)
@@ -151,7 +147,6 @@ type mockShoppingListService struct {
 	deleteItemFn   func(ctx context.Context, userID, listID, itemID string) (*domain.ShoppingList, error)
 	clearCheckedFn func(ctx context.Context, userID, listID string) (*domain.ShoppingList, error)
 	reorderFn      func(ctx context.Context, userID, listID string, itemIDs []string) (*domain.ShoppingList, error)
-	updateSharesFn func(ctx context.Context, userID, listID string, sharedUsers []request.SharedUserInput) (*domain.ShoppingList, error)
 }
 
 func (m *mockShoppingListService) Get(ctx context.Context, userID string) (*domain.ShoppingList, error) {
@@ -172,6 +167,33 @@ func (m *mockShoppingListService) ClearChecked(ctx context.Context, userID, list
 func (m *mockShoppingListService) Reorder(ctx context.Context, userID, listID string, itemIDs []string) (*domain.ShoppingList, error) {
 	return m.reorderFn(ctx, userID, listID, itemIDs)
 }
-func (m *mockShoppingListService) UpdateShares(ctx context.Context, userID, listID string, sharedUsers []request.SharedUserInput) (*domain.ShoppingList, error) {
-	return m.updateSharesFn(ctx, userID, listID, sharedUsers)
+
+// --- ShareGroupService のモック ---
+
+type mockShareGroupService struct {
+	getMineFn    func(ctx context.Context, userID string) (*domain.ShareGroup, error)
+	createFn     func(ctx context.Context, userID, name string) (*domain.ShareGroup, error)
+	joinFn       func(ctx context.Context, userID, code string) (*domain.ShareGroup, error)
+	leaveFn      func(ctx context.Context, userID string) error
+	removeFn     func(ctx context.Context, ownerID, targetUserID string) error
+	regenerateFn func(ctx context.Context, ownerID string) (*domain.ShareGroup, error)
+}
+
+func (m *mockShareGroupService) GetMine(ctx context.Context, userID string) (*domain.ShareGroup, error) {
+	return m.getMineFn(ctx, userID)
+}
+func (m *mockShareGroupService) Create(ctx context.Context, userID, name string) (*domain.ShareGroup, error) {
+	return m.createFn(ctx, userID, name)
+}
+func (m *mockShareGroupService) Join(ctx context.Context, userID, code string) (*domain.ShareGroup, error) {
+	return m.joinFn(ctx, userID, code)
+}
+func (m *mockShareGroupService) Leave(ctx context.Context, userID string) error {
+	return m.leaveFn(ctx, userID)
+}
+func (m *mockShareGroupService) RemoveMember(ctx context.Context, ownerID, targetUserID string) error {
+	return m.removeFn(ctx, ownerID, targetUserID)
+}
+func (m *mockShareGroupService) RegenerateInviteCode(ctx context.Context, ownerID string) (*domain.ShareGroup, error) {
+	return m.regenerateFn(ctx, ownerID)
 }

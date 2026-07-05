@@ -41,40 +41,6 @@ func TestUserGetByID_NotFound(t *testing.T) {
 	assert.Nil(t, got)
 }
 
-// 自分を含む複数ユーザーがいる時、List で自分自身を除いた一覧が返ること。
-func TestUserList_ExcludesSelf(t *testing.T) {
-	// Arrange
-	ur := &mockUserRepo{all: []domain.User{
-		*factory.NewUser(factory.WithID("u1"), factory.WithUsername("alice")),
-		*factory.NewUser(factory.WithID("u2"), factory.WithUsername("bob")),
-	}}
-	svc := NewUserService(ur, &mockAvatarStorage{})
-
-	// Act
-	users, err := svc.List(context.Background(), "u1")
-
-	// Assert: 自分(u1)を除いた残りだけが返ること
-	require.NoError(t, err)
-	ids := make([]string, len(users))
-	for i, u := range users {
-		ids[i] = u.ID
-	}
-	assert.Equal(t, []string{"u2"}, ids)
-}
-
-// ユーザーが1人もいない時、List で空が返ること。
-func TestUserList_Empty(t *testing.T) {
-	// Arrange
-	svc := NewUserService(&mockUserRepo{}, &mockAvatarStorage{})
-
-	// Act
-	users, err := svc.List(context.Background(), "u1")
-
-	// Assert
-	require.NoError(t, err)
-	assert.Empty(t, users)
-}
-
 // arrangeSelfUser は自分(u1)を byID/byName/byEmail に登録した mock を返す。
 func arrangeSelfUser(opts ...factory.UserOption) *mockUserRepo {
 	base := []factory.UserOption{

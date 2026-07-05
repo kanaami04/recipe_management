@@ -124,29 +124,6 @@ func TestUserRepo_FindByUsername_NotFound(t *testing.T) {
 	assert.Nil(t, got)
 }
 
-// 複数ユーザーがいる時、FindAllExcept で excludeID を除いた残りが ID 昇順で返ること。
-func TestUserRepo_FindAllExcept_ExcludesID(t *testing.T) {
-	// Arrange
-	testutil.RequireIntegration(t)
-	truncateAll(t)
-	ctx := context.Background()
-	repo := NewUserRepository(testDB)
-	alice := seedUser(t, "alice")
-	seedUser(t, "bob")
-	seedUser(t, "carol")
-
-	// Act
-	users, err := repo.FindAllExcept(ctx, alice.ID)
-
-	// Assert: alice を除き ID 昇順で返ること
-	require.NoError(t, err)
-	names := make([]string, len(users))
-	for i, u := range users {
-		names[i] = u.Username
-	}
-	assert.Equal(t, []string{"bob", "carol"}, names)
-}
-
 // プロフィールを更新した時、username が保存されること。
 func TestUserRepo_Update_SavesUsername(t *testing.T) {
 	// Arrange
@@ -276,13 +253,14 @@ func TestUserRepo_Delete_CascadesOwnedLabels(t *testing.T) {
 	assert.Zero(t, count)
 }
 
-// アカウントを削除しても、他人が所有し自分に共有していたレシピは残ること。
+// アカウントを削除しても、同じグループの他人が所有していたレシピは残ること。
 func TestUserRepo_Delete_KeepsOthersSharedRecipe(t *testing.T) {
-	// Arrange: bob 所有のレシピを alice に共有
+	// Arrange: bob 所有のレシピを、bob と alice が同じグループで共有
 	ctx, repo, alice := arrangeUserRepo(t)
 	bob := seedUser(t, "bob")
+	seedShareGroup(t, bob, alice) // 所有者 bob、メンバー alice
 	recipeRepo := NewRecipeRepository(testDB)
-	shared := factory.NewRecipe(factory.WithOwnerID(bob.ID), factory.WithSharedUsers(*alice))
+	shared := factory.NewRecipe(factory.WithOwnerID(bob.ID))
 	require.NoError(t, recipeRepo.Create(ctx, shared))
 
 	// Act: alice を削除

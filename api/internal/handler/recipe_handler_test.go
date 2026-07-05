@@ -254,17 +254,6 @@ func TestRecipeHandler_Update_Forbidden(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 }
 
-// 共有先ユーザーが存在しない時、400 が返ること。
-func TestRecipeHandler_Update_SharedUserNotFound(t *testing.T) {
-	// Arrange & Act
-	rec := serveUpdate(t, func(_ context.Context, _, _ string, _ request.RecipeRequest) (*domain.Recipe, error) {
-		return nil, service.ErrSharedUserNotFound
-	}, testRecipeID, `{"title":"更新"}`)
-
-	// Assert
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-}
-
 // サービスが想定外のエラーを返した時、500 が返ること。
 func TestRecipeHandler_Update_InternalError(t *testing.T) {
 	// Arrange & Act

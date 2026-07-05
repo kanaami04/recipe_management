@@ -148,8 +148,6 @@ func mapServiceError(err error) error {
 		return echo.NewHTTPError(http.StatusNotFound, "not found")
 	case errors.Is(err, service.ErrForbidden):
 		return echo.NewHTTPError(http.StatusForbidden, "you do not have permission to perform this action")
-	case errors.Is(err, service.ErrSharedUserNotFound):
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case errors.Is(err, service.ErrDuplicate):
 		return echo.NewHTTPError(http.StatusConflict, "already exists")
 	case errors.Is(err, service.ErrUserAlreadyExists):
@@ -158,6 +156,14 @@ func mapServiceError(err error) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "現在のパスワードが違います")
 	case errors.Is(err, service.ErrInvalidURL):
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid url")
+	case errors.Is(err, service.ErrAlreadyInGroup):
+		return echo.NewHTTPError(http.StatusConflict, "既にシェアグループに参加しています")
+	case errors.Is(err, service.ErrNotInGroup):
+		return echo.NewHTTPError(http.StatusNotFound, "シェアグループに参加していません")
+	case errors.Is(err, service.ErrNotGroupOwner):
+		return echo.NewHTTPError(http.StatusForbidden, "この操作はグループの所有者のみ可能です")
+	case errors.Is(err, service.ErrInviteCodeInvalid):
+		return echo.NewHTTPError(http.StatusBadRequest, "招待コードが無効か期限切れです")
 	default:
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}

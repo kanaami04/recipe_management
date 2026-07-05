@@ -39,7 +39,6 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 			authorized.POST("/user_info/avatar/", h.User.CreateAvatarUploadURL)
 			authorized.PUT("/user_info/avatar/", h.User.ConfirmAvatar)
 			authorized.DELETE("/user_info/avatar/", h.User.DeleteAvatar)
-			authorized.GET("/users/", h.User.List)
 		}
 
 		// ラベル
@@ -64,13 +63,22 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 		// 買い物リスト
 		{
 			authorized.GET("/shopping_list/", h.ShoppingList.Get)
-			authorized.PUT("/shopping_list/:id/shares/", h.ShoppingList.UpdateShares)
 			authorized.POST("/shopping_list/:id/items/", h.ShoppingList.AddItem)
 			// checked / reorder は静的パス。:item_id より先に登録して曖昧さを避ける。
 			authorized.DELETE("/shopping_list/:id/items/checked/", h.ShoppingList.ClearChecked)
 			authorized.PUT("/shopping_list/:id/items/reorder/", h.ShoppingList.Reorder)
 			authorized.PUT("/shopping_list/:id/items/:item_id/", h.ShoppingList.UpdateItem)
 			authorized.DELETE("/shopping_list/:id/items/:item_id/", h.ShoppingList.DeleteItem)
+		}
+
+		// シェアグループ
+		{
+			authorized.GET("/share_group/", h.ShareGroup.Get)
+			authorized.POST("/share_group/", h.ShareGroup.Create)
+			authorized.POST("/share_group/join/", h.ShareGroup.Join)
+			authorized.POST("/share_group/leave/", h.ShareGroup.Leave)
+			authorized.POST("/share_group/invite_code/", h.ShareGroup.RegenerateInviteCode)
+			authorized.DELETE("/share_group/members/:user_id/", h.ShareGroup.RemoveMember)
 		}
 
 		// OGP(外部レシピ URL のサムネイル取得)

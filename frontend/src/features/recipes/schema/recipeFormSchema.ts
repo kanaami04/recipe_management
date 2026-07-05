@@ -54,7 +54,6 @@ export const recipeFormSchema = z
     sourceUrl: z.string(),
     thumbnailUrl: z.string(),
     label: z.array(z.string()),
-    sharedUser: z.array(z.string()),
     // 空行は無視しつつ、入力途中の行は名前・単位を必須にする(モード共通)。
     ingredients: z.array(materialSchema).superRefine(validateRows),
     seasoning: z.array(materialSchema).superRefine(validateRows),
@@ -116,7 +115,6 @@ export function toFormValues(
     sourceUrl: recipe?.source_url ?? '',
     thumbnailUrl: recipe?.thumbnail_url ?? '',
     label: recipe?.label.map((l) => l.name) ?? [],
-    sharedUser: recipe?.shared_user.map((u) => u.username) ?? [],
     ingredients: recipe?.cooking.map((c) => ({
       name: c.ingredients.name,
       quantity: c.quantity,
@@ -156,7 +154,6 @@ export function toRecipeRequest(values: RecipeFormValues): RecipeRequest {
     source_url: isUrl ? values.sourceUrl : '',
     thumbnail_url: isUrl ? values.thumbnailUrl : '',
     label: values.label.map((name) => ({ name })),
-    shared_user: values.sharedUser.map((username) => ({ username })),
     // 未使用の空行は送らない(検証で除外済みだが、送信でも念のため除く)。
     cooking: isUrl
       ? []
