@@ -355,6 +355,107 @@ func TestRecipeRepo_Delete_CascadesRecipeOrders(t *testing.T) {
 	assert.Zero(t, count)
 }
 
+// countRows は table の (user_id, recipe_id) に一致する行数を返す。掃除結果の検証に使う。
+func countRows(t *testing.T, table, userID, recipeID string) int64 {
+	t.Helper()
+	var count int64
+	if err := testDB.Table(table).
+		Where("user_id = ? AND recipe_id = ?", userID, recipeID).
+		Count(&count).Error; err != nil {
+		t.Fatalf("count %s: %v", table, err)
+	}
+	return count
+}
+
+// 共有が解けて見えなくなったレシピについて、PruneRecipeState がそのユーザーの
+// recipe_archives 行を消すこと。
+func TestRecipeRepo_PruneRecipeState_RemovesOrphanedArchive(t *testing.T) {
+	// Arrange: friend が owner のレシピをアーカイブした後、グループから外れる
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	friend := seedUser(t, "friend")
+	group := seedShareGroup(t, owner, friend)
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.SetArchived(ctx, friend.ID, r.ID, true))
+	require.NoError(t, NewShareGroupRepository(testDB).RemoveMember(ctx, group.ID, friend.ID))
+
+	// Act
+	require.NoError(t, repo.PruneRecipeState(ctx, friend.ID))
+
+	// Assert
+	assert.Zero(t, countRows(t, "recipe_archives", friend.ID, r.ID))
+}
+
+// 共有が解けて見えなくなったレシピについて、PruneRecipeState がそのユーザーの
+// recipe_orders 行を消すこと。
+func TestRecipeRepo_PruneRecipeState_RemovesOrphanedOrder(t *testing.T) {
+	// Arrange: friend が owner のレシピを並べ替えた後、グループから外れる
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	friend := seedUser(t, "friend")
+	group := seedShareGroup(t, owner, friend)
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.Reorder(ctx, friend.ID, []string{r.ID}))
+	require.NoError(t, NewShareGroupRepository(testDB).RemoveMember(ctx, group.ID, friend.ID))
+
+	// Act
+	require.NoError(t, repo.PruneRecipeState(ctx, friend.ID))
+
+	// Assert
+	assert.Zero(t, countRows(t, "recipe_orders", friend.ID, r.ID))
+}
+
+// 自分が所有するレシピについては、PruneRecipeState がアーカイブ行を残すこと(見えるため)。
+func TestRecipeRepo_PruneRecipeState_KeepsOwnRecipe(t *testing.T) {
+	// Arrange: friend が自分のレシピをアーカイブし、グループから外れる
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	friend := seedUser(t, "friend")
+	group := seedShareGroup(t, owner, friend)
+	r := factory.NewRecipe(factory.WithOwnerID(friend.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.SetArchived(ctx, friend.ID, r.ID, true))
+	require.NoError(t, NewShareGroupRepository(testDB).RemoveMember(ctx, group.ID, friend.ID))
+
+	// Act
+	require.NoError(t, repo.PruneRecipeState(ctx, friend.ID))
+
+	// Assert
+	assert.Equal(t, int64(1), countRows(t, "recipe_archives", friend.ID, r.ID))
+}
+
+// まだ同じグループで見えるレシピについては、PruneRecipeState がアーカイブ行を残すこと。
+func TestRecipeRepo_PruneRecipeState_KeepsStillSharedRecipe(t *testing.T) {
+	// Arrange: friend が owner のレシピをアーカイブし、グループには留まったまま
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewRecipeRepository(testDB)
+	owner := seedUser(t, "owner")
+	friend := seedUser(t, "friend")
+	seedShareGroup(t, owner, friend)
+	r := factory.NewRecipe(factory.WithOwnerID(owner.ID))
+	require.NoError(t, repo.Create(ctx, r))
+	require.NoError(t, repo.SetArchived(ctx, friend.ID, r.ID, true))
+
+	// Act
+	require.NoError(t, repo.PruneRecipeState(ctx, friend.ID))
+
+	// Assert
+	assert.Equal(t, int64(1), countRows(t, "recipe_archives", friend.ID, r.ID))
+}
+
 // arrangeUpdatedRecipe は初版レシピを作成後、別の食材・別ラベルに差し替える Update を実行し、
 // その ID を返す。置き換えセマンティクスを1テスト1観点で検証するための共通セットアップ。
 func arrangeUpdatedRecipe(t *testing.T) (context.Context, domain.RecipeRepository, string) {

@@ -18,6 +18,8 @@ type mockRecipeRepo struct {
 	reorderedIDs []string
 	// archived[userID][recipeID] = true でアーカイブ済み。
 	archived map[string]map[string]bool
+	// prunedUserIDs は PruneRecipeState を呼ばれたユーザーを呼び出し順に記録する。
+	prunedUserIDs []string
 }
 
 func newMockRecipeRepo() *mockRecipeRepo {
@@ -76,6 +78,10 @@ func (m *mockRecipeRepo) SetArchived(_ context.Context, userID, recipeID string,
 }
 func (m *mockRecipeRepo) IsArchived(_ context.Context, userID, recipeID string) (bool, error) {
 	return m.archived[userID][recipeID], nil
+}
+func (m *mockRecipeRepo) PruneRecipeState(_ context.Context, userID string) error {
+	m.prunedUserIDs = append(m.prunedUserIDs, userID)
+	return nil
 }
 
 // --- UserRepository のモック ---
