@@ -24,8 +24,9 @@ func (r *shareGroupRepository) Create(ctx context.Context, group *domain.ShareGr
 		if err := tx.Omit("Owner", "Members").Create(group).Error; err != nil {
 			return err
 		}
-		// 所有者自身もメンバー行を持つ。
-		member := &domain.ShareGroupMember{GroupID: group.ID, UserID: group.OwnerID}
+		// 所有者自身もメンバー行を持つ(常に統合設定 true。自分の所有リストがそのまま
+		// グループの共有リストになるため、この値自体は本人には意味を持たない)。
+		member := &domain.ShareGroupMember{GroupID: group.ID, UserID: group.OwnerID, ShareShoppingList: true}
 		return tx.Omit("Group", "User").Create(member).Error
 	})
 }
@@ -99,15 +100,54 @@ func (r *shareGroupRepository) MemberIDs(ctx context.Context, userID string) ([]
 	return ids, err
 }
 
-func (r *shareGroupRepository) AddMember(ctx context.Context, groupID, userID string) error {
-	member := &domain.ShareGroupMember{GroupID: groupID, UserID: userID}
-	return r.db.WithContext(ctx).Omit("Group", "User").Create(member).Error
+func (r *shareGroupRepository) AddMember(ctx context.Context, groupID, userID string, shareShoppingList bool) error {
+	// ShareShoppingList は false も意図した値として書き込みたいため map で Create する。
+	// 構造体 Create だと、default タグ付きフィールドがゼロ値(false)のとき gorm が INSERT
+	// から省いて DB 側の default(true)に化けてしまう(Select で明示指定しても防げない)。
+	// map Create は struct Create と違い autoCreateTime を特別扱いしないため、
+	// joined_at も明示的に渡す(渡さないと NULL のまま入ってしまう)。
+	return r.db.WithContext(ctx).
+		Model(&domain.ShareGroupMember{}).
+		Create(map[string]any{
+			"group_id":            groupID,
+			"user_id":             userID,
+			"share_shopping_list": shareShoppingList,
+			"joined_at":           time.Now(),
+		}).Error
 }
 
 func (r *shareGroupRepository) RemoveMember(ctx context.Context, groupID, userID string) error {
 	return r.db.WithContext(ctx).
 		Where("group_id = ? AND user_id = ?", groupID, userID).
 		Delete(&domain.ShareGroupMember{}).Error
+}
+
+func (r *shareGroupRepository) FindMembership(ctx context.Context, userID string) (*domain.ShareGroupMember, error) {
+	var member domain.ShareGroupMember
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&member).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &member, nil
+}
+
+func (r *shareGroupRepository) SharingMemberIDs(ctx context.Context, groupID string) ([]string, error) {
+	var ids []string
+	err := r.db.WithContext(ctx).
+		Model(&domain.ShareGroupMember{}).
+		Where("group_id = ? AND share_shopping_list = ?", groupID, true).
+		Pluck("user_id", &ids).Error
+	return ids, err
+}
+
+func (r *shareGroupRepository) UpdateShareShoppingList(ctx context.Context, userID string, share bool) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.ShareGroupMember{}).
+		Where("user_id = ?", userID).
+		Update("share_shopping_list", share).Error
 }
 
 func (r *shareGroupRepository) UpdateInviteCode(ctx context.Context, groupID, code string, expiresAt time.Time) error {

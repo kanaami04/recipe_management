@@ -792,6 +792,31 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/share_group/shopping_list_sharing/:
+    put:
+      tags: [share-group]
+      summary: 自分の買い物リストのグループ統合設定を切り替える
+      operationId: updateShoppingListSharing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShoppingListSharingRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareGroupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/share_group/members/{user_id}/:
     parameters:
       - name: user_id
@@ -1353,17 +1378,37 @@ components:
 
     JoinShareGroupRequest:
       type: object
-      required: [invite_code]
+      required: [invite_code, share_shopping_list]
       properties:
         invite_code:
           type: string
           x-oapi-codegen-extra-tags:
             validate: required
+        share_shopping_list:
+          type: boolean
+          description: >-
+            true ならグループの買い物リストへ統合する(自分の個人リストは物理削除される)。
+            false なら個人の買い物リストを維持する(グループの共有リストは見えない)。
+          x-go-type-skip-optional-pointer: true
+
+    UpdateShoppingListSharingRequest:
+      type: object
+      required: [share_shopping_list]
+      properties:
+        share_shopping_list:
+          type: boolean
+          description: >-
+            true にすると買い物リストをグループへ統合する(自分の個人リストは物理削除される)。
+            false にすると個人運用に戻す(次回アクセス時に新規の空リストができる)。
+          x-go-type-skip-optional-pointer: true
 
     ShareGroupResponse:
       type: object
-      description: シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
-      required: [id, name, owner, members, invite_code, invite_code_expires_at, is_owner]
+      description: >-
+        シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
+        share_shopping_list は取得ユーザー自身の買い物リスト統合設定。
+      required:
+        [id, name, owner, members, invite_code, invite_code_expires_at, is_owner, share_shopping_list]
       properties:
         id:
           type: string
@@ -1384,6 +1429,8 @@ components:
           type: string
           description: 'JST。形式: YYYY-MM-DD HH:mm'
         is_owner:
+          type: boolean
+        share_shopping_list:
           type: boolean
 
 security:

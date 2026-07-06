@@ -15,6 +15,12 @@ type ShareGroupMember struct {
 	Group    ShareGroup `gorm:"foreignKey:GroupID;constraint:OnDelete:CASCADE"`
 	User     User       `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 	JoinedAt time.Time  `gorm:"autoCreateTime"`
+
+	// ShareShoppingList は「買い物リストをグループ所有者のリストへ統合するか」の自分自身の設定。
+	// true: グループ所有者のリストを共同編集する(既定)。false: 個人の買い物リストを使う
+	// (グループの共有リストは見えない)。true にした瞬間、自分の個人リストは物理削除される
+	// (service 層。統合をやめて個人運用に戻した後は次回アクセス時に新規の空リストができる)。
+	ShareShoppingList bool `gorm:"not null;default:true"`
 }
 
 func (ShareGroupMember) TableName() string { return "share_group_members" }

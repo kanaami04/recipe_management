@@ -221,11 +221,16 @@ export const zCreateShareGroupRequest = z.object({
 });
 
 export const zJoinShareGroupRequest = z.object({
-    invite_code: z.string()
+    invite_code: z.string(),
+    share_shopping_list: z.boolean()
+});
+
+export const zUpdateShoppingListSharingRequest = z.object({
+    share_shopping_list: z.boolean()
 });
 
 /**
- * シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
+ * シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。 share_shopping_list は取得ユーザー自身の買い物リスト統合設定。
  */
 export const zShareGroupResponse = z.object({
     id: z.uuid(),
@@ -234,7 +239,8 @@ export const zShareGroupResponse = z.object({
     members: z.array(zUserListItem),
     invite_code: z.string(),
     invite_code_expires_at: z.string(),
-    is_owner: z.boolean()
+    is_owner: z.boolean(),
+    share_shopping_list: z.boolean()
 });
 
 export const zLoginBody = zTokenRequest;
@@ -488,6 +494,13 @@ export const zLeaveShareGroupResponse = z.void();
  * 再発行成功
  */
 export const zRegenerateInviteCodeResponse = zShareGroupResponse;
+
+export const zUpdateShoppingListSharingBody = zUpdateShoppingListSharingRequest;
+
+/**
+ * 更新成功
+ */
+export const zUpdateShoppingListSharingResponse = zShareGroupResponse;
 
 export const zRemoveShareGroupMemberPath = z.object({
     user_id: z.uuid()

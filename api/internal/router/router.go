@@ -78,6 +78,7 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 			authorized.POST("/share_group/join/", h.ShareGroup.Join)
 			authorized.POST("/share_group/leave/", h.ShareGroup.Leave)
 			authorized.POST("/share_group/invite_code/", h.ShareGroup.RegenerateInviteCode)
+			authorized.PUT("/share_group/shopping_list_sharing/", h.ShareGroup.UpdateShoppingListSharing)
 			authorized.DELETE("/share_group/members/:user_id/", h.ShareGroup.RemoveMember)
 		}
 

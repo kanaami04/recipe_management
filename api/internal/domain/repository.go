@@ -87,6 +87,10 @@ type ShoppingListRepository interface {
 	DeleteCheckedItems(ctx context.Context, listID string) error
 	// Reorder は listID の項目の表示順を itemIDs の並び(先頭 = position 0)で保存する。
 	Reorder(ctx context.Context, listID string, itemIDs []string) error
+	// DeleteByOwnerID は ownerID が所有する買い物リストを物理削除する(無ければ何もしない)。
+	// 項目は FK の ON DELETE CASCADE で一緒に消える。グループの共有リストへ統合するとき、
+	// 統合前の個人リストを消すために使う。
+	DeleteByOwnerID(ctx context.Context, ownerID string) error
 }
 
 type ShareGroupRepository interface {
@@ -101,10 +105,19 @@ type ShareGroupRepository interface {
 	// MemberIDs は userID と同じグループに属する全ユーザー ID(自分を含む)を返す。
 	// どのグループにも属さないときは空スライスを返す。可視性・認可判定に使う。
 	MemberIDs(ctx context.Context, userID string) ([]string, error)
-	// AddMember は userID を groupID のメンバーに加える。
-	AddMember(ctx context.Context, groupID, userID string) error
+	// AddMember は userID を groupID のメンバーに加える。shareShoppingList は参加時点の
+	// 買い物リスト統合設定(true ならグループ所有者のリストを共同編集する)。
+	AddMember(ctx context.Context, groupID, userID string, shareShoppingList bool) error
 	// RemoveMember は userID を groupID のメンバーから外す。
 	RemoveMember(ctx context.Context, groupID, userID string) error
+	// FindMembership は userID 自身の ShareGroupMember 行を返す(どのグループにも属さなければ nil)。
+	// ShareShoppingList など本人の所属設定を読むのに使う。
+	FindMembership(ctx context.Context, userID string) (*ShareGroupMember, error)
+	// SharingMemberIDs は groupID のメンバーのうち、買い物リストをグループに統合している
+	// (ShareShoppingList = true)ユーザー ID を返す(所有者を含む)。
+	SharingMemberIDs(ctx context.Context, groupID string) ([]string, error)
+	// UpdateShareShoppingList は userID 自身の買い物リスト統合設定を更新する。
+	UpdateShareShoppingList(ctx context.Context, userID string, share bool) error
 	// UpdateInviteCode は招待コードと有効期限を差し替える(旧コードを失効させる)。
 	UpdateInviteCode(ctx context.Context, groupID, code string, expiresAt time.Time) error
 	// Delete はグループを解散する(メンバー行は FK CASCADE で消える)。

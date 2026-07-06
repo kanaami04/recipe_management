@@ -109,3 +109,10 @@ func (r *shoppingListRepository) DeleteCheckedItems(ctx context.Context, listID 
 		Where("shopping_list_id = ? AND checked = ?", listID, true).
 		Delete(&domain.ShoppingListItem{}).Error
 }
+
+func (r *shoppingListRepository) DeleteByOwnerID(ctx context.Context, ownerID string) error {
+	// 項目は FK の ON DELETE CASCADE で一緒に消える。無ければ 0 件影響で成功扱い。
+	return r.db.WithContext(ctx).
+		Where("owner_id = ?", ownerID).
+		Delete(&domain.ShoppingList{}).Error
+}

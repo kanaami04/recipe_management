@@ -93,7 +93,7 @@ func TestShareGroupHandler_Create_Conflict(t *testing.T) {
 }
 
 // serveGroupJoin は joinFn を差し替えたハンドラに POST /api/share_group/join/ し結果を返す。
-func serveGroupJoin(t *testing.T, joinFn func(context.Context, string, string) (*domain.ShareGroup, error), body string) *httptest.ResponseRecorder {
+func serveGroupJoin(t *testing.T, joinFn func(context.Context, string, string, bool) (*domain.ShareGroup, error), body string) *httptest.ResponseRecorder {
 	t.Helper()
 	e := newTestEcho()
 	h := newShareGroupHandler(&mockShareGroupService{joinFn: joinFn})
@@ -106,21 +106,38 @@ func serveGroupJoin(t *testing.T, joinFn func(context.Context, string, string) (
 // 招待コードで参加した時、200 が返ること。
 func TestShareGroupHandler_Join_Returns200(t *testing.T) {
 	// Arrange & Act
-	rec := serveGroupJoin(t, func(_ context.Context, _, _ string) (*domain.ShareGroup, error) {
+	rec := serveGroupJoin(t, func(_ context.Context, _, _ string, _ bool) (*domain.ShareGroup, error) {
 		return sampleGroup(), nil
-	}, `{"invite_code":"CODE1234"}`)
+	}, `{"invite_code":"CODE1234","share_shopping_list":true}`)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, rec.Code)
 }
 
+// 買い物リストを統合する選択が service にそのまま渡ること。
+func TestShareGroupHandler_Join_PassesShareShoppingList(t *testing.T) {
+	// Arrange
+	var got bool
+	joinFn := func(_ context.Context, _, _ string, share bool) (*domain.ShareGroup, error) {
+		got = share
+		return sampleGroup(), nil
+	}
+
+	// Act
+	rec := serveGroupJoin(t, joinFn, `{"invite_code":"CODE1234","share_shopping_list":false}`)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.False(t, got)
+}
+
 // invite_code が空の時、サービスを呼ばず 400 が返ること。
 func TestShareGroupHandler_Join_ValidationError(t *testing.T) {
 	// Arrange & Act
-	rec := serveGroupJoin(t, func(_ context.Context, _, _ string) (*domain.ShareGroup, error) {
+	rec := serveGroupJoin(t, func(_ context.Context, _, _ string, _ bool) (*domain.ShareGroup, error) {
 		t.Fatal("validation fail 時に service を呼んではいけない")
 		return nil, nil
-	}, `{"invite_code":""}`)
+	}, `{"invite_code":"","share_shopping_list":true}`)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -129,9 +146,9 @@ func TestShareGroupHandler_Join_ValidationError(t *testing.T) {
 // 無効な招待コードでサービスが ErrInviteCodeInvalid を返した時、400 が返ること。
 func TestShareGroupHandler_Join_InvalidCode(t *testing.T) {
 	// Arrange & Act
-	rec := serveGroupJoin(t, func(_ context.Context, _, _ string) (*domain.ShareGroup, error) {
+	rec := serveGroupJoin(t, func(_ context.Context, _, _ string, _ bool) (*domain.ShareGroup, error) {
 		return nil, service.ErrInviteCodeInvalid
-	}, `{"invite_code":"NOPE"}`)
+	}, `{"invite_code":"NOPE","share_shopping_list":true}`)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -196,6 +213,66 @@ func TestShareGroupHandler_Regenerate_Forbidden(t *testing.T) {
 	rec := serveGroupRegenerate(func(_ context.Context, _ string) (*domain.ShareGroup, error) {
 		return nil, service.ErrNotGroupOwner
 	})
+
+	// Assert
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+// serveUpdateShoppingListSharing は setSharingFn / getMineFn を差し替えたハンドラに
+// PUT .../shopping_list_sharing/ し結果を返す。
+func serveUpdateShoppingListSharing(
+	setSharingFn func(context.Context, string, bool) error,
+	getMineFn func(context.Context, string) (*domain.ShareGroup, error),
+	body string,
+) *httptest.ResponseRecorder {
+	e := newTestEcho()
+	h := newShareGroupHandler(&mockShareGroupService{setSharingFn: setSharingFn, getMineFn: getMineFn})
+	e.PUT("/api/share_group/shopping_list_sharing/", h.UpdateShoppingListSharing)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, jsonRequest(http.MethodPut, "/api/share_group/shopping_list_sharing/", body))
+	return rec
+}
+
+// 買い物リストの統合設定を切り替えた時、200 が返ること。
+func TestShareGroupHandler_UpdateShoppingListSharing_Returns200(t *testing.T) {
+	// Arrange & Act
+	rec := serveUpdateShoppingListSharing(
+		func(_ context.Context, _ string, _ bool) error { return nil },
+		func(_ context.Context, _ string) (*domain.ShareGroup, error) { return sampleGroup(), nil },
+		`{"share_shopping_list":true}`,
+	)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+// 未所属でサービスが ErrNotInGroup を返した時、404 が返ること。
+func TestShareGroupHandler_UpdateShoppingListSharing_NotInGroup(t *testing.T) {
+	// Arrange & Act
+	rec := serveUpdateShoppingListSharing(
+		func(_ context.Context, _ string, _ bool) error { return service.ErrNotInGroup },
+		func(_ context.Context, _ string) (*domain.ShareGroup, error) {
+			t.Fatal("SetShoppingListSharing 失敗時に GetMine を呼んではいけない")
+			return nil, nil
+		},
+		`{"share_shopping_list":true}`,
+	)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+// 所有者がサービスから ErrForbidden を受け取った時、403 が返ること。
+func TestShareGroupHandler_UpdateShoppingListSharing_OwnerForbidden(t *testing.T) {
+	// Arrange & Act
+	rec := serveUpdateShoppingListSharing(
+		func(_ context.Context, _ string, _ bool) error { return service.ErrForbidden },
+		func(_ context.Context, _ string) (*domain.ShareGroup, error) {
+			t.Fatal("SetShoppingListSharing 失敗時に GetMine を呼んではいけない")
+			return nil, nil
+		},
+		`{"share_shopping_list":true}`,
+	)
 
 	// Assert
 	assert.Equal(t, http.StatusForbidden, rec.Code)

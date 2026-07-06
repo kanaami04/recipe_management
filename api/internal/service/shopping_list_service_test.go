@@ -57,6 +57,86 @@ func TestShoppingListGet_UsesGroupOwnersList(t *testing.T) {
 	assert.Equal(t, "l1", list.ID)
 }
 
+// グループ所属でも買い物リストの統合をやめたメンバーは、Get で自分自身のリストが
+// 返ること(グループ所有者のリストへは倒さない)。
+func TestShoppingListGet_PersonalWhenSharingDisabled(t *testing.T) {
+	// Arrange
+	lr := newMockShoppingListRepo()
+	lr.store["lOwner"] = &domain.ShoppingList{ID: "lOwner", OwnerID: "uOwner"}
+	lr.store["lMember"] = &domain.ShoppingList{ID: "lMember", OwnerID: "uMember"}
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "uOwner", "uMember")
+	gr.shareShoppingList["uMember"] = false // 統合をやめて個人運用
+	svc := NewShoppingListService(lr, gr)
+
+	// Act
+	list, err := svc.Get(context.Background(), "uMember")
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, "lMember", list.ID)
+}
+
+// グループの共有リストの SharedUsers には、統合しているメンバーだけが含まれること
+// (統合をやめたメンバーは除外される)。
+func TestShoppingListGet_SharedUsersExcludesOptedOutMembers(t *testing.T) {
+	// Arrange
+	lr := newMockShoppingListRepo()
+	lr.store["lOwner"] = &domain.ShoppingList{ID: "lOwner", OwnerID: "uOwner"}
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "uOwner", "uSharing", "uOptedOut")
+	gr.shareShoppingList["uOptedOut"] = false
+	svc := NewShoppingListService(lr, gr)
+
+	// Act
+	list, err := svc.Get(context.Background(), "uOwner")
+
+	// Assert
+	require.NoError(t, err)
+	sharedIDs := make([]string, 0, len(list.SharedUsers))
+	for _, u := range list.SharedUsers {
+		sharedIDs = append(sharedIDs, u.ID)
+	}
+	assert.ElementsMatch(t, []string{"uSharing"}, sharedIDs)
+}
+
+// 統合をやめたメンバー自身の個人リストは、グループに属していても誰とも共有されて
+// いない(SharedUsers が空)こと。
+func TestShoppingListGet_OptedOutMembersOwnListHasNoSharedUsers(t *testing.T) {
+	// Arrange
+	lr := newMockShoppingListRepo()
+	lr.store["lMember"] = &domain.ShoppingList{ID: "lMember", OwnerID: "uMember"}
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "uOwner", "uMember")
+	gr.shareShoppingList["uMember"] = false
+	svc := NewShoppingListService(lr, gr)
+
+	// Act
+	list, err := svc.Get(context.Background(), "uMember")
+
+	// Assert
+	require.NoError(t, err)
+	assert.Empty(t, list.SharedUsers)
+}
+
+// 統合をやめたメンバーがグループ所有者のリストを操作しようとした時、ErrForbidden が
+// 返ること(自分のリストは使えるが、統合していないので共有リストは操作できない)。
+func TestShoppingListAddItem_ForbiddenForOptedOutMember(t *testing.T) {
+	// Arrange
+	lr := newMockShoppingListRepo()
+	lr.store["lOwner"] = &domain.ShoppingList{ID: "lOwner", OwnerID: "uOwner"}
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "uOwner", "uMember")
+	gr.shareShoppingList["uMember"] = false
+	svc := NewShoppingListService(lr, gr)
+
+	// Act
+	_, err := svc.AddItem(context.Background(), "uMember", "lOwner", "牛乳")
+
+	// Assert
+	assert.ErrorIs(t, err, ErrForbidden)
+}
+
 // 所有者が項目を追加した時、名前付きでリポジトリに保存されること。
 func TestShoppingListAddItem_Saves(t *testing.T) {
 	// Arrange
