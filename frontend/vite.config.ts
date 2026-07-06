@@ -28,6 +28,7 @@ const pwa = () =>
       description: '自分のレシピを登録・検索できる管理アプリ',
       lang: 'ja',
       display: 'standalone',
+      orientation: 'portrait',
       start_url: '/',
       scope: '/',
       theme_color: '#ffffff',
