@@ -27,9 +27,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* PWA。framework mode では vite-plugin-pwa の自動注入が
             効かないため manifest/アイコンを手書きする(ワークアラウンド③)。 */}
         <meta name="theme-color" content="#ffffff" />
+        <title>cookience</title>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
+        {/* ブランドワードマーク用フォント。ロゴのみで使うため軽量に絞る。 */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <Meta />
         <Links />
       </head>

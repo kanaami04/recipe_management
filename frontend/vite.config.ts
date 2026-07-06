@@ -23,8 +23,8 @@ const pwa = () =>
     // framework mode の client 出力先。既定(dist)のままだと sw.js が迷子になる。
     outDir: 'build/client',
     manifest: {
-      name: 'レシピ管理',
-      short_name: 'レシピ',
+      name: 'cookience',
+      short_name: 'cookience',
       description: '自分のレシピを登録・検索できる管理アプリ',
       lang: 'ja',
       display: 'standalone',
