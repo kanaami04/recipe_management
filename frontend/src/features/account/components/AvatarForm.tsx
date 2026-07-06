@@ -17,7 +17,7 @@ import { Button } from '@/shared/ui/button'
 // アップロードを許可する画像形式(サーバの oneof と一致させる)と上限サイズ。
 type ContentType = CreateAvatarUploadUrlRequest['content_type']
 const ALLOWED_TYPES: ContentType[] = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_BYTES = 5 * 1024 * 1024 // 5MB
+const MAX_BYTES = 20 * 1024 * 1024 // 20MB
 
 // プロフィール画像の変更・削除フォーム。
 // アップロードは「署名付き URL 発行 → S3 へ直 PUT → 確定」の 3 段階。
@@ -72,7 +72,7 @@ export function AvatarForm({ user }: { user: UserInfoResponse }) {
       return
     }
     if (file.size > MAX_BYTES) {
-      toast.error('画像は 5MB 以下にしてください')
+      toast.error('画像は 20MB 以下にしてください')
       return
     }
     upload.mutate(file)
@@ -114,7 +114,7 @@ export function AvatarForm({ user }: { user: UserInfoResponse }) {
             </Button>
           )}
         </div>
-        <p className="text-muted-foreground text-sm">JPEG / PNG / WebP、5MB まで。</p>
+        <p className="text-muted-foreground text-sm">JPEG / PNG / WebP、20MB まで。</p>
       </div>
     </div>
   )
