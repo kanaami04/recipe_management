@@ -14,11 +14,13 @@ import {
   listRecipesQueryKey,
   regenerateInviteCodeMutation,
   removeShareGroupMemberMutation,
+  updateShoppingListSharingMutation,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { ShareGroupResponse, UserListItem } from '@/shared/api/generated/types.gen'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import { Button } from '@/shared/ui/button'
+import { Checkbox } from '@/shared/ui/checkbox'
 import { Input } from '@/shared/ui/input'
 import { Separator } from '@/shared/ui/separator'
 import { SidebarTrigger } from '@/shared/ui/sidebar'
@@ -97,6 +99,7 @@ export function ShareGroupPage() {
 function ShareGroupOnboarding({ onJoined }: { onJoined: (g: ShareGroupResponse) => void }) {
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
+  const [shareShoppingList, setShareShoppingList] = useState(true)
 
   const create = useMutation({
     ...createShareGroupMutation(),
@@ -126,13 +129,13 @@ function ShareGroupOnboarding({ onJoined }: { onJoined: (g: ShareGroupResponse) 
 
   const submitJoin = () => {
     if (code.trim() === '' || join.isPending) return
-    join.mutate({ body: { invite_code: code.trim() } })
+    join.mutate({ body: { invite_code: code.trim(), share_shopping_list: shareShoppingList } })
   }
 
   return (
     <div className="flex flex-col gap-6">
       <p className="text-muted-foreground text-sm">
-        共有グループを作ると、レシピや買い物リストをメンバー全員で共有できます。
+        共有グループを作ると、レシピをメンバー全員で共有できます。
         まずはグループを作るか、招待コードで既存のグループに参加してください。
       </p>
 
@@ -173,6 +176,15 @@ function ShareGroupOnboarding({ onJoined }: { onJoined: (g: ShareGroupResponse) 
             参加
           </Button>
         </div>
+        <label className="flex cursor-pointer items-center gap-2 pt-1">
+          <Checkbox
+            checked={shareShoppingList}
+            onCheckedChange={(checked) => setShareShoppingList(checked === true)}
+          />
+          <span className="text-muted-foreground text-sm">
+            買い物リストもグループで共有する(あとで設定から変更できます)
+          </span>
+        </label>
       </div>
     </div>
   )
@@ -222,6 +234,19 @@ function ShareGroupDetail({
     onError: () => toast.error(group.is_owner ? '解散に失敗しました' : '退出に失敗しました'),
   })
 
+  const updateSharing = useMutation({
+    ...updateShoppingListSharingMutation(),
+    onSuccess: (data) => {
+      onGroupUpdated(data)
+      toast.success(
+        data.share_shopping_list
+          ? '買い物リストをグループに統合しました'
+          : '買い物リストを個人運用に戻しました',
+      )
+    },
+    onError: () => toast.error('買い物リストの設定を変更できませんでした'),
+  })
+
   const copyCode = async () => {
     try {
       await navigator.clipboard.writeText(group.invite_code)
@@ -236,9 +261,30 @@ function ShareGroupDetail({
       <div>
         <h2 className="text-lg font-medium">{group.name}</h2>
         <p className="text-muted-foreground text-sm">
-          メンバーはレシピ・買い物リストを全員で共有します。
+          メンバーはレシピを全員で共有します。買い物リストは下の設定で個別に選べます。
         </p>
       </div>
+
+      {/* 買い物リストの統合設定(所有者は自分のリストがそのまま共有リストになるため対象外) */}
+      {!group.is_owner && (
+        <div className="flex flex-col gap-2 rounded-md border p-4">
+          <h3 className="text-sm font-medium">買い物リスト</h3>
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={group.share_shopping_list}
+              disabled={updateSharing.isPending}
+              onCheckedChange={(checked) =>
+                updateSharing.mutate({ body: { share_shopping_list: checked === true } })
+              }
+            />
+            <span className="text-sm">グループの買い物リストに統合する</span>
+          </label>
+          <p className="text-muted-foreground text-xs">
+            オフにすると個人用の買い物リストに切り替わります(グループの共有リストは見えなくなります)。
+            オンにすると今の個人リストは削除され、グループの共有リストを使うようになります。
+          </p>
+        </div>
+      )}
 
       {/* メンバー一覧 */}
       <div className="flex flex-col gap-2">

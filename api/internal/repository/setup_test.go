@@ -102,7 +102,7 @@ func seedShareGroup(t *testing.T, owner *domain.User, members ...*domain.User) *
 		t.Fatalf("seed group: %v", err)
 	}
 	for _, m := range members {
-		if err := repo.AddMember(context.Background(), g.ID, m.ID); err != nil {
+		if err := repo.AddMember(context.Background(), g.ID, m.ID, true); err != nil {
 			t.Fatalf("add member %q: %v", m.Username, err)
 		}
 	}

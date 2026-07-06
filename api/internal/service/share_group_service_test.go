@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"recipe-backend/internal/domain"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,7 +15,7 @@ import (
 func TestShareGroupCreate_Succeeds(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	group, err := svc.Create(context.Background(), "u1", "我が家")
@@ -29,7 +31,7 @@ func TestShareGroupCreate_Succeeds(t *testing.T) {
 // 名前を空で作成した時、既定名が使われること。
 func TestShareGroupCreate_DefaultsName(t *testing.T) {
 	// Arrange
-	svc := NewShareGroupService(newMockShareGroupRepo())
+	svc := NewShareGroupService(newMockShareGroupRepo(), newMockShoppingListRepo())
 
 	// Act
 	group, err := svc.Create(context.Background(), "u1", "  ")
@@ -44,7 +46,7 @@ func TestShareGroupCreate_AlreadyInGroup(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
 	gr.seed("g1", "u1")
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	_, err := svc.Create(context.Background(), "u1", "別グループ")
@@ -60,16 +62,54 @@ func TestShareGroupJoin_Succeeds(t *testing.T) {
 	g := gr.seed("g1", "owner")
 	g.InviteCode = "CODE1234"
 	g.InviteCodeExpiresAt = time.Now().Add(time.Hour)
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
-	group, err := svc.Join(context.Background(), "u2", "CODE1234")
+	group, err := svc.Join(context.Background(), "u2", "CODE1234", true)
 
 	// Assert
 	require.NoError(t, err)
 	assert.Equal(t, "g1", group.ID)
 	ids, _ := gr.MemberIDs(context.Background(), "u2")
 	assert.Contains(t, ids, "u2")
+}
+
+// 統合を選んで参加した時、自分の個人リストが物理削除されること。
+func TestShareGroupJoin_SharesShoppingList_DeletesPersonalList(t *testing.T) {
+	// Arrange
+	gr := newMockShareGroupRepo()
+	g := gr.seed("g1", "owner")
+	g.InviteCode = "CODE1234"
+	g.InviteCodeExpiresAt = time.Now().Add(time.Hour)
+	lr := newMockShoppingListRepo()
+	require.NoError(t, lr.Create(context.Background(), &domain.ShoppingList{OwnerID: "u2"}))
+	svc := NewShareGroupService(gr, lr)
+
+	// Act
+	_, err := svc.Join(context.Background(), "u2", "CODE1234", true)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Contains(t, lr.deletedOwnerIDs, "u2")
+}
+
+// 個人運用を選んで参加した時、自分の個人リストは消されないこと。
+func TestShareGroupJoin_KeepsPersonalList(t *testing.T) {
+	// Arrange
+	gr := newMockShareGroupRepo()
+	g := gr.seed("g1", "owner")
+	g.InviteCode = "CODE1234"
+	g.InviteCodeExpiresAt = time.Now().Add(time.Hour)
+	lr := newMockShoppingListRepo()
+	require.NoError(t, lr.Create(context.Background(), &domain.ShoppingList{OwnerID: "u2"}))
+	svc := NewShareGroupService(gr, lr)
+
+	// Act
+	_, err := svc.Join(context.Background(), "u2", "CODE1234", false)
+
+	// Assert
+	require.NoError(t, err)
+	assert.NotContains(t, lr.deletedOwnerIDs, "u2")
 }
 
 // 既にグループに所属しているユーザーが参加しようとした時、ErrAlreadyInGroup が返ること。
@@ -80,10 +120,10 @@ func TestShareGroupJoin_AlreadyInGroup(t *testing.T) {
 	other.InviteCode = "CODE1234"
 	other.InviteCodeExpiresAt = time.Now().Add(time.Hour)
 	gr.seed("g2", "u2") // u2 は既に別グループ
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
-	_, err := svc.Join(context.Background(), "u2", "CODE1234")
+	_, err := svc.Join(context.Background(), "u2", "CODE1234", true)
 
 	// Assert
 	assert.ErrorIs(t, err, ErrAlreadyInGroup)
@@ -92,10 +132,10 @@ func TestShareGroupJoin_AlreadyInGroup(t *testing.T) {
 // 存在しない招待コードで参加しようとした時、ErrInviteCodeInvalid が返ること。
 func TestShareGroupJoin_InvalidCode(t *testing.T) {
 	// Arrange
-	svc := NewShareGroupService(newMockShareGroupRepo())
+	svc := NewShareGroupService(newMockShareGroupRepo(), newMockShoppingListRepo())
 
 	// Act
-	_, err := svc.Join(context.Background(), "u2", "NOPE")
+	_, err := svc.Join(context.Background(), "u2", "NOPE", true)
 
 	// Assert
 	assert.ErrorIs(t, err, ErrInviteCodeInvalid)
@@ -108,10 +148,10 @@ func TestShareGroupJoin_ExpiredCode(t *testing.T) {
 	g := gr.seed("g1", "owner")
 	g.InviteCode = "OLDCODE1"
 	g.InviteCodeExpiresAt = time.Now().Add(-time.Hour) // 期限切れ
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
-	_, err := svc.Join(context.Background(), "u2", "OLDCODE1")
+	_, err := svc.Join(context.Background(), "u2", "OLDCODE1", true)
 
 	// Assert
 	assert.ErrorIs(t, err, ErrInviteCodeInvalid)
@@ -122,7 +162,7 @@ func TestShareGroupLeave_Member(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
 	gr.seed("g1", "owner", "u2")
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	err := svc.Leave(context.Background(), "u2")
@@ -139,7 +179,7 @@ func TestShareGroupLeave_OwnerDisbands(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
 	gr.seed("g1", "owner", "u2")
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	err := svc.Leave(context.Background(), "owner")
@@ -152,7 +192,7 @@ func TestShareGroupLeave_OwnerDisbands(t *testing.T) {
 // グループ未所属で抜けようとした時、ErrNotInGroup が返ること。
 func TestShareGroupLeave_NotInGroup(t *testing.T) {
 	// Arrange
-	svc := NewShareGroupService(newMockShareGroupRepo())
+	svc := NewShareGroupService(newMockShareGroupRepo(), newMockShoppingListRepo())
 
 	// Act
 	err := svc.Leave(context.Background(), "u1")
@@ -166,7 +206,7 @@ func TestShareGroupRemoveMember_OwnerRemoves(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
 	gr.seed("g1", "owner", "u2")
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	err := svc.RemoveMember(context.Background(), "owner", "u2")
@@ -182,7 +222,7 @@ func TestShareGroupRemoveMember_NotOwner(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
 	gr.seed("g1", "owner", "u2", "u3")
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act: u2(非所有者)が u3 を外そうとする
 	err := svc.RemoveMember(context.Background(), "u2", "u3")
@@ -196,7 +236,7 @@ func TestShareGroupRemoveMember_CannotRemoveSelf(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
 	gr.seed("g1", "owner", "u2")
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	err := svc.RemoveMember(context.Background(), "owner", "owner")
@@ -211,7 +251,7 @@ func TestShareGroupRegenerateInviteCode_ChangesCode(t *testing.T) {
 	gr := newMockShareGroupRepo()
 	g := gr.seed("g1", "owner")
 	g.InviteCode = "OLDCODE1"
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	group, err := svc.RegenerateInviteCode(context.Background(), "owner")
@@ -226,11 +266,79 @@ func TestShareGroupRegenerateInviteCode_NotOwner(t *testing.T) {
 	// Arrange
 	gr := newMockShareGroupRepo()
 	gr.seed("g1", "owner", "u2")
-	svc := NewShareGroupService(gr)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo())
 
 	// Act
 	_, err := svc.RegenerateInviteCode(context.Background(), "u2")
 
 	// Assert
 	assert.ErrorIs(t, err, ErrNotGroupOwner)
+}
+
+// メンバーが買い物リストの統合をオンにした時、自分の個人リストが物理削除されること。
+func TestShareGroupSetShoppingListSharing_EnablingDeletesPersonalList(t *testing.T) {
+	// Arrange
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "owner", "u2")
+	gr.shareShoppingList["u2"] = false // 個人運用中
+	lr := newMockShoppingListRepo()
+	require.NoError(t, lr.Create(context.Background(), &domain.ShoppingList{OwnerID: "u2"}))
+	svc := NewShareGroupService(gr, lr)
+
+	// Act
+	err := svc.SetShoppingListSharing(context.Background(), "u2", true)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Contains(t, lr.deletedOwnerIDs, "u2")
+	membership, _ := gr.FindMembership(context.Background(), "u2")
+	assert.True(t, membership.ShareShoppingList)
+}
+
+// メンバーが買い物リストの統合をオフにした時、個人リストは削除されず設定だけ変わること。
+func TestShareGroupSetShoppingListSharing_DisablingKeepsExistingList(t *testing.T) {
+	// Arrange
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "owner", "u2") // seed は既定で ShareShoppingList=true
+	lr := newMockShoppingListRepo()
+	svc := NewShareGroupService(gr, lr)
+
+	// Act
+	err := svc.SetShoppingListSharing(context.Background(), "u2", false)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Empty(t, lr.deletedOwnerIDs)
+	membership, _ := gr.FindMembership(context.Background(), "u2")
+	assert.False(t, membership.ShareShoppingList)
+}
+
+// グループ未所属で切り替えようとした時、ErrNotInGroup が返ること。
+func TestShareGroupSetShoppingListSharing_NotInGroup(t *testing.T) {
+	// Arrange
+	svc := NewShareGroupService(newMockShareGroupRepo(), newMockShoppingListRepo())
+
+	// Act
+	err := svc.SetShoppingListSharing(context.Background(), "u1", true)
+
+	// Assert
+	assert.ErrorIs(t, err, ErrNotInGroup)
+}
+
+// 所有者が自分の統合設定を変えようとした時、ErrForbidden が返り、所有者のリスト
+// (= グループの共有リストそのもの)が消されないこと。
+func TestShareGroupSetShoppingListSharing_OwnerForbidden(t *testing.T) {
+	// Arrange
+	gr := newMockShareGroupRepo()
+	gr.seed("g1", "owner", "u2")
+	lr := newMockShoppingListRepo()
+	require.NoError(t, lr.Create(context.Background(), &domain.ShoppingList{OwnerID: "owner"}))
+	svc := NewShareGroupService(gr, lr)
+
+	// Act
+	err := svc.SetShoppingListSharing(context.Background(), "owner", true)
+
+	// Assert
+	assert.ErrorIs(t, err, ErrForbidden)
+	assert.Empty(t, lr.deletedOwnerIDs)
 }

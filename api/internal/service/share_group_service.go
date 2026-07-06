@@ -21,22 +21,31 @@ type ShareGroupService interface {
 	// Create はグループを作成し、userID を所有者兼メンバーにする。既に所属していれば ErrAlreadyInGroup。
 	Create(ctx context.Context, userID, name string) (*domain.ShareGroup, error)
 	// Join は招待コードでグループに参加する。既に所属していれば ErrAlreadyInGroup、
-	// コードが無効/期限切れなら ErrInviteCodeInvalid。
-	Join(ctx context.Context, userID, code string) (*domain.ShareGroup, error)
+	// コードが無効/期限切れなら ErrInviteCodeInvalid。shareShoppingList が true のときは
+	// 参加と同時に買い物リストを統合し、参加者自身の個人リストは物理削除する。
+	Join(ctx context.Context, userID, code string, shareShoppingList bool) (*domain.ShareGroup, error)
 	// Leave はグループを抜ける。所有者が抜ける場合はグループを解散する。未所属なら ErrNotInGroup。
 	Leave(ctx context.Context, userID string) error
 	// RemoveMember は所有者が他メンバーを外す。所有者以外の操作は ErrNotGroupOwner。
 	RemoveMember(ctx context.Context, ownerID, targetUserID string) error
 	// RegenerateInviteCode は所有者が招待コードを再発行する(旧コードを失効)。
 	RegenerateInviteCode(ctx context.Context, ownerID string) (*domain.ShareGroup, error)
+	// SetShoppingListSharing は userID 自身の買い物リスト統合設定を切り替える。未所属なら
+	// ErrNotInGroup。true にする(統合する)ときは、自分の個人リストを物理削除する。
+	// false にする(個人運用に戻す)ときは何も削除しない。次回アクセス時に新規の空リストができる。
+	SetShoppingListSharing(ctx context.Context, userID string, share bool) error
+	// ShoppingListSharing は userID 自身の買い物リスト統合設定を返す(どのグループにも
+	// 属さないときは true。個人リストのみなのでこの値自体は意味を持たない)。
+	ShoppingListSharing(ctx context.Context, userID string) (bool, error)
 }
 
 type shareGroupService struct {
 	groups domain.ShareGroupRepository
+	lists  domain.ShoppingListRepository
 }
 
-func NewShareGroupService(groups domain.ShareGroupRepository) ShareGroupService {
-	return &shareGroupService{groups: groups}
+func NewShareGroupService(groups domain.ShareGroupRepository, lists domain.ShoppingListRepository) ShareGroupService {
+	return &shareGroupService{groups: groups, lists: lists}
 }
 
 func (s *shareGroupService) GetMine(ctx context.Context, userID string) (*domain.ShareGroup, error) {
@@ -83,7 +92,7 @@ func (s *shareGroupService) mapMembershipConflict(ctx context.Context, userID st
 	return err
 }
 
-func (s *shareGroupService) Join(ctx context.Context, userID, code string) (*domain.ShareGroup, error) {
+func (s *shareGroupService) Join(ctx context.Context, userID, code string, shareShoppingList bool) (*domain.ShareGroup, error) {
 	existing, err := s.groups.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -98,10 +107,54 @@ func (s *shareGroupService) Join(ctx context.Context, userID, code string) (*dom
 	if group == nil || time.Now().After(group.InviteCodeExpiresAt) {
 		return nil, ErrInviteCodeInvalid
 	}
-	if err := s.groups.AddMember(ctx, group.ID, userID); err != nil {
+	if err := s.groups.AddMember(ctx, group.ID, userID, shareShoppingList); err != nil {
 		return nil, s.mapMembershipConflict(ctx, userID, err)
 	}
+	if shareShoppingList {
+		// 買い物リストをグループへ統合する: 自分の個人リストは物理削除する。
+		if err := s.lists.DeleteByOwnerID(ctx, userID); err != nil {
+			return nil, err
+		}
+	}
 	return s.groups.FindByID(ctx, group.ID)
+}
+
+func (s *shareGroupService) SetShoppingListSharing(ctx context.Context, userID string, share bool) error {
+	group, err := s.groups.FindByUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if group == nil {
+		return ErrNotInGroup
+	}
+	// 所有者の買い物リストはそのものが「グループの共有リスト」なので、この設定は
+	// 所有者には意味を持たない。ここで弾かないと share=true 指定時に統合先である
+	// 共有リスト自体を物理削除してしまう。
+	if group.OwnerID == userID {
+		return ErrForbidden
+	}
+	// 先にフラグを更新し、その後で個人リストを消す。逆順だと、削除は成功したのに
+	// フラグ更新が失敗した場合にデータだけ失われ設定は変わっていない状態になる。
+	if err := s.groups.UpdateShareShoppingList(ctx, userID, share); err != nil {
+		return err
+	}
+	if share {
+		// 統合する: 自分の個人リストを物理削除する(統合をやめて個人運用に戻した後に
+		// 新規で作られる分には影響しない)。
+		return s.lists.DeleteByOwnerID(ctx, userID)
+	}
+	return nil
+}
+
+func (s *shareGroupService) ShoppingListSharing(ctx context.Context, userID string) (bool, error) {
+	membership, err := s.groups.FindMembership(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	if membership == nil {
+		return true, nil
+	}
+	return membership.ShareShoppingList, nil
 }
 
 func (s *shareGroupService) Leave(ctx context.Context, userID string) error {

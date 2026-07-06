@@ -57,7 +57,7 @@ func TestShareGroupRepo_AddMember_ResolvesByUser(t *testing.T) {
 	g := makeGroup(t, ctx, repo, owner)
 
 	// Act
-	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID))
+	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID, true))
 
 	// Assert
 	got, err := repo.FindByUserID(ctx, member.ID)
@@ -89,7 +89,7 @@ func TestShareGroupRepo_MemberIDs_ReturnsGroupmates(t *testing.T) {
 	owner := seedUser(t, "owner")
 	member := seedUser(t, "member")
 	g := makeGroup(t, ctx, repo, owner)
-	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID))
+	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID, true))
 
 	// Act
 	ids, err := repo.MemberIDs(ctx, member.ID)
@@ -122,10 +122,10 @@ func TestShareGroupRepo_AddMember_RejectsSecondGroup(t *testing.T) {
 	member := seedUser(t, "member")
 	g1 := makeGroup(t, ctx, repo, owner1)
 	g2 := makeGroup(t, ctx, repo, owner2)
-	require.NoError(t, repo.AddMember(ctx, g1.ID, member.ID))
+	require.NoError(t, repo.AddMember(ctx, g1.ID, member.ID, true))
 
 	// Act: 2 つ目のグループへ追加しようとする
-	err := repo.AddMember(ctx, g2.ID, member.ID)
+	err := repo.AddMember(ctx, g2.ID, member.ID, true)
 
 	// Assert: 一意制約で弾かれる
 	assert.Error(t, err)
@@ -138,7 +138,7 @@ func TestShareGroupRepo_Delete_CascadesMembers(t *testing.T) {
 	owner := seedUser(t, "owner")
 	member := seedUser(t, "member")
 	g := makeGroup(t, ctx, repo, owner)
-	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID))
+	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID, true))
 
 	// Act
 	require.NoError(t, repo.Delete(ctx, g.ID))
@@ -147,4 +147,110 @@ func TestShareGroupRepo_Delete_CascadesMembers(t *testing.T) {
 	got, err := repo.FindByUserID(ctx, member.ID)
 	require.NoError(t, err)
 	assert.Nil(t, got)
+}
+
+// グループを作成した時、所有者の ShareShoppingList が true で登録されること。
+func TestShareGroupRepo_Create_OwnerSharesShoppingListByDefault(t *testing.T) {
+	// Arrange
+	ctx, repo := arrangeShareGroupRepo(t)
+	owner := seedUser(t, "owner")
+
+	// Act
+	makeGroup(t, ctx, repo, owner)
+
+	// Assert
+	got, err := repo.FindMembership(ctx, owner.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.True(t, got.ShareShoppingList)
+}
+
+// shareShoppingList=false でメンバーを追加した時、false のまま登録されること
+// (bool のゼロ値と default タグの相互作用で意図せず true に化けないことの確認)。
+func TestShareGroupRepo_AddMember_PersistsShareShoppingListFalse(t *testing.T) {
+	// Arrange
+	ctx, repo := arrangeShareGroupRepo(t)
+	owner := seedUser(t, "owner")
+	member := seedUser(t, "member")
+	g := makeGroup(t, ctx, repo, owner)
+
+	// Act
+	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID, false))
+
+	// Assert
+	got, err := repo.FindMembership(ctx, member.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.False(t, got.ShareShoppingList)
+}
+
+// AddMember で追加したメンバーの JoinedAt が設定されること(map ベース Create でも
+// autoCreateTime が NULL のまま入らないことの確認)。
+func TestShareGroupRepo_AddMember_SetsJoinedAt(t *testing.T) {
+	// Arrange
+	ctx, repo := arrangeShareGroupRepo(t)
+	owner := seedUser(t, "owner")
+	member := seedUser(t, "member")
+	g := makeGroup(t, ctx, repo, owner)
+
+	// Act
+	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID, true))
+
+	// Assert
+	got, err := repo.FindMembership(ctx, member.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.False(t, got.JoinedAt.IsZero())
+}
+
+// UpdateShareShoppingList で設定を切り替えられること。
+func TestShareGroupRepo_UpdateShareShoppingList_Toggles(t *testing.T) {
+	// Arrange
+	ctx, repo := arrangeShareGroupRepo(t)
+	owner := seedUser(t, "owner")
+	member := seedUser(t, "member")
+	g := makeGroup(t, ctx, repo, owner)
+	require.NoError(t, repo.AddMember(ctx, g.ID, member.ID, true))
+
+	// Act
+	require.NoError(t, repo.UpdateShareShoppingList(ctx, member.ID, false))
+
+	// Assert
+	got, err := repo.FindMembership(ctx, member.ID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.False(t, got.ShareShoppingList)
+}
+
+// FindMembership は所属していないユーザーに対して nil を返すこと。
+func TestShareGroupRepo_FindMembership_NilForNonMember(t *testing.T) {
+	// Arrange
+	ctx, repo := arrangeShareGroupRepo(t)
+	stranger := seedUser(t, "stranger")
+
+	// Act
+	got, err := repo.FindMembership(ctx, stranger.ID)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Nil(t, got)
+}
+
+// SharingMemberIDs は ShareShoppingList=true のメンバーだけを返すこと。
+func TestShareGroupRepo_SharingMemberIDs_ExcludesOptedOut(t *testing.T) {
+	// Arrange
+	ctx, repo := arrangeShareGroupRepo(t)
+	owner := seedUser(t, "owner")
+	sharing := seedUser(t, "sharing")
+	optedOut := seedUser(t, "optedout")
+	g := makeGroup(t, ctx, repo, owner)
+	require.NoError(t, repo.AddMember(ctx, g.ID, sharing.ID, true))
+	require.NoError(t, repo.AddMember(ctx, g.ID, optedOut.ID, false))
+
+	// Act
+	ids, err := repo.SharingMemberIDs(ctx, g.ID)
+
+	// Assert
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{owner.ID, sharing.ID}, ids)
 }

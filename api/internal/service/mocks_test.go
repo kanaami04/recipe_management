@@ -206,13 +206,14 @@ func (m *mockLabelRepo) Delete(_ context.Context, label *domain.Label) error {
 // --- ShoppingListRepository のモック ---
 
 type mockShoppingListRepo struct {
-	store        map[string]*domain.ShoppingList // id -> list
-	created      *domain.ShoppingList
-	addedItem    *domain.ShoppingListItem
-	checkedItems map[string]bool // itemID -> checked
-	deletedItems []string
-	clearedLists []string
-	reorderedIDs []string
+	store           map[string]*domain.ShoppingList // id -> list
+	created         *domain.ShoppingList
+	addedItem       *domain.ShoppingListItem
+	checkedItems    map[string]bool // itemID -> checked
+	deletedItems    []string
+	clearedLists    []string
+	reorderedIDs    []string
+	deletedOwnerIDs []string // DeleteByOwnerID に渡された ownerID を呼び出し順に記録
 }
 
 func newMockShoppingListRepo() *mockShoppingListRepo {
@@ -294,27 +295,43 @@ func (m *mockShoppingListRepo) DeleteCheckedItems(_ context.Context, listID stri
 	}
 	return nil
 }
+func (m *mockShoppingListRepo) DeleteByOwnerID(_ context.Context, ownerID string) error {
+	for lid, l := range m.store {
+		if l.OwnerID == ownerID {
+			delete(m.store, lid)
+			m.deletedOwnerIDs = append(m.deletedOwnerIDs, ownerID)
+		}
+	}
+	return nil
+}
 
 // --- ShareGroupRepository のモック ---
 
 type mockShareGroupRepo struct {
-	groups     map[string]*domain.ShareGroup // id -> group
-	membership map[string]string             // user_id -> group_id
-	created    *domain.ShareGroup
-	deletedIDs []string
+	groups            map[string]*domain.ShareGroup // id -> group
+	membership        map[string]string             // user_id -> group_id
+	shareShoppingList map[string]bool               // user_id -> ShareShoppingList
+	created           *domain.ShareGroup
+	deletedIDs        []string
 }
 
 func newMockShareGroupRepo() *mockShareGroupRepo {
-	return &mockShareGroupRepo{groups: map[string]*domain.ShareGroup{}, membership: map[string]string{}}
+	return &mockShareGroupRepo{
+		groups:            map[string]*domain.ShareGroup{},
+		membership:        map[string]string{},
+		shareShoppingList: map[string]bool{},
+	}
 }
 
-// seed はテスト用に owner + メンバーを持つグループを 1 件登録する。
+// seed はテスト用に owner + メンバーを持つグループを 1 件登録する(全員 ShareShoppingList=true)。
 func (m *mockShareGroupRepo) seed(groupID, ownerID string, memberIDs ...string) *domain.ShareGroup {
 	members := []domain.User{{ID: ownerID}}
 	m.membership[ownerID] = groupID
+	m.shareShoppingList[ownerID] = true
 	for _, uid := range memberIDs {
 		members = append(members, domain.User{ID: uid})
 		m.membership[uid] = groupID
+		m.shareShoppingList[uid] = true
 	}
 	g := &domain.ShareGroup{ID: groupID, Name: "g", OwnerID: ownerID, Members: members}
 	m.groups[groupID] = g
@@ -329,6 +346,7 @@ func (m *mockShareGroupRepo) Create(_ context.Context, g *domain.ShareGroup) err
 	cp.Members = []domain.User{{ID: g.OwnerID}}
 	m.groups[g.ID] = &cp
 	m.membership[g.OwnerID] = g.ID
+	m.shareShoppingList[g.OwnerID] = true
 	m.created = &cp
 	return nil
 }
@@ -367,8 +385,9 @@ func (m *mockShareGroupRepo) MemberIDs(_ context.Context, userID string) ([]stri
 	}
 	return ids, nil
 }
-func (m *mockShareGroupRepo) AddMember(_ context.Context, groupID, userID string) error {
+func (m *mockShareGroupRepo) AddMember(_ context.Context, groupID, userID string, shareShoppingList bool) error {
 	m.membership[userID] = groupID
+	m.shareShoppingList[userID] = shareShoppingList
 	if g, ok := m.groups[groupID]; ok {
 		g.Members = append(g.Members, domain.User{ID: userID})
 	}
@@ -376,6 +395,7 @@ func (m *mockShareGroupRepo) AddMember(_ context.Context, groupID, userID string
 }
 func (m *mockShareGroupRepo) RemoveMember(_ context.Context, groupID, userID string) error {
 	delete(m.membership, userID)
+	delete(m.shareShoppingList, userID)
 	if g, ok := m.groups[groupID]; ok {
 		kept := g.Members[:0]
 		for _, u := range g.Members {
@@ -398,9 +418,30 @@ func (m *mockShareGroupRepo) Delete(_ context.Context, groupID string) error {
 	for uid, gid := range m.membership {
 		if gid == groupID {
 			delete(m.membership, uid)
+			delete(m.shareShoppingList, uid)
 		}
 	}
 	m.deletedIDs = append(m.deletedIDs, groupID)
+	return nil
+}
+func (m *mockShareGroupRepo) FindMembership(_ context.Context, userID string) (*domain.ShareGroupMember, error) {
+	gid, ok := m.membership[userID]
+	if !ok {
+		return nil, nil
+	}
+	return &domain.ShareGroupMember{GroupID: gid, UserID: userID, ShareShoppingList: m.shareShoppingList[userID]}, nil
+}
+func (m *mockShareGroupRepo) SharingMemberIDs(_ context.Context, groupID string) ([]string, error) {
+	var ids []string
+	for uid, gid := range m.membership {
+		if gid == groupID && m.shareShoppingList[uid] {
+			ids = append(ids, uid)
+		}
+	}
+	return ids, nil
+}
+func (m *mockShareGroupRepo) UpdateShareShoppingList(_ context.Context, userID string, share bool) error {
+	m.shareShoppingList[userID] = share
 	return nil
 }
 

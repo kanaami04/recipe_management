@@ -32,7 +32,7 @@ func New(
 		Label:        NewLabelService(labelRepo),
 		Recipe:       NewRecipeService(recipeRepo, shareGroupRepo),
 		ShoppingList: NewShoppingListService(shoppingListRepo, shareGroupRepo),
-		ShareGroup:   NewShareGroupService(shareGroupRepo),
+		ShareGroup:   NewShareGroupService(shareGroupRepo, shoppingListRepo),
 		Ogp:          NewOgpService(),
 	}
 }

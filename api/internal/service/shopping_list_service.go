@@ -32,25 +32,25 @@ func (s *shoppingListService) Get(ctx context.Context, userID string) (*domain.S
 	if err != nil {
 		return nil, err
 	}
-	ownerID := userID
-	if group != nil {
-		// グループ所属時はグループ所有者のリストを「グループの 1 リスト」として使い回す。
-		ownerID = group.OwnerID
+	ownerID, err := s.resolveOwnerID(ctx, userID, group)
+	if err != nil {
+		return nil, err
 	}
 	existing, err := s.lists.FindByOwnerID(ctx, ownerID)
 	if err != nil {
 		return nil, err
 	}
 	if existing != nil {
-		return applyShared(group, existing), nil
+		return s.applyShared(ctx, group, existing)
 	}
 	// リストがまだ無ければ、対象所有者の空のリストを作って返す。
+	// (統合をやめて個人運用に戻した直後は、統合時に消した個人リストがまだ無いのでここで新規に作られる)
 	list := &domain.ShoppingList{OwnerID: ownerID}
 	if err := s.lists.Create(ctx, list); err != nil {
 		// 別リクエストが同時に作成した場合は owner_id の一意制約で弾かれる。
 		// その勝者を読み直して返す(二重作成を避ける)。
 		if again, ferr := s.lists.FindByOwnerID(ctx, ownerID); ferr == nil && again != nil {
-			return applyShared(group, again), nil
+			return s.applyShared(ctx, group, again)
 		}
 		return nil, err
 	}
@@ -58,7 +58,24 @@ func (s *shoppingListService) Get(ctx context.Context, userID string) (*domain.S
 	if err != nil {
 		return nil, err
 	}
-	return applyShared(group, created), nil
+	return s.applyShared(ctx, group, created)
+}
+
+// resolveOwnerID は userID が見るべきリストの所有者 ID を返す。グループ所属かつ自分の
+// ShareShoppingList が true のときだけグループ所有者のリストへ倒す。それ以外(未所属、
+// または統合をやめて個人運用を選んでいる)は自分自身のリストを見る。
+func (s *shoppingListService) resolveOwnerID(ctx context.Context, userID string, group *domain.ShareGroup) (string, error) {
+	if group == nil {
+		return userID, nil
+	}
+	membership, err := s.groups.FindMembership(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	if membership != nil && membership.ShareShoppingList {
+		return group.OwnerID, nil
+	}
+	return userID, nil
 }
 
 func (s *shoppingListService) AddItem(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error) {
@@ -153,16 +170,34 @@ func (s *shoppingListService) reload(ctx context.Context, userID, listID string)
 	if err != nil {
 		return nil, err
 	}
-	return applyShared(group, list), nil
+	return s.applyShared(ctx, group, list)
 }
 
-// applyShared はリストの SharedUsers に「group のメンバー(owner を除く)」を詰めて返す。
-// group が nil(グループ未所属)なら空のまま。
-func applyShared(group *domain.ShareGroup, list *domain.ShoppingList) *domain.ShoppingList {
-	if group != nil {
-		list.SharedUsers = membersExcept(group.Members, list.OwnerID)
+// applyShared はリストがグループの共有リストそのもの(list.OwnerID == group.OwnerID)の
+// ときだけ、SharedUsers に「買い物リストを統合しているメンバー(owner を除く)」を詰める。
+// 統合をやめて個人運用に戻したメンバー自身のリストは、グループに属していても誰とも
+// 共有されていないので空のまま返す。
+func (s *shoppingListService) applyShared(ctx context.Context, group *domain.ShareGroup, list *domain.ShoppingList) (*domain.ShoppingList, error) {
+	if group == nil || list.OwnerID != group.OwnerID {
+		list.SharedUsers = nil
+		return list, nil
 	}
-	return list
+	sharingIDs, err := s.groups.SharingMemberIDs(ctx, group.ID)
+	if err != nil {
+		return nil, err
+	}
+	sharing := make(map[string]struct{}, len(sharingIDs))
+	for _, id := range sharingIDs {
+		sharing[id] = struct{}{}
+	}
+	shared := make([]domain.User, 0, len(group.Members))
+	for _, m := range membersExcept(group.Members, list.OwnerID) {
+		if _, ok := sharing[m.ID]; ok {
+			shared = append(shared, m)
+		}
+	}
+	list.SharedUsers = shared
+	return list, nil
 }
 
 // authorize は listID のリストを取り出し、userID が操作できる(所有者、または owner と同じ
@@ -185,11 +220,19 @@ func (s *shoppingListService) authorize(ctx context.Context, userID, listID stri
 	return list, nil
 }
 
-// canModifyList は userID が list を編集できる(所有者、または owner と同じグループのメンバー)
-// かを返す。
+// canModifyList は userID が list を編集できる(所有者、または「同じグループのメンバー」かつ
+// 「自分自身が買い物リストをグループへ統合している」)かを返す。統合をやめたメンバーは、
+// グループ所有者のリストに対する操作権を持たない(自分のリストは第一分岐でカバーされる)。
 func (s *shoppingListService) canModifyList(ctx context.Context, l *domain.ShoppingList, userID string) (bool, error) {
 	if l.OwnerID == userID {
 		return true, nil
+	}
+	membership, err := s.groups.FindMembership(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	if membership == nil || !membership.ShareShoppingList {
+		return false, nil
 	}
 	memberIDs, err := s.groups.MemberIDs(ctx, userID)
 	if err != nil {

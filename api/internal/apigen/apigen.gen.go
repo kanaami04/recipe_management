@@ -92,6 +92,9 @@ type Error struct {
 // JoinShareGroupRequest defines model for JoinShareGroupRequest.
 type JoinShareGroupRequest struct {
 	InviteCode string `json:"invite_code" validate:"required"`
+
+	// ShareShoppingList true ならグループの買い物リストへ統合する(自分の個人リストは物理削除される)。 false なら個人の買い物リストを維持する(グループの共有リストは見えない)。
+	ShareShoppingList bool `json:"share_shopping_list"`
 }
 
 // LabelInput defines model for LabelInput.
@@ -210,7 +213,7 @@ type SeasonResponse struct {
 	Unit      string       `json:"unit"`
 }
 
-// ShareGroupResponse シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
+// ShareGroupResponse シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。 share_shopping_list は取得ユーザー自身の買い物リスト統合設定。
 type ShareGroupResponse struct {
 	ID         string `json:"id"`
 	InviteCode string `json:"invite_code"`
@@ -221,6 +224,7 @@ type ShareGroupResponse struct {
 	Members             []UserListItem `json:"members"`
 	Name                string         `json:"name"`
 	Owner               UserListItem   `json:"owner"`
+	ShareShoppingList   bool           `json:"share_shopping_list"`
 }
 
 // ShoppingListItemInput defines model for ShoppingListItemInput.
@@ -262,6 +266,12 @@ type TokenRequest struct {
 // TokenResponse refresh は body に含めず Cookie で発行する
 type TokenResponse struct {
 	Access string `json:"access"`
+}
+
+// UpdateShoppingListSharingRequest defines model for UpdateShoppingListSharingRequest.
+type UpdateShoppingListSharingRequest struct {
+	// ShareShoppingList true にすると買い物リストをグループへ統合する(自分の個人リストは物理削除される)。 false にすると個人運用に戻す(次回アクセス時に新規の空リストができる)。
+	ShareShoppingList bool `json:"share_shopping_list"`
 }
 
 // UpdateUserRequest defines model for UpdateUserRequest.
@@ -339,6 +349,9 @@ type CreateShareGroupJSONRequestBody = CreateShareGroupRequest
 
 // JoinShareGroupJSONRequestBody defines body for JoinShareGroup for application/json ContentType.
 type JoinShareGroupJSONRequestBody = JoinShareGroupRequest
+
+// UpdateShoppingListSharingJSONRequestBody defines body for UpdateShoppingListSharing for application/json ContentType.
+type UpdateShoppingListSharingJSONRequestBody = UpdateShoppingListSharingRequest
 
 // AddShoppingListItemJSONRequestBody defines body for AddShoppingListItem for application/json ContentType.
 type AddShoppingListItemJSONRequestBody = ShoppingListItemInput

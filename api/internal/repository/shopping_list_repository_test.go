@@ -138,3 +138,34 @@ func TestShoppingListRepo_DeleteCheckedItems_KeepsUnchecked(t *testing.T) {
 	require.Len(t, got.Items, 1)
 	assert.Equal(t, "卵", got.Items[0].Name)
 }
+
+// 所有リストを物理削除した時、リストと項目の両方が消えること(項目は CASCADE)。
+func TestShoppingListRepo_DeleteByOwnerID_RemovesListAndItems(t *testing.T) {
+	// Arrange
+	ctx, repo, owner, id := arrangeShoppingList(t)
+	require.NoError(t, repo.AddItem(ctx, &domain.ShoppingListItem{ShoppingListID: id, Name: "牛乳"}))
+
+	// Act
+	require.NoError(t, repo.DeleteByOwnerID(ctx, owner.ID))
+
+	// Assert
+	got, err := repo.FindByOwnerID(ctx, owner.ID)
+	require.NoError(t, err)
+	assert.Nil(t, got)
+}
+
+// 所有リストが無いユーザーに対して呼んでもエラーにならないこと。
+func TestShoppingListRepo_DeleteByOwnerID_NoopWhenNone(t *testing.T) {
+	// Arrange
+	testutil.RequireIntegration(t)
+	truncateAll(t)
+	ctx := context.Background()
+	repo := NewShoppingListRepository(testDB)
+	stranger := seedUser(t, "stranger")
+
+	// Act
+	err := repo.DeleteByOwnerID(ctx, stranger.ID)
+
+	// Assert
+	assert.NoError(t, err)
+}

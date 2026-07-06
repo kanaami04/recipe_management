@@ -265,10 +265,21 @@ export type CreateShareGroupRequest = {
 
 export type JoinShareGroupRequest = {
     invite_code: string;
+    /**
+     * true ならグループの買い物リストへ統合する(自分の個人リストは物理削除される)。 false なら個人の買い物リストを維持する(グループの共有リストは見えない)。
+     */
+    share_shopping_list: boolean;
+};
+
+export type UpdateShoppingListSharingRequest = {
+    /**
+     * true にすると買い物リストをグループへ統合する(自分の個人リストは物理削除される)。 false にすると個人運用に戻す(次回アクセス時に新規の空リストができる)。
+     */
+    share_shopping_list: boolean;
 };
 
 /**
- * シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。
+ * シェアグループ。members は所有者を含む全メンバー。is_owner は取得ユーザーが所有者か。 share_shopping_list は取得ユーザー自身の買い物リスト統合設定。
  */
 export type ShareGroupResponse = {
     id: string;
@@ -281,6 +292,7 @@ export type ShareGroupResponse = {
      */
     invite_code_expires_at: string;
     is_owner: boolean;
+    share_shopping_list: boolean;
 };
 
 export type LoginData = {
@@ -1386,6 +1398,39 @@ export type RegenerateInviteCodeResponses = {
 };
 
 export type RegenerateInviteCodeResponse = RegenerateInviteCodeResponses[keyof RegenerateInviteCodeResponses];
+
+export type UpdateShoppingListSharingData = {
+    body: UpdateShoppingListSharingRequest;
+    path?: never;
+    query?: never;
+    url: '/api/share_group/shopping_list_sharing/';
+};
+
+export type UpdateShoppingListSharingErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type UpdateShoppingListSharingError = UpdateShoppingListSharingErrors[keyof UpdateShoppingListSharingErrors];
+
+export type UpdateShoppingListSharingResponses = {
+    /**
+     * 更新成功
+     */
+    200: ShareGroupResponse;
+};
+
+export type UpdateShoppingListSharingResponse = UpdateShoppingListSharingResponses[keyof UpdateShoppingListSharingResponses];
 
 export type RemoveShareGroupMemberData = {
     body?: never;
