@@ -30,7 +30,7 @@ test('Web App Manifest が配信され、head から参照されている', asyn
   const res = await request.get('/manifest.webmanifest')
   expect(res.status()).toBe(200)
   const manifest = await res.json()
-  expect(manifest.name).toBe('レシピ管理')
+  expect(manifest.name).toBe('cookience')
   expect(manifest.display).toBe('standalone')
   expect(manifest.icons.length).toBeGreaterThanOrEqual(3)
 })

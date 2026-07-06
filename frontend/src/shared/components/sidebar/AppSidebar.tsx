@@ -1,3 +1,4 @@
+import { Logo } from '@/shared/components/Logo'
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +19,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <span className="text-base font-semibold">レシピ管理</span>
+              <span>
+                <Logo markClassName="size-5" wordmarkClassName="text-base" />
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

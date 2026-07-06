@@ -9,6 +9,7 @@ import {
   listRecipesQueryKey,
 } from '@/shared/api/generated/@tanstack/react-query.gen'
 import type { RecipeRequest } from '@/shared/api/generated/types.gen'
+import { Logo } from '@/shared/components/Logo'
 import { Button } from '@/shared/ui/button'
 import {
   Dialog,
@@ -48,7 +49,8 @@ export function RecipesHeader() {
       <div className="flex w-full items-center gap-2 px-3 sm:px-4 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
-        <h1 className="text-base font-medium">MyRecipes</h1>
+        <Logo markClassName="size-5" wordmarkClassName="text-base" />
+        <h1 className="sr-only">cookience</h1>
         <div className="ml-auto flex items-center gap-2">
           <Input placeholder="検索" className="w-32 sm:w-40" />
           <Separator orientation="vertical" className="data-[orientation=vertical]:h-4" />

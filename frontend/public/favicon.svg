@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <rect width="512" height="512" rx="114" fill="#1c1c1c"></rect>
+  <g transform="translate(106 106) scale(3)">
+    <defs>
+      <clipPath id="cookience-favicon-interior">
+        <path d="M45 22H55V42L70 76A6 6 0 0 1 64 82H36A6 6 0 0 1 30 76L45 42Z"></path>
+      </clipPath>
+    </defs>
+    <rect x="24" y="64" width="52" height="30" fill="#d93a2b" clip-path="url(#cookience-favicon-interior)"></rect>
+    <path d="M40 22H60" stroke="#fafafa" stroke-width="6" stroke-linecap="round"></path>
+    <path d="M45 22V42L30 76A6 6 0 0 0 36 82H64A6 6 0 0 0 70 76L55 42V22" stroke="#fafafa" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"></path>
+    <path d="M48 49H54.8M48 55H57.5M48 61H60" stroke="#fafafa" stroke-width="3" stroke-linecap="round"></path>
+  </g>
+</svg>

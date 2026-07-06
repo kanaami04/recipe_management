@@ -43,6 +43,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* ブランドロゴのワードマーク用フォント(Space Grotesk は root.tsx で読み込む) */
+  --font-brand: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  /* ブランド固定色(ロゴのフラスコの液体・ワードマークのピリオド)。
+     テーマで明暗を切り替えず、ライト/ダーク共通で使う。 */
+  --color-brand: #d93a2b;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
