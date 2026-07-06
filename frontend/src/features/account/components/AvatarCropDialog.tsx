@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Cropper, { type Area, type Point } from 'react-easy-crop'
 import { toast } from 'sonner'
 
@@ -33,6 +33,16 @@ export function AvatarCropDialog({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
   const [cropping, setCropping] = useState(false)
 
+  // ダイアログの開くアニメーション(95%スケール)の最中に react-easy-crop が寸法を測ると、
+  // クロップ枠・画像・移動制限がすべて 95% 基準でズレ、ズーム最小でも上下に動かせて背景が
+  // 見えてしまう。アニメーション完了後に Cropper をマウントし、実寸で一度だけ計測させる。
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    // アニメーションが走らない環境(reduced motion 等)向けの保険。
+    const id = setTimeout(() => setReady(true), 300)
+    return () => clearTimeout(id)
+  }, [])
+
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels)
   }, [])
@@ -60,19 +70,20 @@ export function AvatarCropDialog({
         if (!open && !disabled) onCancel()
       }}
     >
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} onAnimationEnd={() => setReady(true)}>
         <DialogHeader>
           <DialogTitle>アイコンを切り抜く</DialogTitle>
           <DialogDescription>ドラッグで位置、スライダーで拡大を調整できます。</DialogDescription>
         </DialogHeader>
-        <div className="bg-muted relative h-64 w-full overflow-hidden rounded-md sm:h-72">
-          {imageSrc && (
+        <div className="bg-muted relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-md">
+          {imageSrc && ready && (
             <Cropper
               image={imageSrc}
               crop={crop}
               zoom={zoom}
               aspect={1}
               cropShape="round"
+              objectFit="cover"
               showGrid={false}
               onCropChange={setCrop}
               onZoomChange={setZoom}
