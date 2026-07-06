@@ -67,6 +67,11 @@ type RecipeRepository interface {
 	SetArchived(ctx context.Context, userID, recipeID string, archived bool) error
 	// IsArchived は userID にとって recipeID がアーカイブ済みかを返す。
 	IsArchived(ctx context.Context, userID, recipeID string) (bool, error)
+	// PruneRecipeState は userID が今は見られないレシピ(自分の所有でも、同じシェアグループの
+	// メンバー所有でもないレシピ)に残った recipe_archives / recipe_orders 行を消す。
+	// グループ脱退・除名・解散でレシピが見えなくなったとき、再共有で過去のアーカイブ状態・
+	// 並び順が蘇らないよう掃除するのに使う(メンバー行の更新後に呼ぶ)。
+	PruneRecipeState(ctx context.Context, userID string) error
 }
 
 type ShoppingListRepository interface {

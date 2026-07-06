@@ -126,6 +126,31 @@ func (r *recipeRepository) Reorder(ctx context.Context, userID string, recipeIDs
 		Create(&orders).Error
 }
 
+// orphanRecipeIDs は userID が今は見られないレシピ(自分の所有でも、同じシェアグループの
+// メンバー所有でもないレシピ)の ID を引くサブクエリを返す。掃除対象の絞り込みに使う。
+func orphanRecipeIDs(db *gorm.DB, userID string) *gorm.DB {
+	return db.Table("recipes").
+		Select("recipes.id").
+		Where("recipes.owner_id <> ?", userID).
+		Where("recipes.owner_id NOT IN (?)", sameGroupOwnerIDs(db, userID))
+}
+
+func (r *recipeRepository) PruneRecipeState(ctx context.Context, userID string) error {
+	// 見えなくなったレシピに対する per-user 状態(アーカイブ・並び順)を両方消す。
+	// 2 テーブルへの削除をまとめて成否させるためトランザクションで包む。
+	// サブクエリは実行しないため 2 文で作り直す(可視範囲は呼び出し時点のメンバー行に依る)。
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.
+			Where("user_id = ? AND recipe_id IN (?)", userID, orphanRecipeIDs(tx, userID)).
+			Delete(&domain.RecipeArchive{}).Error; err != nil {
+			return err
+		}
+		return tx.
+			Where("user_id = ? AND recipe_id IN (?)", userID, orphanRecipeIDs(tx, userID)).
+			Delete(&domain.RecipeOrder{}).Error
+	})
+}
+
 func (r *recipeRepository) FindByID(ctx context.Context, id string) (*domain.Recipe, error) {
 	var recipe domain.Recipe
 	err := preloadAll(r.db.WithContext(ctx)).Where("id = ?", id).First(&recipe).Error

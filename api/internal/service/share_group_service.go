@@ -40,12 +40,13 @@ type ShareGroupService interface {
 }
 
 type shareGroupService struct {
-	groups domain.ShareGroupRepository
-	lists  domain.ShoppingListRepository
+	groups  domain.ShareGroupRepository
+	lists   domain.ShoppingListRepository
+	recipes domain.RecipeRepository
 }
 
-func NewShareGroupService(groups domain.ShareGroupRepository, lists domain.ShoppingListRepository) ShareGroupService {
-	return &shareGroupService{groups: groups, lists: lists}
+func NewShareGroupService(groups domain.ShareGroupRepository, lists domain.ShoppingListRepository, recipes domain.RecipeRepository) ShareGroupService {
+	return &shareGroupService{groups: groups, lists: lists, recipes: recipes}
 }
 
 func (s *shareGroupService) GetMine(ctx context.Context, userID string) (*domain.ShareGroup, error) {
@@ -167,9 +168,19 @@ func (s *shareGroupService) Leave(ctx context.Context, userID string) error {
 	}
 	// 所有者が抜ける場合はグループを解散する(メンバー行は CASCADE で消える)。
 	if group.OwnerID == userID {
-		return s.groups.Delete(ctx, group.ID)
+		members := userIDsOf(group.Members)
+		if err := s.groups.Delete(ctx, group.ID); err != nil {
+			return err
+		}
+		// 解散で全員が互いのレシピを見られなくなる。全メンバーの残置状態を掃除する。
+		return s.pruneRecipeState(ctx, members)
 	}
-	return s.groups.RemoveMember(ctx, group.ID, userID)
+	// 抜けた本人と残るメンバーが互いのレシピを見られなくなる。両者の残置状態を掃除する。
+	affected := append(userIDsOf(membersExcept(group.Members, userID)), userID)
+	if err := s.groups.RemoveMember(ctx, group.ID, userID); err != nil {
+		return err
+	}
+	return s.pruneRecipeState(ctx, affected)
 }
 
 func (s *shareGroupService) RemoveMember(ctx context.Context, ownerID, targetUserID string) error {
@@ -187,7 +198,23 @@ func (s *shareGroupService) RemoveMember(ctx context.Context, ownerID, targetUse
 	if targetUserID == ownerID {
 		return ErrForbidden
 	}
-	return s.groups.RemoveMember(ctx, group.ID, targetUserID)
+	// 外された本人と残るメンバーが互いのレシピを見られなくなる。両者の残置状態を掃除する。
+	affected := append(userIDsOf(membersExcept(group.Members, targetUserID)), targetUserID)
+	if err := s.groups.RemoveMember(ctx, group.ID, targetUserID); err != nil {
+		return err
+	}
+	return s.pruneRecipeState(ctx, affected)
+}
+
+// pruneRecipeState は userIDs それぞれについて、見えなくなったレシピに残る
+// recipe_archives / recipe_orders を掃除する(メンバー行の更新後に呼ぶ)。
+func (s *shareGroupService) pruneRecipeState(ctx context.Context, userIDs []string) error {
+	for _, uid := range userIDs {
+		if err := s.recipes.PruneRecipeState(ctx, uid); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *shareGroupService) RegenerateInviteCode(ctx context.Context, ownerID string) (*domain.ShareGroup, error) {
@@ -209,4 +236,14 @@ func (s *shareGroupService) RegenerateInviteCode(ctx context.Context, ownerID st
 		return nil, err
 	}
 	return s.groups.FindByID(ctx, group.ID)
+}
+
+// userIDsOf は users の ID を並び順のまま取り出す。新しいスライスを返すため、
+// 呼び出し側で append しても元の Members を汚さない。
+func userIDsOf(users []domain.User) []string {
+	ids := make([]string, 0, len(users))
+	for _, u := range users {
+		ids = append(ids, u.ID)
+	}
+	return ids
 }
