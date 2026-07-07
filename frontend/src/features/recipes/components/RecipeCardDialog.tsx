@@ -1,6 +1,6 @@
 import { DialogDescription } from '@radix-ui/react-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Archive, ArchiveRestore, MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, MoreVertical, Pencil, ShoppingCart, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
 
+import { RecipeAddToShoppingList } from './RecipeAddToShoppingList'
 import { RecipeCard } from './RecipeCard'
 import { RecipeDetail } from './RecipeDetail'
 import { RecipeDetailEditDialog } from './RecipeDetailEditDialog'
@@ -28,7 +29,11 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
   const [isEditing, setIsEditing] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+  const [isAddingToList, setIsAddingToList] = useState(false)
   const queryClient = useQueryClient()
+
+  // 材料も調味料も無いレシピでは「買い物リストに追加」を出さない。
+  const canAddToList = recipe.cooking.length > 0 || recipe.season.length > 0
 
   // 削除は生成 mutation + 一覧 query の無効化に集約する。
   const deleteMutation = useMutation({
@@ -94,6 +99,12 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {canAddToList && (
+                <DropdownMenuItem onClick={() => setIsAddingToList(true)}>
+                  <ShoppingCart />
+                  買い物リストに追加
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => setIsEditing(true)}>
                 <Pencil />
                 編集
@@ -121,6 +132,13 @@ export function RecipeCardDialog({ recipe }: { recipe: RecipeResponse }) {
           open={isEditing}
           onOpenChange={() => setIsEditing(false)}
         />
+        {canAddToList && (
+          <RecipeAddToShoppingList
+            recipe={recipe}
+            open={isAddingToList}
+            onOpenChange={setIsAddingToList}
+          />
+        )}
       </Dialog>
       <ConfirmDialog
         title="レシピを削除しますか？"

@@ -6,7 +6,6 @@ import { formatAmount } from '@/features/recipes/units'
 import type { RecipeResponse } from '@/shared/api/generated/types.gen'
 import { Badge } from '@/shared/ui/badge'
 
-import { RecipeAddToShoppingList } from './RecipeAddToShoppingList'
 import { RecipeSourceLink } from './RecipeSourceLink'
 
 // 詳細ダイアログの本文。画像を持たないテキスト中心のレシピを、
@@ -33,9 +32,6 @@ export function RecipeDetail({ recipe }: { recipe: RecipeResponse }) {
         )}
         <MetaChip icon={<Carrot className="size-3.5" />}>材料{recipe.cooking.length}品</MetaChip>
       </div>
-
-      {/* 材料・調味料を選んで買い物リストへ追加する。 */}
-      <RecipeAddToShoppingList recipe={recipe} />
 
       {recipe.label.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
