@@ -28,7 +28,9 @@ export function SortableRecipeCard({ recipe }: { recipe: RecipeResponse }) {
       {...attributes}
       {...listeners}
     >
-      <GripVertical className="text-muted-foreground pointer-events-none absolute top-1 right-1 z-10 size-4 opacity-50" />
+      {/* グリップは absolute なのでカード内容の上に出る。z はスクロール時に sticky ヘッダー
+          (z-10)へ潜り込ませるため 0 に留める(z-10 だと DOM 順でヘッダーの上に被る)。 */}
+      <GripVertical className="text-muted-foreground pointer-events-none absolute top-1 right-1 z-0 size-4 opacity-50" />
       <RecipeCardDialog recipe={recipe} />
     </div>
   )

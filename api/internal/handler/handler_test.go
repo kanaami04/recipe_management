@@ -5,6 +5,7 @@ import (
 
 	"recipe-backend/internal/domain"
 	"recipe-backend/internal/dto/request"
+	"recipe-backend/internal/service"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -143,6 +144,7 @@ func (m *mockLabelService) Delete(ctx context.Context, ownerID, id string) error
 type mockShoppingListService struct {
 	getFn          func(ctx context.Context, userID string) (*domain.ShoppingList, error)
 	addItemFn      func(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error)
+	addItemsFn     func(ctx context.Context, userID, listID string, items []service.NewItem) (*domain.ShoppingList, error)
 	setCheckedFn   func(ctx context.Context, userID, listID, itemID string, checked bool) (*domain.ShoppingList, error)
 	deleteItemFn   func(ctx context.Context, userID, listID, itemID string) (*domain.ShoppingList, error)
 	clearCheckedFn func(ctx context.Context, userID, listID string) (*domain.ShoppingList, error)
@@ -154,6 +156,9 @@ func (m *mockShoppingListService) Get(ctx context.Context, userID string) (*doma
 }
 func (m *mockShoppingListService) AddItem(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error) {
 	return m.addItemFn(ctx, userID, listID, name)
+}
+func (m *mockShoppingListService) AddItems(ctx context.Context, userID, listID string, items []service.NewItem) (*domain.ShoppingList, error) {
+	return m.addItemsFn(ctx, userID, listID, items)
 }
 func (m *mockShoppingListService) SetItemChecked(ctx context.Context, userID, listID, itemID string, checked bool) (*domain.ShoppingList, error) {
 	return m.setCheckedFn(ctx, userID, listID, itemID, checked)

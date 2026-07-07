@@ -84,6 +84,9 @@ type ShoppingListRepository interface {
 	Create(ctx context.Context, list *ShoppingList) error
 	// AddItem はリストに項目を 1 件追加する。
 	AddItem(ctx context.Context, item *ShoppingListItem) error
+	// AddItems はリストに複数項目をまとめて追加する(重複はマージせず別行で追加)。
+	// position は既存の最大 + 1 から順に採番する。全項目が同じリストに属する前提。
+	AddItems(ctx context.Context, items []*ShoppingListItem) error
 	// SetItemChecked は項目のチェック状態を更新する。
 	SetItemChecked(ctx context.Context, itemID string, checked bool) error
 	// DeleteItem は項目を 1 件削除する。

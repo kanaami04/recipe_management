@@ -59,20 +59,47 @@ func (r *shoppingListRepository) Create(ctx context.Context, list *domain.Shoppi
 	return r.db.WithContext(ctx).Omit("Owner").Create(list).Error
 }
 
-func (r *shoppingListRepository) AddItem(ctx context.Context, item *domain.ShoppingListItem) error {
-	// 追加項目は末尾へ回すため、リスト内の現在の最大 position + 1 を割り当てる。
+// nextPosition は listID の項目を末尾へ回すための position(現在の最大 + 1、項目が無ければ 0)を返す。
+func nextPosition(db *gorm.DB, listID string) (int, error) {
 	var maxPos *int
-	if err := r.db.WithContext(ctx).
+	if err := db.
 		Model(&domain.ShoppingListItem{}).
-		Where("shopping_list_id = ?", item.ShoppingListID).
+		Where("shopping_list_id = ?", listID).
 		Select("MAX(position)").
 		Scan(&maxPos).Error; err != nil {
+		return 0, err
+	}
+	if maxPos == nil {
+		return 0, nil
+	}
+	return *maxPos + 1, nil
+}
+
+func (r *shoppingListRepository) AddItem(ctx context.Context, item *domain.ShoppingListItem) error {
+	// 追加項目は末尾へ回すため、リスト内の現在の最大 position + 1 を割り当てる。
+	pos, err := nextPosition(r.db.WithContext(ctx), item.ShoppingListID)
+	if err != nil {
 		return err
 	}
-	if maxPos != nil {
-		item.Position = *maxPos + 1
-	}
+	item.Position = pos
 	return r.db.WithContext(ctx).Create(item).Error
+}
+
+func (r *shoppingListRepository) AddItems(ctx context.Context, items []*domain.ShoppingListItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	// 全項目が同じリストに属する前提。現在の最大 position + 1 から連番で末尾へ積む。
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		next, err := nextPosition(tx, items[0].ShoppingListID)
+		if err != nil {
+			return err
+		}
+		for i, item := range items {
+			item.Position = next + i
+		}
+		return tx.Create(items).Error
+	})
 }
 
 func (r *shoppingListRepository) Reorder(ctx context.Context, listID string, itemIDs []string) error {

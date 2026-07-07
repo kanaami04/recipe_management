@@ -64,7 +64,8 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 		{
 			authorized.GET("/shopping_list/", h.ShoppingList.Get)
 			authorized.POST("/shopping_list/:id/items/", h.ShoppingList.AddItem)
-			// checked / reorder は静的パス。:item_id より先に登録して曖昧さを避ける。
+			// bulk / checked / reorder は静的パス。:item_id より先に登録して曖昧さを避ける。
+			authorized.POST("/shopping_list/:id/items/bulk/", h.ShoppingList.AddItems)
 			authorized.DELETE("/shopping_list/:id/items/checked/", h.ShoppingList.ClearChecked)
 			authorized.PUT("/shopping_list/:id/items/reorder/", h.ShoppingList.Reorder)
 			authorized.PUT("/shopping_list/:id/items/:item_id/", h.ShoppingList.UpdateItem)

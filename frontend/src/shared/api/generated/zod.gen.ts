@@ -184,6 +184,22 @@ export const zShoppingListItemInput = z.object({
 });
 
 /**
+ * 一括追加する 1 項目。数量・単位は任意(レシピから追加するとき付く)。
+ */
+export const zShoppingListBulkAddItem = z.object({
+    name: z.string().max(50),
+    quantity: z.number().nullish(),
+    unit: z.string().max(10).optional()
+});
+
+/**
+ * 買い物リストへ複数項目をまとめて追加する。重複はマージせず別行で追加する。
+ */
+export const zShoppingListBulkAddRequest = z.object({
+    items: z.array(zShoppingListBulkAddItem).min(1)
+});
+
+/**
  * 項目のチェック状態。true でチェック済み、false で未チェック。
  */
 export const zShoppingListItemUpdateRequest = z.object({
@@ -200,6 +216,8 @@ export const zShoppingListReorderRequest = z.object({
 export const zShoppingListItemResponse = z.object({
     id: z.uuid(),
     name: z.string(),
+    quantity: z.number().nullish(),
+    unit: z.string(),
     checked: z.boolean()
 });
 
@@ -423,6 +441,17 @@ export const zAddShoppingListItemPath = z.object({
  * 追加成功(更新後のリスト全体を返す)
  */
 export const zAddShoppingListItemResponse = zShoppingListResponse;
+
+export const zAddShoppingListItemsBody = zShoppingListBulkAddRequest;
+
+export const zAddShoppingListItemsPath = z.object({
+    id: z.uuid()
+});
+
+/**
+ * 追加成功(更新後のリスト全体を返す)
+ */
+export const zAddShoppingListItemsResponse = zShoppingListResponse;
 
 export const zClearCheckedShoppingListItemsPath = z.object({
     id: z.uuid()

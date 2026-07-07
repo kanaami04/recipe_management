@@ -17,9 +17,11 @@ func ToShoppingListResponse(l *domain.ShoppingList, avatars domain.AvatarStorage
 	items := make([]ShoppingListItemResponse, 0, len(l.Items))
 	for i := range l.Items {
 		items = append(items, ShoppingListItemResponse{
-			ID:      l.Items[i].ID,
-			Name:    l.Items[i].Name,
-			Checked: l.Items[i].Checked,
+			ID:       l.Items[i].ID,
+			Name:     l.Items[i].Name,
+			Quantity: l.Items[i].Quantity,
+			Unit:     l.Items[i].Unit,
+			Checked:  l.Items[i].Checked,
 		})
 	}
 

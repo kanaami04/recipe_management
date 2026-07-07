@@ -2,6 +2,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Trash2 } from 'lucide-react'
 
+import { formatAmount } from '@/features/recipes/units'
 import type { ShoppingListItemResponse } from '@/shared/api/generated/types.gen'
 import { Button } from '@/shared/ui/button'
 import { Checkbox } from '@/shared/ui/checkbox'
@@ -48,7 +49,12 @@ export function SortableShoppingListItem({
           checked={item.checked}
           onCheckedChange={(checked) => onToggle(checked === true)}
         />
-        <span className="truncate">{item.name}</span>
+        <span className="min-w-0 flex-1 truncate">{item.name}</span>
+        {item.quantity != null && (
+          <span className="text-muted-foreground shrink-0 text-sm tabular-nums">
+            {formatAmount(item.quantity, item.unit)}
+          </span>
+        )}
       </label>
       <Button variant="ghost" size="icon" aria-label="削除" onClick={onDelete}>
         <Trash2 />

@@ -11,10 +11,21 @@ type ShoppingListService interface {
 	// グループ所属時はグループの 1 リスト(= グループ所有者のリスト)を全員で共同編集する。
 	Get(ctx context.Context, userID string) (*domain.ShoppingList, error)
 	AddItem(ctx context.Context, userID, listID, name string) (*domain.ShoppingList, error)
+	// AddItems はリストに複数項目をまとめて追加する(重複はマージせず別行で追加)。
+	// レシピの材料・調味料をまとめて入れる用途。
+	AddItems(ctx context.Context, userID, listID string, items []NewItem) (*domain.ShoppingList, error)
 	SetItemChecked(ctx context.Context, userID, listID, itemID string, checked bool) (*domain.ShoppingList, error)
 	DeleteItem(ctx context.Context, userID, listID, itemID string) (*domain.ShoppingList, error)
 	ClearChecked(ctx context.Context, userID, listID string) (*domain.ShoppingList, error)
 	Reorder(ctx context.Context, userID, listID string, itemIDs []string) (*domain.ShoppingList, error)
+}
+
+// NewItem は買い物リストへ一括追加する 1 項目の入力。Quantity / Unit は任意
+// (レシピから追加するときに分量が付く。手動追加は Quantity=nil・Unit="")。
+type NewItem struct {
+	Name     string
+	Quantity *float64
+	Unit     string
 }
 
 type shoppingListService struct {
@@ -84,6 +95,25 @@ func (s *shoppingListService) AddItem(ctx context.Context, userID, listID, name 
 	}
 	item := &domain.ShoppingListItem{ShoppingListID: listID, Name: name}
 	if err := s.lists.AddItem(ctx, item); err != nil {
+		return nil, err
+	}
+	return s.reload(ctx, userID, listID)
+}
+
+func (s *shoppingListService) AddItems(ctx context.Context, userID, listID string, items []NewItem) (*domain.ShoppingList, error) {
+	if _, err := s.authorize(ctx, userID, listID); err != nil {
+		return nil, err
+	}
+	toAdd := make([]*domain.ShoppingListItem, 0, len(items))
+	for _, it := range items {
+		toAdd = append(toAdd, &domain.ShoppingListItem{
+			ShoppingListID: listID,
+			Name:           it.Name,
+			Quantity:       it.Quantity,
+			Unit:           it.Unit,
+		})
+	}
+	if err := s.lists.AddItems(ctx, toAdd); err != nil {
 		return nil, err
 	}
 	return s.reload(ctx, userID, listID)
