@@ -25,7 +25,11 @@ run = "go test ./..."
 [tasks.migrate]
 description = "本番 DB マイグレーション。api/.env.migrate(Session pooler の DATABASE_URL、gitignore 済み)を読む"
 dir = "api"
-run = "go run . -migrate -env .env.migrate"
+# .env.migrate が無い環境ではサイレントに既定 DSN へ流れないよう、明確に失敗させる。
+run = [
+  "test -f .env.migrate || { echo 'ERROR: api/.env.migrate がありません(Session pooler の DATABASE_URL)。本番 DB を移行するにはこのファイルが必要です。infra/README.md を参照。' >&2; exit 1; }",
+  "go run . -migrate -env .env.migrate",
+]
 
 [tasks.build-lambda]
 description = "Lambda 用 Go バイナリ(linux/arm64)を infra/dist/api/bootstrap へビルド"
@@ -40,6 +44,9 @@ run = "npm ci && npm run build"
 
 [tasks.deploy]
 description = "AWS へデプロイ(S3 + CloudFront + Lambda)。初回は infra/README.md の手順を参照"
-depends = ["build-lambda", "build-web"]
+# migrate を依存に含めることで、cdk deploy(run)より前にスキーマ適用を必ず完了させる。
+# depends は全て完了してから run が走るため、「列追加 → 新コード稼働」の順序が保証される。
+# migrate 失敗時は deploy 全体が中断し、列が無いまま新コードがデプロイされることを防ぐ。
+depends = ["migrate", "build-lambda", "build-web"]
 dir = "infra"
 run = "npm ci && npx cdk deploy --require-approval never"
