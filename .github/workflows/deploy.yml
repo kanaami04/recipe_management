@@ -1,0 +1,68 @@
+name: Deploy
+
+# スマホ(GitHub モバイルアプリ)からでも安全にデプロイできるようにする。
+# - トリガーは手動実行のみ(workflow_dispatch)。
+# - AWS 認証は OIDC で一時クレデンシャルを引き受ける(静的アクセスキーは保存しない)。
+# - production Environment の承認ゲートで、押し間違いによる誤デプロイを防ぐ。
+# デプロイ本体は mise run deploy(migrate → build → cdk deploy)をそのまま呼ぶため、
+# スキーマ適用はコード稼働より前に必ず完了する。
+on:
+  workflow_dispatch:
+
+# 同時デプロイを直列化する(取り消さず、順番に流す)。
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # OIDC トークンの発行に必須。
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # 承認レビュアーを設定した Environment。承認されるまで下のステップは走らない。
+    # OIDC の sub は repo:<owner>/<repo>:environment:production になり、IAM ロールの
+    # 信頼ポリシーをこの Environment に限定できる。
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      # OIDC で IAM ロールを引き受け、一時クレデンシャルを環境にセットする。
+      - name: Configure AWS credentials (OIDC)
+        id: aws
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-1
+
+      # mise.toml のツール(node / go)をそのまま解決してインストールする。
+      - name: Setup toolchain (mise)
+        uses: jdx/mise-action@v2
+
+      # 秘密は GitHub Secrets に置き、ここで 2 つの env ファイルへ書き出す。
+      # migrate と CDK で DSN(session pooler / transaction pooler)を取り違えないよう、
+      # ローカルと同じく別ファイルに分ける。どちらも .gitignore 済みでコミットされない。
+      - name: Write secret env files
+        env:
+          MIGRATE_DATABASE_URL: ${{ secrets.MIGRATE_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ORIGIN_VERIFY_SECRET: ${{ secrets.ORIGIN_VERIFY_SECRET }}
+        run: |
+          set -euo pipefail
+          # migrate(DDL)は session pooler。api/.env.migrate から読む。
+          printf 'DATABASE_URL=%s\n' "$MIGRATE_DATABASE_URL" > api/.env.migrate
+          # CDK/Lambda は transaction pooler。infra/.env を dotenv が読む。
+          {
+            printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+            printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+            printf 'ORIGIN_VERIFY_SECRET=%s\n' "$ORIGIN_VERIFY_SECRET"
+          } > infra/.env
+
+      # migrate → build-lambda / build-web → cdk deploy。
+      # migrate は depends のため cdk deploy より前に必ず完了する。
+      - name: Deploy
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ steps.aws.outputs.aws-account-id }}
+        run: mise run deploy
