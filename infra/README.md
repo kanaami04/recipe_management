@@ -73,6 +73,77 @@ session pooler 接続文字列 + `?sslmode=require`)。
 > `database schema is behind code; run mise run migrate` を出す(API は落とさない)。
 > 万一 migrate を流し忘れても、ログで早期に気づける。
 
+## スマホからデプロイ(GitHub Actions)
+
+ローカル環境なしで、スマホの GitHub アプリからデプロイできる。仕組みは
+`.github/workflows/deploy.yml`:
+
+- **手動実行のみ**(`workflow_dispatch`)。GitHub アプリ → Actions → **Deploy** → Run workflow。
+- **AWS 認証は OIDC**。静的アクセスキーはどこにも保存せず、実行のたびに数分で失効する
+  一時クレデンシャルを引き受ける。
+- **production Environment の承認ゲート**で、押し間違いによる誤デプロイを防ぐ。
+- 中身は `mise run deploy` を呼ぶだけなので、**migrate → build → cdk deploy** の順序と
+  「スキーマ適用がコード稼働より前」は 2 回目以降のデプロイと同じ。
+
+### 初回セットアップ(一度きり)
+
+1. **AWS に GitHub OIDC プロバイダを作成**(未作成なら)。
+   - プロバイダ URL: `https://token.actions.githubusercontent.com`、対象(audience): `sts.amazonaws.com`。
+
+2. **デプロイ用 IAM ロールを作成**。信頼ポリシーをこのリポジトリの production Environment に限定する:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Principal": { "Federated": "arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com" },
+       "Action": "sts:AssumeRoleWithWebIdentity",
+       "Condition": {
+         "StringEquals": {
+           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+           "token.actions.githubusercontent.com:sub": "repo:kanaami04/recipe_management:environment:production"
+         }
+       }
+     }]
+   }
+   ```
+   権限は CDK v2 のブートストラップロールを引き受けられれば足りる(最小):
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Action": "sts:AssumeRole",
+       "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/cdk-hnb659fds-*"
+     }]
+   }
+   ```
+   個人アカウントで簡単に済ませるなら、代わりに広めの管理ポリシーを付けてもよい。
+
+3. **GitHub の Environment `production` を作成**し、**Required reviewers に自分を追加**(承認ゲート)。
+   Settings → Environments → New environment。
+
+4. **Secrets を production Environment に登録**(Settings → Environments → production → Secrets):
+
+   | Secret | 中身 |
+   |---|---|
+   | `AWS_DEPLOY_ROLE_ARN` | 手順 2 で作った IAM ロールの ARN |
+   | `DATABASE_URL` | **Transaction pooler**(ポート 6543)+ `?sslmode=require&default_query_exec_mode=simple_protocol`。Lambda 用 |
+   | `MIGRATE_DATABASE_URL` | **Session pooler**(ポート 5432)+ `?sslmode=require`。マイグレーション(DDL)用 |
+   | `JWT_SECRET` | `openssl rand -hex 32` |
+   | `ORIGIN_VERIFY_SECRET` | `openssl rand -hex 32` |
+
+   > `DATABASE_URL` と `MIGRATE_DATABASE_URL` のプーラーを取り違えないこと。DDL は transaction
+   > pooler では実行できないため、migrate は必ず session pooler を使う。ワークフローは前者を
+   > `infra/.env`、後者を `api/.env.migrate` へ書き分ける。
+
+5. `npx cdk bootstrap` が未実施なら、初回セットアップ手順で一度だけ実行しておく。
+
+### 使い方(スマホ)
+
+GitHub アプリ → 対象リポジトリ → Actions → **Deploy** → Run workflow →
+実行後に承認(Review deployments → Approve)。以降は自動で migrate → build → deploy が走る。
+
 ## デプロイ後の確認
 
 ```bash
