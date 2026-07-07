@@ -53,12 +53,25 @@ CloudFront
 mise run deploy
 ```
 
-> **スキーマを変更したときは必ず migrate → deploy の順**。列を追加した新コードを
-> 先にデプロイすると、既存レコードの読み取りが「列が無い」で全て 500 になる。
-> 例: プロフィール画像対応で `users.avatar_key` を追加したときは、先に session pooler の
-> DSN で `cd ../api && DATABASE_URL='<session pooler>?sslmode=require' go run . -migrate` を
-> 実行してから `mise run deploy` する。アバター用の S3 バケット・CloudFront 配信・
-> Lambda 権限・環境変数は CDK が自動で作成する(手動設定は不要)。
+`mise run deploy` は **マイグレーション → ビルド → cdk deploy** の順で走る。
+`[tasks.deploy]` が `migrate` を依存に含むため、`migrate`(スキーマ適用)は必ず
+`cdk deploy`(コード稼働)より前に完了する。列を追加した新コードが列の無い DB に対して
+先に動き出す事故(既存レコードの読み取り・INSERT が「列が無い」で全て 500)を、
+手動の手順ではなくデプロイの構造として防ぐ。
+
+`migrate` は `api/.env.migrate`(Session pooler の DATABASE_URL、gitignore 済み)を読む。
+このファイルが無い環境ではサイレントにスキップせず、明確なエラーで `deploy` 全体を中断する。
+DDL を流す端末には事前に `api/.env.migrate` を用意しておくこと(中身は初回セットアップの
+session pooler 接続文字列 + `?sslmode=require`)。
+
+> **補足**: AutoMigrate は追加系のみ・冪等のため、スキーマ変更が無いデプロイで `migrate` を
+> 流しても列は追加されず実質何もしない(安全に毎回走らせてよい)。破壊的 DDL(列削除・
+> 型変更・DROP)は AutoMigrate では行われない。
+>
+> なお本番(Lambda, `AUTO_MIGRATE=false`)は起動時に「期待カラムの有無」を検査し、
+> スキーマがコードより古い場合は CloudWatch ログに
+> `database schema is behind code; run mise run migrate` を出す(API は落とさない)。
+> 万一 migrate を流し忘れても、ログで早期に気づける。
 
 ## デプロイ後の確認
 
