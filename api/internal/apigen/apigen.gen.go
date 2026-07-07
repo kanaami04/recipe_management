@@ -227,6 +227,18 @@ type ShareGroupResponse struct {
 	ShareShoppingList   bool           `json:"share_shopping_list"`
 }
 
+// ShoppingListBulkAddItem 一括追加する 1 項目。数量・単位は任意(レシピから追加するとき付く)。
+type ShoppingListBulkAddItem struct {
+	Name     string   `json:"name" validate:"required,max=50"`
+	Quantity *float64 `json:"quantity,omitempty"`
+	Unit     string   `json:"unit,omitempty" validate:"max=10"`
+}
+
+// ShoppingListBulkAddRequest 買い物リストへ複数項目をまとめて追加する。重複はマージせず別行で追加する。
+type ShoppingListBulkAddRequest struct {
+	Items []ShoppingListBulkAddItem `json:"items" validate:"required,min=1,dive"`
+}
+
 // ShoppingListItemInput defines model for ShoppingListItemInput.
 type ShoppingListItemInput struct {
 	Name string `json:"name" validate:"required,max=50"`
@@ -237,6 +249,12 @@ type ShoppingListItemResponse struct {
 	Checked bool   `json:"checked"`
 	ID      string `json:"id"`
 	Name    string `json:"name"`
+
+	// Quantity レシピから追加した項目の数量。手動追加した項目は null。
+	Quantity *float64 `json:"quantity,omitempty"`
+
+	// Unit 数量の単位(例 ml、個)。数量が無い項目は空文字。
+	Unit string `json:"unit"`
 }
 
 // ShoppingListItemUpdateRequest 項目のチェック状態。true でチェック済み、false で未チェック。
@@ -355,6 +373,9 @@ type UpdateShoppingListSharingJSONRequestBody = UpdateShoppingListSharingRequest
 
 // AddShoppingListItemJSONRequestBody defines body for AddShoppingListItem for application/json ContentType.
 type AddShoppingListItemJSONRequestBody = ShoppingListItemInput
+
+// AddShoppingListItemsJSONRequestBody defines body for AddShoppingListItems for application/json ContentType.
+type AddShoppingListItemsJSONRequestBody = ShoppingListBulkAddRequest
 
 // ReorderShoppingListItemsJSONRequestBody defines body for ReorderShoppingListItems for application/json ContentType.
 type ReorderShoppingListItemsJSONRequestBody = ShoppingListReorderRequest

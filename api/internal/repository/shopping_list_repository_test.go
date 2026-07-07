@@ -119,6 +119,32 @@ func TestShoppingListRepo_AddItem_AppendsToEnd(t *testing.T) {
 	assert.Equal(t, []string{"牛乳", "卵"}, []string{got.Items[0].Name, got.Items[1].Name})
 }
 
+// 複数項目を一括追加した時、既存の末尾へ追加順に並び、数量・単位が保存されること。
+func TestShoppingListRepo_AddItems_AppendsAllWithAmounts(t *testing.T) {
+	// Arrange: 既存項目 1 件(position 0 に確定)
+	ctx, repo, _, id := arrangeShoppingList(t)
+	first := &domain.ShoppingListItem{ShoppingListID: id, Name: "牛乳"}
+	require.NoError(t, repo.AddItem(ctx, first))
+	require.NoError(t, repo.Reorder(ctx, id, []string{first.ID}))
+	qty := 200.0
+
+	// Act: 材料 2 件を一括追加(片方だけ数量・単位あり)
+	require.NoError(t, repo.AddItems(ctx, []*domain.ShoppingListItem{
+		{ShoppingListID: id, Name: "卵", Quantity: &qty, Unit: "ml"},
+		{ShoppingListID: id, Name: "パン"},
+	}))
+
+	// Assert
+	got, err := repo.FindByID(ctx, id)
+	require.NoError(t, err)
+	require.Len(t, got.Items, 3)
+	assert.Equal(t, []string{"牛乳", "卵", "パン"}, []string{got.Items[0].Name, got.Items[1].Name, got.Items[2].Name})
+	require.NotNil(t, got.Items[1].Quantity)
+	assert.Equal(t, qty, *got.Items[1].Quantity)
+	assert.Equal(t, "ml", got.Items[1].Unit)
+	assert.Nil(t, got.Items[2].Quantity)
+}
+
 // チェック済みを一括削除した時、未チェックの項目だけが残ること。
 func TestShoppingListRepo_DeleteCheckedItems_KeepsUnchecked(t *testing.T) {
 	// Arrange

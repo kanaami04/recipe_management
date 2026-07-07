@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { RecipeSharedAvatars } from '@/features/recipes/components/RecipeSharedAvatars'
+import { formatAmount } from '@/features/recipes/units'
 import { SortableShoppingListItem } from '@/features/shopping-list/components/SortableShoppingListItem'
 import {
   addShoppingListItemMutation,
@@ -237,7 +238,14 @@ export function ShoppingListPage() {
                         })
                       }
                     />
-                    <span className="text-muted-foreground truncate line-through">{item.name}</span>
+                    <span className="text-muted-foreground min-w-0 flex-1 truncate line-through">
+                      {item.name}
+                    </span>
+                    {item.quantity != null && (
+                      <span className="text-muted-foreground shrink-0 text-sm line-through tabular-nums">
+                        {formatAmount(item.quantity, item.unit)}
+                      </span>
+                    )}
                   </label>
                   <Button
                     variant="ghost"

@@ -50,6 +50,32 @@ func (h *ShoppingListHandler) AddItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.ToShoppingListResponse(list, h.avatars))
 }
 
+// AddItems は POST /api/shopping_list/:id/items/bulk/。複数項目をまとめて追加する。
+func (h *ShoppingListHandler) AddItems(c echo.Context) error {
+	userID := appmw.UserIDFromContext(c)
+	id, err := parseID(c)
+	if err != nil {
+		return err
+	}
+	var req request.ShoppingListBulkAddRequest
+	if err := bindAndValidate(c, &req); err != nil {
+		return err
+	}
+	items := make([]service.NewItem, 0, len(req.Items))
+	for _, it := range req.Items {
+		items = append(items, service.NewItem{
+			Name:     it.Name,
+			Quantity: it.Quantity,
+			Unit:     it.Unit,
+		})
+	}
+	list, err := h.svc.AddItems(c.Request().Context(), userID, id, items)
+	if err != nil {
+		return mapServiceError(err)
+	}
+	return c.JSON(http.StatusOK, response.ToShoppingListResponse(list, h.avatars))
+}
+
 // UpdateItem は PUT /api/shopping_list/:id/items/:item_id/。チェック状態を更新する。
 func (h *ShoppingListHandler) UpdateItem(c echo.Context) error {
 	userID := appmw.UserIDFromContext(c)

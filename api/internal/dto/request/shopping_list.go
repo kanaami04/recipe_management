@@ -7,4 +7,6 @@ type (
 	ShoppingListItemInput         = apigen.ShoppingListItemInput
 	ShoppingListItemUpdateRequest = apigen.ShoppingListItemUpdateRequest
 	ShoppingListReorderRequest    = apigen.ShoppingListReorderRequest
+	ShoppingListBulkAddRequest    = apigen.ShoppingListBulkAddRequest
+	ShoppingListBulkAddItem       = apigen.ShoppingListBulkAddItem
 )

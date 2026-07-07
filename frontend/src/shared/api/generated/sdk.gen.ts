@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddShoppingListItemData, AddShoppingListItemErrors, AddShoppingListItemResponses, ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsErrors, ClearCheckedShoppingListItemsResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateShareGroupData, CreateShareGroupErrors, CreateShareGroupResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteShoppingListItemData, DeleteShoppingListItemErrors, DeleteShoppingListItemResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetShareGroupData, GetShareGroupErrors, GetShareGroupResponses, GetShoppingListData, GetShoppingListErrors, GetShoppingListResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, JoinShareGroupData, JoinShareGroupErrors, JoinShareGroupResponses, LeaveShareGroupData, LeaveShareGroupErrors, LeaveShareGroupResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegenerateInviteCodeData, RegenerateInviteCodeErrors, RegenerateInviteCodeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveShareGroupMemberData, RemoveShareGroupMemberErrors, RemoveShareGroupMemberResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, ReorderShoppingListItemsData, ReorderShoppingListItemsErrors, ReorderShoppingListItemsResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateShoppingListItemData, UpdateShoppingListItemErrors, UpdateShoppingListItemResponses, UpdateShoppingListSharingData, UpdateShoppingListSharingErrors, UpdateShoppingListSharingResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
+import type { AddShoppingListItemData, AddShoppingListItemErrors, AddShoppingListItemResponses, AddShoppingListItemsData, AddShoppingListItemsErrors, AddShoppingListItemsResponses, ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsErrors, ClearCheckedShoppingListItemsResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateShareGroupData, CreateShareGroupErrors, CreateShareGroupResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteShoppingListItemData, DeleteShoppingListItemErrors, DeleteShoppingListItemResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetShareGroupData, GetShareGroupErrors, GetShareGroupResponses, GetShoppingListData, GetShoppingListErrors, GetShoppingListResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, JoinShareGroupData, JoinShareGroupErrors, JoinShareGroupResponses, LeaveShareGroupData, LeaveShareGroupErrors, LeaveShareGroupResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegenerateInviteCodeData, RegenerateInviteCodeErrors, RegenerateInviteCodeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveShareGroupMemberData, RemoveShareGroupMemberErrors, RemoveShareGroupMemberResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, ReorderShoppingListItemsData, ReorderShoppingListItemsErrors, ReorderShoppingListItemsResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateShoppingListItemData, UpdateShoppingListItemErrors, UpdateShoppingListItemResponses, UpdateShoppingListSharingData, UpdateShoppingListSharingErrors, UpdateShoppingListSharingResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -321,6 +321,22 @@ export const addShoppingListItem = <ThrowOnError extends boolean = false>(option
     responseType: 'json',
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/shopping_list/{id}/items/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 買い物リストに複数項目をまとめて追加する
+ *
+ * レシピの材料・調味料などをまとめて追加する。重複はマージせず別行で追加する。
+ */
+export const addShoppingListItems = <ThrowOnError extends boolean = false>(options: Options<AddShoppingListItemsData, ThrowOnError>): RequestResult<AddShoppingListItemsResponses, AddShoppingListItemsErrors, ThrowOnError> => (options.client ?? client).post<AddShoppingListItemsResponses, AddShoppingListItemsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/shopping_list/{id}/items/bulk/',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -227,6 +227,22 @@ export type ShoppingListItemInput = {
 };
 
 /**
+ * 一括追加する 1 項目。数量・単位は任意(レシピから追加するとき付く)。
+ */
+export type ShoppingListBulkAddItem = {
+    name: string;
+    quantity?: number | null;
+    unit?: string;
+};
+
+/**
+ * 買い物リストへ複数項目をまとめて追加する。重複はマージせず別行で追加する。
+ */
+export type ShoppingListBulkAddRequest = {
+    items: Array<ShoppingListBulkAddItem>;
+};
+
+/**
  * 項目のチェック状態。true でチェック済み、false で未チェック。
  */
 export type ShoppingListItemUpdateRequest = {
@@ -243,6 +259,14 @@ export type ShoppingListReorderRequest = {
 export type ShoppingListItemResponse = {
     id: string;
     name: string;
+    /**
+     * レシピから追加した項目の数量。手動追加した項目は null。
+     */
+    quantity?: number | null;
+    /**
+     * 数量の単位(例 ml、個)。数量が無い項目は空文字。
+     */
+    unit: string;
     checked: boolean;
 };
 
@@ -1073,6 +1097,48 @@ export type AddShoppingListItemResponses = {
 };
 
 export type AddShoppingListItemResponse = AddShoppingListItemResponses[keyof AddShoppingListItemResponses];
+
+export type AddShoppingListItemsData = {
+    body: ShoppingListBulkAddRequest;
+    path: {
+        /**
+         * 買い物リスト ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/shopping_list/{id}/items/bulk/';
+};
+
+export type AddShoppingListItemsErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+    /**
+     * 未認証・トークン無効/期限切れ・クレデンシャル不正
+     */
+    401: Error;
+    /**
+     * 権限なし(他ユーザーのレシピ操作など)
+     */
+    403: Error;
+    /**
+     * 対象が存在しない
+     */
+    404: Error;
+};
+
+export type AddShoppingListItemsError = AddShoppingListItemsErrors[keyof AddShoppingListItemsErrors];
+
+export type AddShoppingListItemsResponses = {
+    /**
+     * 追加成功(更新後のリスト全体を返す)
+     */
+    200: ShoppingListResponse;
+};
+
+export type AddShoppingListItemsResponse = AddShoppingListItemsResponses[keyof AddShoppingListItemsResponses];
 
 export type ClearCheckedShoppingListItemsData = {
     body?: never;

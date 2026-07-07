@@ -196,6 +196,53 @@ func TestShoppingListAddItem_NotFound(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNotFound)
 }
 
+// 所有者が複数項目を一括追加した時、名前・数量・単位付きで全件保存されること。
+func TestShoppingListAddItems_SavesAll(t *testing.T) {
+	// Arrange
+	lr := newMockShoppingListRepo()
+	lr.store["l1"] = &domain.ShoppingList{ID: "l1", OwnerID: "u1"}
+	svc := NewShoppingListService(lr, newMockShareGroupRepo())
+	qty := 200.0
+
+	// Act
+	_, err := svc.AddItems(context.Background(), "u1", "l1", []NewItem{
+		{Name: "牛乳", Quantity: &qty, Unit: "ml"},
+		{Name: "卵"},
+	})
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, lr.addedItems, 2)
+	assert.Equal(t, &domain.ShoppingListItem{ID: lr.addedItems[0].ID, ShoppingListID: "l1", Name: "牛乳", Quantity: &qty, Unit: "ml"}, lr.addedItems[0])
+	assert.Equal(t, &domain.ShoppingListItem{ID: lr.addedItems[1].ID, ShoppingListID: "l1", Name: "卵"}, lr.addedItems[1])
+}
+
+// グループ外のユーザーが一括追加しようとした時、ErrForbidden が返り保存されないこと。
+func TestShoppingListAddItems_Forbidden(t *testing.T) {
+	// Arrange
+	lr := newMockShoppingListRepo()
+	lr.store["l1"] = &domain.ShoppingList{ID: "l1", OwnerID: "u2"}
+	svc := NewShoppingListService(lr, newMockShareGroupRepo())
+
+	// Act
+	_, err := svc.AddItems(context.Background(), "u1", "l1", []NewItem{{Name: "牛乳"}})
+
+	// Assert
+	assert.ErrorIs(t, err, ErrForbidden)
+}
+
+// 存在しないリストに一括追加しようとした時、ErrNotFound が返ること。
+func TestShoppingListAddItems_NotFound(t *testing.T) {
+	// Arrange
+	svc := NewShoppingListService(newMockShoppingListRepo(), newMockShareGroupRepo())
+
+	// Act
+	_, err := svc.AddItems(context.Background(), "u1", "no-such", []NewItem{{Name: "牛乳"}})
+
+	// Assert
+	assert.ErrorIs(t, err, ErrNotFound)
+}
+
 // 項目をチェックした時、チェック状態がリポジトリに反映されること。
 func TestShoppingListSetItemChecked_Updates(t *testing.T) {
 	// Arrange

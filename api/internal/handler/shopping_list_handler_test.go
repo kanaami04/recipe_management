@@ -120,6 +120,73 @@ func TestShoppingListHandler_AddItem_Forbidden(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 }
 
+// serveAddItems は addItemsFn を差し替えたハンドラに POST /api/shopping_list/:id/items/bulk/ し結果を返す。
+func serveAddItems(addItemsFn func(context.Context, string, string, []service.NewItem) (*domain.ShoppingList, error), idParam, body string) *httptest.ResponseRecorder {
+	e := newTestEcho()
+	h := newShoppingListHandler(&mockShoppingListService{addItemsFn: addItemsFn})
+	e.POST("/api/shopping_list/:id/items/bulk/", h.AddItems)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, jsonRequest(http.MethodPost, "/api/shopping_list/"+idParam+"/items/bulk/", body))
+	return rec
+}
+
+// 複数項目を一括追加した時、200 が返ること。
+func TestShoppingListHandler_AddItems_Returns200(t *testing.T) {
+	// Arrange & Act
+	rec := serveAddItems(func(_ context.Context, _, _ string, items []service.NewItem) (*domain.ShoppingList, error) {
+		return &domain.ShoppingList{ID: testListID, Items: []domain.ShoppingListItem{{ID: testItemID, Name: items[0].Name}}}, nil
+	}, testListID, `{"items":[{"name":"牛乳","quantity":200,"unit":"ml"},{"name":"卵"}]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+// items が空配列の時、サービスを呼ばず 400 が返ること。
+func TestShoppingListHandler_AddItems_ValidationError(t *testing.T) {
+	// Arrange & Act
+	rec := serveAddItems(func(_ context.Context, _, _ string, _ []service.NewItem) (*domain.ShoppingList, error) {
+		t.Fatal("validation fail 時に service を呼んではいけない")
+		return nil, nil
+	}, testListID, `{"items":[]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// id が UUID でない時、サービスを呼ばず 400 が返ること。
+func TestShoppingListHandler_AddItems_InvalidID(t *testing.T) {
+	// Arrange & Act
+	rec := serveAddItems(func(_ context.Context, _, _ string, _ []service.NewItem) (*domain.ShoppingList, error) {
+		t.Fatal("id 不正時に service を呼んではいけない")
+		return nil, nil
+	}, "not-a-uuid", `{"items":[{"name":"牛乳"}]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// 他人のリストでサービスが ErrForbidden を返した時、403 が返ること。
+func TestShoppingListHandler_AddItems_Forbidden(t *testing.T) {
+	// Arrange & Act
+	rec := serveAddItems(func(_ context.Context, _, _ string, _ []service.NewItem) (*domain.ShoppingList, error) {
+		return nil, service.ErrForbidden
+	}, testListID, `{"items":[{"name":"牛乳"}]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+// 存在しないリストでサービスが ErrNotFound を返した時、404 が返ること。
+func TestShoppingListHandler_AddItems_NotFound(t *testing.T) {
+	// Arrange & Act
+	rec := serveAddItems(func(_ context.Context, _, _ string, _ []service.NewItem) (*domain.ShoppingList, error) {
+		return nil, service.ErrNotFound
+	}, testListID, `{"items":[{"name":"牛乳"}]}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
 // serveUpdateItem は setCheckedFn を差し替えたハンドラに PUT /api/shopping_list/:id/items/:item_id/ し結果を返す。
 func serveUpdateItem(setCheckedFn func(context.Context, string, string, string, bool) (*domain.ShoppingList, error), idParam, itemParam, body string) *httptest.ResponseRecorder {
 	e := newTestEcho()

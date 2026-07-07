@@ -215,7 +215,8 @@ type mockShoppingListRepo struct {
 	store           map[string]*domain.ShoppingList // id -> list
 	created         *domain.ShoppingList
 	addedItem       *domain.ShoppingListItem
-	checkedItems    map[string]bool // itemID -> checked
+	addedItems      []*domain.ShoppingListItem // AddItems に渡された項目を呼び出し順に記録
+	checkedItems    map[string]bool            // itemID -> checked
 	deletedItems    []string
 	clearedLists    []string
 	reorderedIDs    []string
@@ -258,6 +259,18 @@ func (m *mockShoppingListRepo) AddItem(_ context.Context, item *domain.ShoppingL
 		l.Items = append(l.Items, *item)
 	}
 	m.addedItem = item
+	return nil
+}
+func (m *mockShoppingListRepo) AddItems(_ context.Context, items []*domain.ShoppingListItem) error {
+	for _, item := range items {
+		if item.ID == "" {
+			item.ID = id.New()
+		}
+		if l, ok := m.store[item.ShoppingListID]; ok {
+			l.Items = append(l.Items, *item)
+		}
+	}
+	m.addedItems = append(m.addedItems, items...)
 	return nil
 }
 func (m *mockShoppingListRepo) SetItemChecked(_ context.Context, itemID string, checked bool) error {
