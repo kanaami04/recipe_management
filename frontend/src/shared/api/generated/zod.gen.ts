@@ -31,6 +31,23 @@ export const zRegisterRequest = z.object({
     password: z.string().min(8)
 });
 
+export const zVerifyEmailRequest = z.object({
+    token: z.string()
+});
+
+export const zResendVerificationRequest = z.object({
+    email: z.email().max(50)
+});
+
+export const zPasswordResetRequest = z.object({
+    email: z.email().max(50)
+});
+
+export const zPasswordResetConfirmRequest = z.object({
+    token: z.string(),
+    password: z.string().min(8)
+});
+
 export const zUserInfoResponse = z.object({
     id: z.uuid(),
     username: z.string(),
@@ -284,6 +301,34 @@ export const zRegisterBody = zRegisterRequest;
  * 登録成功
  */
 export const zRegisterResponse = zUserInfoResponse;
+
+export const zVerifyEmailBody = zVerifyEmailRequest;
+
+/**
+ * 確認成功(本文なし)
+ */
+export const zVerifyEmailResponse = z.void();
+
+export const zResendVerificationBody = zResendVerificationRequest;
+
+/**
+ * 受け付け成功(本文なし)
+ */
+export const zResendVerificationResponse = z.void();
+
+export const zRequestPasswordResetBody = zPasswordResetRequest;
+
+/**
+ * 受け付け成功(本文なし)
+ */
+export const zRequestPasswordResetResponse = z.void();
+
+export const zConfirmPasswordResetBody = zPasswordResetConfirmRequest;
+
+/**
+ * 更新成功(本文なし)
+ */
+export const zConfirmPasswordResetResponse = z.void();
 
 /**
  * 削除成功(本文なし)

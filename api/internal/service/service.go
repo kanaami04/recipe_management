@@ -25,10 +25,12 @@ func New(
 	shareGroupRepo domain.ShareGroupRepository,
 	avatars domain.AvatarStorage,
 	jwt *jwtpkg.Manager,
+	mailer domain.Mailer,
+	emailVerifyURL, passwordResetURL string,
 ) *Services {
 	return &Services{
-		Auth:         NewAuthService(userRepo, jwt),
-		User:         NewUserService(userRepo, avatars),
+		Auth:         NewAuthService(userRepo, jwt, mailer, emailVerifyURL, passwordResetURL),
+		User:         NewUserService(userRepo, avatars, jwt, mailer, emailVerifyURL),
 		Label:        NewLabelService(labelRepo),
 		Recipe:       NewRecipeService(recipeRepo, shareGroupRepo),
 		ShoppingList: NewShoppingListService(shoppingListRepo, shareGroupRepo),

@@ -26,6 +26,7 @@ CloudFront
    cp .env.example .env
    # DATABASE_URL: transaction pooler + ?sslmode=require&default_query_exec_mode=simple_protocol
    # JWT_SECRET / ORIGIN_VERIFY_SECRET: openssl rand -hex 32 で生成
+   # SES_FROM_ADDRESS: 確認/リセットメールの送信元(下記 SES セットアップで検証したアドレス)
    ```
 3. **マイグレーション**(スキーマ変更時も同じ):
    ```bash
@@ -46,6 +47,23 @@ CloudFront
    npx cdk deploy -c corsOrigin=https://xxxx.cloudfront.net --require-approval never
    ```
    本番は同一オリジンのため CORS は実質使われないが、設定を正しておく。
+
+## メール送信(SES)のセットアップ
+
+確認メール・パスワードリセットメールは Amazon SES で送る。デプロイ前に AWS 側で次を済ませる。
+CDK は Lambda に `ses:SendEmail`(送信元アドレスの identity に限定)を付けるだけで、
+identity 検証とサンドボックス解除は AWS の操作が要る。
+
+1. **送信元アドレスの検証**: SES コンソール(`ap-northeast-1`)で `SES_FROM_ADDRESS` に使う
+   アドレス(またはドメイン)を identity として登録し、検証を完了する。
+2. **サンドボックス解除**: 初期状態の SES は検証済みアドレス宛にしか送れない。任意の宛先へ
+   送るには本番アクセスを申請する(承認まで時間がかかる)。申請前は自分の検証済みアドレスで
+   登録・確認フローを試せる。
+3. **リージョン**: Lambda には `SES_REGION` としてスタックのリージョンを渡す。SES を別リージョンで
+   有効化した場合はそのリージョンに合わせて上書きする。
+
+`SES_FROM_ADDRESS` が未設定だとバックエンドは送信基盤を持たず、メール内容をログに出すだけになる
+(ローカル開発の挙動)。本番では `infra/.env` に必ず設定する。
 
 ## 2 回目以降のデプロイ
 
@@ -132,6 +150,7 @@ session pooler 接続文字列 + `?sslmode=require`)。
    | `MIGRATE_DATABASE_URL` | **Session pooler**(ポート 5432)+ `?sslmode=require`。マイグレーション(DDL)用 |
    | `JWT_SECRET` | `openssl rand -hex 32` |
    | `ORIGIN_VERIFY_SECRET` | `openssl rand -hex 32` |
+   | `SES_FROM_ADDRESS` | 確認/リセットメールの送信元。SES で検証済みのアドレス(上記 SES セットアップ参照) |
 
    > `DATABASE_URL` と `MIGRATE_DATABASE_URL` のプーラーを取り違えないこと。DDL は transaction
    > pooler では実行できないため、migrate は必ず session pooler を使う。ワークフローは前者を

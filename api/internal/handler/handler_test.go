@@ -26,9 +26,13 @@ func newTestEcho() *echo.Echo {
 // --- サービスのモック（関数フィールドで差し替え）---
 
 type mockAuthService struct {
-	loginFn    func(ctx context.Context, username, password string) (string, string, error)
-	refreshFn  func(ctx context.Context, refresh string) (string, error)
-	registerFn func(ctx context.Context, username, email, password string) (*domain.User, error)
+	loginFn                func(ctx context.Context, username, password string) (string, string, error)
+	refreshFn              func(ctx context.Context, refresh string) (string, error)
+	registerFn             func(ctx context.Context, username, email, password string) (*domain.User, error)
+	verifyEmailFn          func(ctx context.Context, token string) error
+	resendVerificationFn   func(ctx context.Context, email string) error
+	requestPasswordResetFn func(ctx context.Context, email string) error
+	confirmPasswordResetFn func(ctx context.Context, token, newPassword string) error
 }
 
 func (m *mockAuthService) Login(ctx context.Context, u, p string) (string, string, error) {
@@ -39,6 +43,18 @@ func (m *mockAuthService) Refresh(ctx context.Context, r string) (string, error)
 }
 func (m *mockAuthService) Register(ctx context.Context, u, e, p string) (*domain.User, error) {
 	return m.registerFn(ctx, u, e, p)
+}
+func (m *mockAuthService) VerifyEmail(ctx context.Context, token string) error {
+	return m.verifyEmailFn(ctx, token)
+}
+func (m *mockAuthService) ResendVerification(ctx context.Context, email string) error {
+	return m.resendVerificationFn(ctx, email)
+}
+func (m *mockAuthService) RequestPasswordReset(ctx context.Context, email string) error {
+	return m.requestPasswordResetFn(ctx, email)
+}
+func (m *mockAuthService) ConfirmPasswordReset(ctx context.Context, token, newPassword string) error {
+	return m.confirmPasswordResetFn(ctx, token, newPassword)
 }
 
 type mockRecipeService struct {

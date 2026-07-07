@@ -39,6 +39,14 @@ func Connect(dsn string, logger *slog.Logger) (*gorm.DB, error) {
 // Migrate は全エンティティの AutoMigrate を実行する。
 // FK 解決のため、参照される側を先に並べる。
 func Migrate(db *gorm.DB) error {
+	// email_verified 列の「新規追加」を AutoMigrate 前に検知する。列が無い既存 DB では、
+	// AutoMigrate が default false で全ユーザーに列を足すため、追加直後に既存ユーザーを
+	// 確認済み(true)へ backfill する(後方互換)。新規 DB は users 自体が無く対象外。
+	backfillVerified, err := needsEmailVerifiedBackfill(db)
+	if err != nil {
+		return err
+	}
+
 	if err := db.AutoMigrate(
 		&domain.User{},
 		&domain.Recipe{},
@@ -54,6 +62,14 @@ func Migrate(db *gorm.DB) error {
 		&domain.ShareGroupMember{},
 	); err != nil {
 		return err
+	}
+	if backfillVerified {
+		// 列追加時の一度きり。既存ユーザー(この時点で全員 false)を確認済みにする。
+		if err := db.Model(&domain.User{}).
+			Where("email_verified = ?", false).
+			Update("email_verified", true).Error; err != nil {
+			return err
+		}
 	}
 	if err := migrateArchiveToPerUser(db); err != nil {
 		return err
@@ -92,6 +108,16 @@ func MissingColumns(db *gorm.DB) []string {
 		}
 	}
 	return missing
+}
+
+// needsEmailVerifiedBackfill は users テーブルが既にあり、まだ email_verified 列が無いかを返す。
+// true のときだけ列追加後の一度きりの backfill(既存ユーザーを確認済み扱い)を行う。
+func needsEmailVerifiedBackfill(db *gorm.DB) (bool, error) {
+	exists, err := tableExists(db, "users")
+	if err != nil || !exists {
+		return false, err
+	}
+	return !db.Migrator().HasColumn(&domain.User{}, "email_verified"), nil
 }
 
 // tableExists は current_schema 上に name テーブルが存在するかを返す。

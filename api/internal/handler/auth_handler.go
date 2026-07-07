@@ -61,6 +61,10 @@ func (h *AuthHandler) Token(c echo.Context) error {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			return echo.NewHTTPError(http.StatusUnauthorized, "no active account found with the given credentials")
 		}
+		// 未確認は 403 で返し、フロントが再送導線を出せるよう資格情報不正(401)と区別する。
+		if errors.Is(err, service.ErrEmailNotVerified) {
+			return echo.NewHTTPError(http.StatusForbidden, "email not verified")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
 
@@ -106,4 +110,76 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
 	return c.JSON(http.StatusCreated, response.ToUserInfo(user, h.avatars))
+}
+
+// VerifyEmail は POST /api/auth/verify/。確認トークンを受け取り email_verified を立てる。
+func (h *AuthHandler) VerifyEmail(c echo.Context) error {
+	var req request.VerifyEmailRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := h.svc.VerifyEmail(c.Request().Context(), req.Token); err != nil {
+		if errors.Is(err, service.ErrInvalidToken) {
+			return echo.NewHTTPError(http.StatusBadRequest, "token is invalid or expired")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+// ResendVerification は POST /api/auth/verify/resend/。確認メールを再送する。
+// メール列挙を防ぐため、ユーザー不在・確認済みでも 204 を返す。
+func (h *AuthHandler) ResendVerification(c echo.Context) error {
+	var req request.ResendVerificationRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := h.svc.ResendVerification(c.Request().Context(), req.Email); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+// RequestPasswordReset は POST /api/auth/password/reset/。リセットメールを送る。
+// メール列挙を防ぐため、ユーザー不在でも 204 を返す。
+func (h *AuthHandler) RequestPasswordReset(c echo.Context) error {
+	var req request.PasswordResetRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := h.svc.RequestPasswordReset(c.Request().Context(), req.Email); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+// ConfirmPasswordReset は POST /api/auth/password/reset/confirm/。トークンと新パスワードで更新する。
+func (h *AuthHandler) ConfirmPasswordReset(c echo.Context) error {
+	var req request.PasswordResetConfirmRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := h.svc.ConfirmPasswordReset(c.Request().Context(), req.Token, req.Password); err != nil {
+		if errors.Is(err, service.ErrInvalidToken) {
+			return echo.NewHTTPError(http.StatusBadRequest, "token is invalid or expired")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	}
+	return c.NoContent(http.StatusNoContent)
 }

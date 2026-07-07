@@ -33,6 +33,23 @@ export type RegisterRequest = {
     password: string;
 };
 
+export type VerifyEmailRequest = {
+    token: string;
+};
+
+export type ResendVerificationRequest = {
+    email: string;
+};
+
+export type PasswordResetRequest = {
+    email: string;
+};
+
+export type PasswordResetConfirmRequest = {
+    token: string;
+    password: string;
+};
+
 export type UserInfoResponse = {
     id: string;
     username: string;
@@ -335,6 +352,10 @@ export type LoginErrors = {
      * 未認証・トークン無効/期限切れ・クレデンシャル不正
      */
     401: Error;
+    /**
+     * メール未確認(確認が済むまでログインできない)
+     */
+    403: Error;
 };
 
 export type LoginError = LoginErrors[keyof LoginErrors];
@@ -417,6 +438,106 @@ export type RegisterResponses = {
 };
 
 export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+
+export type VerifyEmailData = {
+    body: VerifyEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/verify/';
+};
+
+export type VerifyEmailErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+};
+
+export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
+
+export type VerifyEmailResponses = {
+    /**
+     * 確認成功(本文なし)
+     */
+    204: void;
+};
+
+export type VerifyEmailResponse = VerifyEmailResponses[keyof VerifyEmailResponses];
+
+export type ResendVerificationData = {
+    body: ResendVerificationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/verify/resend/';
+};
+
+export type ResendVerificationErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+};
+
+export type ResendVerificationError = ResendVerificationErrors[keyof ResendVerificationErrors];
+
+export type ResendVerificationResponses = {
+    /**
+     * 受け付け成功(本文なし)
+     */
+    204: void;
+};
+
+export type ResendVerificationResponse = ResendVerificationResponses[keyof ResendVerificationResponses];
+
+export type RequestPasswordResetData = {
+    body: PasswordResetRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/reset/';
+};
+
+export type RequestPasswordResetErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+};
+
+export type RequestPasswordResetError = RequestPasswordResetErrors[keyof RequestPasswordResetErrors];
+
+export type RequestPasswordResetResponses = {
+    /**
+     * 受け付け成功(本文なし)
+     */
+    204: void;
+};
+
+export type RequestPasswordResetResponse = RequestPasswordResetResponses[keyof RequestPasswordResetResponses];
+
+export type ConfirmPasswordResetData = {
+    body: PasswordResetConfirmRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password/reset/confirm/';
+};
+
+export type ConfirmPasswordResetErrors = {
+    /**
+     * リクエスト不正・バリデーション失敗
+     */
+    400: Error;
+};
+
+export type ConfirmPasswordResetError = ConfirmPasswordResetErrors[keyof ConfirmPasswordResetErrors];
+
+export type ConfirmPasswordResetResponses = {
+    /**
+     * 更新成功(本文なし)
+     */
+    204: void;
+};
+
+export type ConfirmPasswordResetResponse = ConfirmPasswordResetResponses[keyof ConfirmPasswordResetResponses];
 
 export type DeleteAccountData = {
     body?: never;

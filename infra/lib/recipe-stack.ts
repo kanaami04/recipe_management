@@ -1,6 +1,7 @@
 import { CfnOutput, Duration, RemovalPolicy, Stack, type StackProps } from 'aws-cdk-lib'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins'
+import * as iam from 'aws-cdk-lib/aws-iam'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as logs from 'aws-cdk-lib/aws-logs'
 import * as s3 from 'aws-cdk-lib/aws-s3'
@@ -13,6 +14,12 @@ import type { Construct } from 'constructs'
 export class RecipeStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
+
+    // アプリの公開オリジン(CloudFront)。初回デプロイ後に -c corsOrigin=... で反映する。
+    // CORS と、確認/リセットメールのリンク先ページ URL の組み立てに使う。
+    const appOrigin = this.node.tryGetContext('corsOrigin') ?? 'https://placeholder.invalid'
+    // 確認/リセットメールの送信元(SES で検証済みのアドレス)。
+    const sesFromAddress = requireEnv('SES_FROM_ADDRESS')
 
     // ---- Lambda (Go + Lambda Web Adapter) --------------------------------
     // Go バイナリは `bootstrap` の名前で infra/dist/api/ に事前ビルドする
@@ -45,7 +52,13 @@ export class RecipeStack extends Stack {
         ORIGIN_VERIFY_SECRET: requireEnv('ORIGIN_VERIFY_SECRET'),
         // 本番は同一オリジンのため CORS は実質発火しない。初回デプロイ後に
         // 判明する CloudFront ドメインを -c corsOrigin=... で一度だけ反映する。
-        CORS_ORIGIN: this.node.tryGetContext('corsOrigin') ?? 'https://placeholder.invalid',
+        CORS_ORIGIN: appOrigin,
+        // メール送信(SES)と、メール内リンクの遷移先(フロントの公開ページ)。
+        // リンクは同一オリジンのフロントを指すため appOrigin から組み立てる。
+        SES_FROM_ADDRESS: sesFromAddress,
+        SES_REGION: this.region,
+        EMAIL_VERIFY_URL: `${appOrigin}/verify-email`,
+        PASSWORD_RESET_URL: `${appOrigin}/reset-password/confirm`,
       },
       logGroup: new logs.LogGroup(this, 'ApiLogs', {
         retention: logs.RetentionDays.ONE_MONTH,
@@ -87,6 +100,18 @@ export class RecipeStack extends Stack {
     // オブジェクト削除(DeleteObject)を行う。閲覧は CloudFront が OAC で読むので付与しない。
     avatars.grantPut(api)
     avatars.grantDelete(api)
+
+    // ---- SES (確認/リセットメール送信) -----------------------------------
+    // SES には L2 の grant ヘルパーが無いためポリシーを直接付ける。送信元アドレスの
+    // identity に限定して最小権限にする(サンドボックス解除は AWS 側で別途申請が必要)。
+    api.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ses:SendEmail'],
+        resources: [
+          `arn:aws:ses:${this.region}:${this.account}:identity/${sesFromAddress}`,
+        ],
+      }),
+    )
 
     // ---- CloudFront ------------------------------------------------------
     const spaRewrite = new cloudfront.Function(this, 'SpaRewrite', {

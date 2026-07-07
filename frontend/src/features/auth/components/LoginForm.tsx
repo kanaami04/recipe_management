@@ -1,11 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
+import { isAxiosError } from 'axios'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { loginFormSchema, type LoginFormValues } from '@/features/auth/schema/loginFormSchema'
+import { resendVerificationMutation } from '@/shared/api/generated/@tanstack/react-query.gen'
 import { login } from '@/shared/auth/authClient'
 import { MessageAlertDialog } from '@/shared/components/MessageAlertDialog'
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
 import {
   Card,
@@ -22,6 +27,8 @@ import { Label } from '@/shared/ui/label'
 export function LoginForm() {
   const navigate = useNavigate()
   const [isErrorOpen, setIsErrorOpen] = useState(false)
+  // メール未確認(403)で弾かれたときの対象メール。再送導線の表示に使う。
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
 
   // フォーム状態は RHF + zod で管理する。
   const {
@@ -34,12 +41,24 @@ export function LoginForm() {
     mode: 'onBlur',
   })
 
+  const resend = useMutation({
+    ...resendVerificationMutation(),
+    onSuccess: () => toast.success('確認メールを再送しました。メールをご確認ください'),
+    onError: () => toast.error('確認メールの再送に失敗しました'),
+  })
+
   const onSubmit = handleSubmit(async (values) => {
+    setUnverifiedEmail(null)
     try {
       // access はメモリ保持、refresh は httpOnly Cookie で発行される。
       await login(values.email, values.password)
       navigate('/top')
     } catch (error) {
+      // 403 はメール未確認。資格情報不正(401)と区別して再送導線を出す。
+      if (isAxiosError(error) && error.response?.status === 403) {
+        setUnverifiedEmail(values.email)
+        return
+      }
       console.error(error)
       setIsErrorOpen(true)
     }
@@ -60,6 +79,23 @@ export function LoginForm() {
         <form onSubmit={onSubmit}>
           <CardContent>
             <div className="flex flex-col gap-6">
+              {unverifiedEmail && (
+                <Alert>
+                  <AlertTitle>メールアドレスが未確認です</AlertTitle>
+                  <AlertDescription className="flex flex-col items-start gap-2">
+                    <span>登録時に送信した確認メールのリンクを開いてください。</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={resend.isPending}
+                      onClick={() => resend.mutate({ body: { email: unverifiedEmail } })}
+                    >
+                      確認メールを再送
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="email">メールアドレス</Label>
                 <Controller
@@ -80,12 +116,12 @@ export function LoginForm() {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">パスワード</Label>
-                  <a
-                    href="#"
+                  <Link
+                    to="/reset-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
                     パスワードをお忘れですか？
-                  </a>
+                  </Link>
                 </div>
                 <Controller
                   control={control}

@@ -49,6 +49,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ORIGIN_VERIFY_SECRET: ${{ secrets.ORIGIN_VERIFY_SECRET }}
+          SES_FROM_ADDRESS: ${{ secrets.SES_FROM_ADDRESS }}
         run: |
           set -euo pipefail
           # migrate(DDL)は session pooler。api/.env.migrate から読む。
@@ -58,6 +59,7 @@ jobs:
             printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
             printf 'ORIGIN_VERIFY_SECRET=%s\n' "$ORIGIN_VERIFY_SECRET"
+            printf 'SES_FROM_ADDRESS=%s\n' "$SES_FROM_ADDRESS"
           } > infra/.env
 
       # migrate → build-lambda / build-web → cdk deploy。

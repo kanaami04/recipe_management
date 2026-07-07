@@ -7,6 +7,7 @@ import (
 
 	"recipe-backend/internal/domain"
 	"recipe-backend/internal/pkg/id"
+	jwtpkg "recipe-backend/internal/pkg/jwt"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,7 +17,8 @@ type UserService interface {
 	// UpdateProfile は username を更新する。他ユーザーと重複したら ErrUserAlreadyExists。
 	// メールは本人確認が要るため ChangeEmail で別途扱う。
 	UpdateProfile(ctx context.Context, userID, username string) (*domain.User, error)
-	// ChangeEmail は現在のパスワードを検証して email を変える。
+	// ChangeEmail は現在のパスワードを検証して email を変える。変更後は email_verified を
+	// false に戻し、新アドレスへ確認メールを送る(確認するまで次回ログインで未確認として弾かれる)。
 	// パスワードが違えば ErrIncorrectPassword、他ユーザーと重複したら ErrUserAlreadyExists。
 	ChangeEmail(ctx context.Context, userID, email, password string) (*domain.User, error)
 	// ChangePassword は現在のパスワードを検証して新しいものに変える。
@@ -37,10 +39,26 @@ type UserService interface {
 type userService struct {
 	users   domain.UserRepository
 	avatars domain.AvatarStorage
+	jwt     *jwtpkg.Manager
+	mailer  domain.Mailer
+	// emailVerifyURL はメール変更時に送る確認メールのリンクのベース URL。
+	emailVerifyURL string
 }
 
-func NewUserService(users domain.UserRepository, avatars domain.AvatarStorage) UserService {
-	return &userService{users: users, avatars: avatars}
+func NewUserService(
+	users domain.UserRepository,
+	avatars domain.AvatarStorage,
+	jwt *jwtpkg.Manager,
+	mailer domain.Mailer,
+	emailVerifyURL string,
+) UserService {
+	return &userService{
+		users:          users,
+		avatars:        avatars,
+		jwt:            jwt,
+		mailer:         mailer,
+		emailVerifyURL: emailVerifyURL,
+	}
 }
 
 func (s *userService) GetByID(ctx context.Context, id string) (*domain.User, error) {
@@ -73,14 +91,23 @@ func (s *userService) ChangeEmail(ctx context.Context, userID, email, password s
 	if err != nil {
 		return nil, err
 	}
-	if email != user.Email {
-		if err := s.ensureEmailFree(ctx, email, userID); err != nil {
-			return nil, err
-		}
+	// 同じメールへの「変更」なら確認済み状態を崩さない(無駄な再確認を強いない)。
+	if email == user.Email {
+		return user, nil
+	}
+	if err := s.ensureEmailFree(ctx, email, userID); err != nil {
+		return nil, err
 	}
 	user.Email = email
+	// 新アドレス保存と確認済みリセットは 1 回の Update で原子的に行う(途中失敗で
+	// 「新アドレス + 確認済み」の抜け穴が残らないようにする)。
+	user.EmailVerified = false
 	if err := s.users.Update(ctx, user); err != nil {
 		return nil, err
+	}
+	// 新アドレスへ確認メールを送る。送信失敗でも変更自体は成立させ(再送導線がある)、ログに残す。
+	if err := sendEmailVerification(ctx, s.jwt, s.mailer, s.emailVerifyURL, user); err != nil {
+		slog.Warn("failed to send verification email on email change", "user_id", userID, "error", err)
 	}
 	return user, nil
 }

@@ -17,10 +17,11 @@ type UserOption func(*domain.User)
 // デフォルトは「有効な一般ユーザー」。必要な属性だけオプションで上書きする。
 func NewUser(opts ...UserOption) *domain.User {
 	u := &domain.User{
-		Username:     "testuser",
-		Email:        "testuser@example.com",
-		PasswordHash: "x",
-		IsActive:     true,
+		Username:      "testuser",
+		Email:         "testuser@example.com",
+		PasswordHash:  "x",
+		IsActive:      true,
+		EmailVerified: true,
 	}
 	for _, opt := range opts {
 		opt(u)
@@ -46,6 +47,11 @@ func WithEmail(email string) UserOption {
 // WithInactive は無効ユーザー（IsActive=false）にする。
 func WithInactive() UserOption {
 	return func(u *domain.User) { u.IsActive = false }
+}
+
+// WithEmailUnverified はメール未確認ユーザー（EmailVerified=false）にする。
+func WithEmailUnverified() UserOption {
+	return func(u *domain.User) { u.EmailVerified = false }
 }
 
 // WithPlainPassword は平文パスワードを bcrypt でハッシュ化してセットする。

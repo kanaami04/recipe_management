@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddShoppingListItemData, AddShoppingListItemErrors, AddShoppingListItemResponses, AddShoppingListItemsData, AddShoppingListItemsErrors, AddShoppingListItemsResponses, ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsErrors, ClearCheckedShoppingListItemsResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateShareGroupData, CreateShareGroupErrors, CreateShareGroupResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteShoppingListItemData, DeleteShoppingListItemErrors, DeleteShoppingListItemResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetShareGroupData, GetShareGroupErrors, GetShareGroupResponses, GetShoppingListData, GetShoppingListErrors, GetShoppingListResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, JoinShareGroupData, JoinShareGroupErrors, JoinShareGroupResponses, LeaveShareGroupData, LeaveShareGroupErrors, LeaveShareGroupResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegenerateInviteCodeData, RegenerateInviteCodeErrors, RegenerateInviteCodeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveShareGroupMemberData, RemoveShareGroupMemberErrors, RemoveShareGroupMemberResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, ReorderShoppingListItemsData, ReorderShoppingListItemsErrors, ReorderShoppingListItemsResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateShoppingListItemData, UpdateShoppingListItemErrors, UpdateShoppingListItemResponses, UpdateShoppingListSharingData, UpdateShoppingListSharingErrors, UpdateShoppingListSharingResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses } from './types.gen';
+import type { AddShoppingListItemData, AddShoppingListItemErrors, AddShoppingListItemResponses, AddShoppingListItemsData, AddShoppingListItemsErrors, AddShoppingListItemsResponses, ArchiveRecipeData, ArchiveRecipeErrors, ArchiveRecipeResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsErrors, ClearCheckedShoppingListItemsResponses, ConfirmAvatarData, ConfirmAvatarErrors, ConfirmAvatarResponses, ConfirmPasswordResetData, ConfirmPasswordResetErrors, ConfirmPasswordResetResponses, CreateAvatarUploadUrlData, CreateAvatarUploadUrlErrors, CreateAvatarUploadUrlResponses, CreateLabelData, CreateLabelErrors, CreateLabelResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateShareGroupData, CreateShareGroupErrors, CreateShareGroupResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteLabelData, DeleteLabelErrors, DeleteLabelResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteShoppingListItemData, DeleteShoppingListItemErrors, DeleteShoppingListItemResponses, FetchOgpData, FetchOgpErrors, FetchOgpResponses, GetShareGroupData, GetShareGroupErrors, GetShareGroupResponses, GetShoppingListData, GetShoppingListErrors, GetShoppingListResponses, GetUserInfoData, GetUserInfoErrors, GetUserInfoResponses, JoinShareGroupData, JoinShareGroupErrors, JoinShareGroupResponses, LeaveShareGroupData, LeaveShareGroupErrors, LeaveShareGroupResponses, ListLabelsData, ListLabelsErrors, ListLabelsResponses, ListRecipesData, ListRecipesErrors, ListRecipesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegenerateInviteCodeData, RegenerateInviteCodeErrors, RegenerateInviteCodeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveShareGroupMemberData, RemoveShareGroupMemberErrors, RemoveShareGroupMemberResponses, ReorderRecipesData, ReorderRecipesErrors, ReorderRecipesResponses, ReorderShoppingListItemsData, ReorderShoppingListItemsErrors, ReorderShoppingListItemsResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResendVerificationData, ResendVerificationErrors, ResendVerificationResponses, UpdateLabelData, UpdateLabelErrors, UpdateLabelResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateShoppingListItemData, UpdateShoppingListItemErrors, UpdateShoppingListItemResponses, UpdateShoppingListSharingData, UpdateShoppingListSharingErrors, UpdateShoppingListSharingResponses, UpdateUserInfoData, UpdateUserInfoErrors, UpdateUserInfoResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -61,6 +61,66 @@ export const logout = <ThrowOnError extends boolean = false>(options?: Options<L
 export const register = <ThrowOnError extends boolean = false>(options: Options<RegisterData, ThrowOnError>): RequestResult<RegisterResponses, RegisterErrors, ThrowOnError> => (options.client ?? client).post<RegisterResponses, RegisterErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/auth/register/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * メールアドレスの確認
+ *
+ * 確認トークンを検証し、有効ならそのユーザーを確認済みにする。
+ */
+export const verifyEmail = <ThrowOnError extends boolean = false>(options: Options<VerifyEmailData, ThrowOnError>): RequestResult<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError> => (options.client ?? client).post<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError>({
+    url: '/api/auth/verify/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 確認メールの再送
+ *
+ * 指定メールのユーザーが未確認なら確認メールを再送する。
+ * メール列挙を防ぐため、ユーザー不在・確認済みでも 204 を返す。
+ *
+ */
+export const resendVerification = <ThrowOnError extends boolean = false>(options: Options<ResendVerificationData, ThrowOnError>): RequestResult<ResendVerificationResponses, ResendVerificationErrors, ThrowOnError> => (options.client ?? client).post<ResendVerificationResponses, ResendVerificationErrors, ThrowOnError>({
+    url: '/api/auth/verify/resend/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * パスワードリセットの申請
+ *
+ * 指定メールのユーザーがいればリセットリンクを送る。
+ * メール列挙を防ぐため、ユーザー不在でも 204 を返す。
+ *
+ */
+export const requestPasswordReset = <ThrowOnError extends boolean = false>(options: Options<RequestPasswordResetData, ThrowOnError>): RequestResult<RequestPasswordResetResponses, RequestPasswordResetErrors, ThrowOnError> => (options.client ?? client).post<RequestPasswordResetResponses, RequestPasswordResetErrors, ThrowOnError>({
+    url: '/api/auth/password/reset/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * パスワードリセットの確定
+ *
+ * リセットトークンと新パスワードを受け取り、パスワードを更新する。
+ */
+export const confirmPasswordReset = <ThrowOnError extends boolean = false>(options: Options<ConfirmPasswordResetData, ThrowOnError>): RequestResult<ConfirmPasswordResetResponses, ConfirmPasswordResetErrors, ThrowOnError> => (options.client ?? client).post<ConfirmPasswordResetResponses, ConfirmPasswordResetErrors, ThrowOnError>({
+    url: '/api/auth/password/reset/confirm/',
     ...options,
     headers: {
         'Content-Type': 'application/json',

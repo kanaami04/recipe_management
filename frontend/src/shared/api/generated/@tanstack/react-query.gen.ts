@@ -4,8 +4,8 @@ import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanst
 import type { AxiosError } from 'axios';
 
 import { client } from '../client.gen';
-import { addShoppingListItem, addShoppingListItems, archiveRecipe, changeEmail, changePassword, clearCheckedShoppingListItems, confirmAvatar, createAvatarUploadUrl, createLabel, createRecipe, createShareGroup, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, deleteShoppingListItem, fetchOgp, getShareGroup, getShoppingList, getUserInfo, joinShareGroup, leaveShareGroup, listLabels, listRecipes, login, logout, type Options, refreshToken, regenerateInviteCode, register, removeShareGroupMember, reorderRecipes, reorderShoppingListItems, updateLabel, updateRecipe, updateShoppingListItem, updateShoppingListSharing, updateUserInfo } from '../sdk.gen';
-import type { AddShoppingListItemData, AddShoppingListItemError, AddShoppingListItemResponse, AddShoppingListItemsData, AddShoppingListItemsError, AddShoppingListItemsResponse, ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsError, ClearCheckedShoppingListItemsResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, CreateShareGroupData, CreateShareGroupError, CreateShareGroupResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, DeleteShoppingListItemData, DeleteShoppingListItemError, DeleteShoppingListItemResponse, FetchOgpData, FetchOgpError, FetchOgpResponse, GetShareGroupData, GetShareGroupError, GetShareGroupResponse, GetShoppingListData, GetShoppingListError, GetShoppingListResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, JoinShareGroupData, JoinShareGroupError, JoinShareGroupResponse, LeaveShareGroupData, LeaveShareGroupError, LeaveShareGroupResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegenerateInviteCodeData, RegenerateInviteCodeError, RegenerateInviteCodeResponse, RegisterData, RegisterError, RegisterResponse, RemoveShareGroupMemberData, RemoveShareGroupMemberError, RemoveShareGroupMemberResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, ReorderShoppingListItemsData, ReorderShoppingListItemsError, ReorderShoppingListItemsResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateShoppingListItemData, UpdateShoppingListItemError, UpdateShoppingListItemResponse, UpdateShoppingListSharingData, UpdateShoppingListSharingError, UpdateShoppingListSharingResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse } from '../types.gen';
+import { addShoppingListItem, addShoppingListItems, archiveRecipe, changeEmail, changePassword, clearCheckedShoppingListItems, confirmAvatar, confirmPasswordReset, createAvatarUploadUrl, createLabel, createRecipe, createShareGroup, deleteAccount, deleteAvatar, deleteLabel, deleteRecipe, deleteShoppingListItem, fetchOgp, getShareGroup, getShoppingList, getUserInfo, joinShareGroup, leaveShareGroup, listLabels, listRecipes, login, logout, type Options, refreshToken, regenerateInviteCode, register, removeShareGroupMember, reorderRecipes, reorderShoppingListItems, requestPasswordReset, resendVerification, updateLabel, updateRecipe, updateShoppingListItem, updateShoppingListSharing, updateUserInfo, verifyEmail } from '../sdk.gen';
+import type { AddShoppingListItemData, AddShoppingListItemError, AddShoppingListItemResponse, AddShoppingListItemsData, AddShoppingListItemsError, AddShoppingListItemsResponse, ArchiveRecipeData, ArchiveRecipeError, ArchiveRecipeResponse, ChangeEmailData, ChangeEmailError, ChangeEmailResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, ClearCheckedShoppingListItemsData, ClearCheckedShoppingListItemsError, ClearCheckedShoppingListItemsResponse, ConfirmAvatarData, ConfirmAvatarError, ConfirmAvatarResponse, ConfirmPasswordResetData, ConfirmPasswordResetError, ConfirmPasswordResetResponse, CreateAvatarUploadUrlData, CreateAvatarUploadUrlError, CreateAvatarUploadUrlResponse, CreateLabelData, CreateLabelError, CreateLabelResponse, CreateRecipeData, CreateRecipeError, CreateRecipeResponse, CreateShareGroupData, CreateShareGroupError, CreateShareGroupResponse, DeleteAccountData, DeleteAccountError, DeleteAccountResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteLabelData, DeleteLabelError, DeleteLabelResponse, DeleteRecipeData, DeleteRecipeError, DeleteRecipeResponse, DeleteShoppingListItemData, DeleteShoppingListItemError, DeleteShoppingListItemResponse, FetchOgpData, FetchOgpError, FetchOgpResponse, GetShareGroupData, GetShareGroupError, GetShareGroupResponse, GetShoppingListData, GetShoppingListError, GetShoppingListResponse, GetUserInfoData, GetUserInfoError, GetUserInfoResponse, JoinShareGroupData, JoinShareGroupError, JoinShareGroupResponse, LeaveShareGroupData, LeaveShareGroupError, LeaveShareGroupResponse, ListLabelsData, ListLabelsError, ListLabelsResponse, ListRecipesData, ListRecipesError, ListRecipesResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutResponse, RefreshTokenData, RefreshTokenError, RefreshTokenResponse, RegenerateInviteCodeData, RegenerateInviteCodeError, RegenerateInviteCodeResponse, RegisterData, RegisterError, RegisterResponse, RemoveShareGroupMemberData, RemoveShareGroupMemberError, RemoveShareGroupMemberResponse, ReorderRecipesData, ReorderRecipesError, ReorderRecipesResponse, ReorderShoppingListItemsData, ReorderShoppingListItemsError, ReorderShoppingListItemsResponse, RequestPasswordResetData, RequestPasswordResetError, RequestPasswordResetResponse, ResendVerificationData, ResendVerificationError, ResendVerificationResponse, UpdateLabelData, UpdateLabelError, UpdateLabelResponse, UpdateRecipeData, UpdateRecipeError, UpdateRecipeResponse, UpdateShoppingListItemData, UpdateShoppingListItemError, UpdateShoppingListItemResponse, UpdateShoppingListSharingData, UpdateShoppingListSharingError, UpdateShoppingListSharingResponse, UpdateUserInfoData, UpdateUserInfoError, UpdateUserInfoResponse, VerifyEmailData, VerifyEmailError, VerifyEmailResponse } from '../types.gen';
 
 /**
  * ログイン(access を body、refresh を httpOnly Cookie で発行)
@@ -75,6 +75,86 @@ export const registerMutation = (options?: Partial<Options<RegisterData>>): UseM
     const mutationOptions: UseMutationOptions<RegisterResponse, AxiosError<RegisterError>, Options<RegisterData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await register({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * メールアドレスの確認
+ *
+ * 確認トークンを検証し、有効ならそのユーザーを確認済みにする。
+ */
+export const verifyEmailMutation = (options?: Partial<Options<VerifyEmailData>>): UseMutationOptions<VerifyEmailResponse, AxiosError<VerifyEmailError>, Options<VerifyEmailData>> => {
+    const mutationOptions: UseMutationOptions<VerifyEmailResponse, AxiosError<VerifyEmailError>, Options<VerifyEmailData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await verifyEmail({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * 確認メールの再送
+ *
+ * 指定メールのユーザーが未確認なら確認メールを再送する。
+ * メール列挙を防ぐため、ユーザー不在・確認済みでも 204 を返す。
+ *
+ */
+export const resendVerificationMutation = (options?: Partial<Options<ResendVerificationData>>): UseMutationOptions<ResendVerificationResponse, AxiosError<ResendVerificationError>, Options<ResendVerificationData>> => {
+    const mutationOptions: UseMutationOptions<ResendVerificationResponse, AxiosError<ResendVerificationError>, Options<ResendVerificationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resendVerification({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * パスワードリセットの申請
+ *
+ * 指定メールのユーザーがいればリセットリンクを送る。
+ * メール列挙を防ぐため、ユーザー不在でも 204 を返す。
+ *
+ */
+export const requestPasswordResetMutation = (options?: Partial<Options<RequestPasswordResetData>>): UseMutationOptions<RequestPasswordResetResponse, AxiosError<RequestPasswordResetError>, Options<RequestPasswordResetData>> => {
+    const mutationOptions: UseMutationOptions<RequestPasswordResetResponse, AxiosError<RequestPasswordResetError>, Options<RequestPasswordResetData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await requestPasswordReset({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * パスワードリセットの確定
+ *
+ * リセットトークンと新パスワードを受け取り、パスワードを更新する。
+ */
+export const confirmPasswordResetMutation = (options?: Partial<Options<ConfirmPasswordResetData>>): UseMutationOptions<ConfirmPasswordResetResponse, AxiosError<ConfirmPasswordResetError>, Options<ConfirmPasswordResetData>> => {
+    const mutationOptions: UseMutationOptions<ConfirmPasswordResetResponse, AxiosError<ConfirmPasswordResetError>, Options<ConfirmPasswordResetData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await confirmPasswordReset({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

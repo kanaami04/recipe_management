@@ -22,6 +22,11 @@ func Register(e *echo.Echo, h *handler.Handlers, jwtManager *jwtpkg.Manager) {
 			api.POST("/token/refresh/", h.Auth.Refresh)
 			api.POST("/auth/register/", h.Auth.Register)
 			api.POST("/auth/logout/", h.Auth.Logout)
+			// メール確認・パスワードリセット(いずれも未ログインで叩く)。
+			api.POST("/auth/verify/", h.Auth.VerifyEmail)
+			api.POST("/auth/verify/resend/", h.Auth.ResendVerification)
+			api.POST("/auth/password/reset/", h.Auth.RequestPasswordReset)
+			api.POST("/auth/password/reset/confirm/", h.Auth.ConfirmPasswordReset)
 		}
 	}
 

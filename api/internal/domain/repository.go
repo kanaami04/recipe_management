@@ -13,12 +13,16 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id string) (*User, error)
 	Create(ctx context.Context, user *User) error
-	// Update は username / email を更新する。
+	// Update は username / email / email_verified を更新する。
+	// メール変更時の「新アドレス保存 + 確認済みリセット」を 1 回の書き込みで原子的に行うため
+	// email_verified も含める。
 	Update(ctx context.Context, user *User) error
 	// UpdatePassword は password_hash を更新する。
 	UpdatePassword(ctx context.Context, userID, passwordHash string) error
 	// UpdateAvatarKey は avatar_key を更新する。nil で未設定に戻す。
 	UpdateAvatarKey(ctx context.Context, userID string, key *string) error
+	// SetEmailVerified は email_verified を更新する。メール確認完了・メール変更時に使う。
+	SetEmailVerified(ctx context.Context, userID string, verified bool) error
 	// Delete はユーザーと、そのユーザーが所有するレシピを削除する。
 	// user 側の従属(labels / recipe_orders / recipe_archives / 共有)は FK CASCADE で消える。
 	Delete(ctx context.Context, userID string) error
@@ -33,6 +37,15 @@ type AvatarStorage interface {
 	Delete(ctx context.Context, key string) error
 	// PublicURL は key を(相対または絶対の)公開 URL に変換する。ネットワークアクセスは行わない。
 	PublicURL(key string) string
+}
+
+// Mailer はメール送信の抽象(本番は AWS SES)。GORM 経由の永続化ではなく外部送信のため、
+// AvatarStorage と同様にリポジトリとは別インターフェースにする。link は完成した遷移先 URL。
+type Mailer interface {
+	// SendEmailVerification は確認リンク付きのメール確認メールを toEmail 宛に送る。
+	SendEmailVerification(ctx context.Context, toEmail, link string) error
+	// SendPasswordReset はリセットリンク付きのパスワードリセットメールを toEmail 宛に送る。
+	SendPasswordReset(ctx context.Context, toEmail, link string) error
 }
 
 type LabelRepository interface {
