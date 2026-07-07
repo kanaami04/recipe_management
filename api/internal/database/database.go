@@ -64,6 +64,36 @@ func Migrate(db *gorm.DB) error {
 	return seedLabelsFromRecipes(db)
 }
 
+// schemaExpectation は「稼働中コードが最低限必要とするカラム」を表す。ここに載せた列が
+// 本番 DB に無いと、その列を含む INSERT/SELECT が実行時に 500 になる。
+type schemaExpectation struct {
+	model   any
+	table   string
+	columns []string
+}
+
+// expectedSchema は起動時に存在を確かめる列。スキーマ変更(列追加)をデプロイしたのに
+// migrate を流し忘れた事故を早期に気づくため、事故が起きた列を代表として載せる。
+// #88 で追加した shopping_list_items.quantity / unit が無いと品物追加が全て失敗した。
+var expectedSchema = []schemaExpectation{
+	{model: &domain.ShoppingListItem{}, table: "shopping_list_items", columns: []string{"quantity", "unit"}},
+}
+
+// MissingColumns は expectedSchema のうち DB に存在しない列を "table.column" 形式で返す。
+// 参照のみで DDL は一切行わない(存在チェックのみ)。スキーマがコードより古いかの早期検知に使う。
+func MissingColumns(db *gorm.DB) []string {
+	migrator := db.Migrator()
+	var missing []string
+	for _, e := range expectedSchema {
+		for _, col := range e.columns {
+			if !migrator.HasColumn(e.model, col) {
+				missing = append(missing, e.table+"."+col)
+			}
+		}
+	}
+	return missing
+}
+
 // tableExists は current_schema 上に name テーブルが存在するかを返す。
 func tableExists(db *gorm.DB, name string) (bool, error) {
 	var exists bool

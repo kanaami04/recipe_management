@@ -78,6 +78,11 @@ func run() error {
 		if err := database.Migrate(db); err != nil {
 			return fmt.Errorf("migrate: %w", err)
 		}
+	} else if missing := database.MissingColumns(db); len(missing) > 0 {
+		// スキーマ変更をデプロイしたのに migrate を流し忘れると、該当列を含む処理が
+		// 全て 500 になる。API 全体は落とさず、起動ログで早期に気づけるようにする。
+		// (復旧は `mise run migrate` を流すだけ。)
+		log.Error("database schema is behind code; run `mise run migrate`", "missing_columns", missing)
 	}
 
 	e := app.New(cfg, db, s3Client, log)
