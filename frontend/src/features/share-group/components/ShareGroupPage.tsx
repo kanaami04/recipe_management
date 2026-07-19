@@ -95,11 +95,17 @@ export function ShareGroupPage() {
   )
 }
 
+// 招待コード(8 文字、紛らわしい文字抜きの英数字。internal/pkg/invite と同じ文字種)の形に
+// 見えるかどうか。グループ名欄への入力ミス(招待コードを名前として作成してしまう)を防ぐための
+// ヒューリスティックにのみ使う。
+const INVITE_CODE_LIKE = /^[A-HJ-NP-Z2-9]{8}$/i
+
 // 未所属のときのオンボーディング。グループ作成 or 招待コードで参加。
 function ShareGroupOnboarding({ onJoined }: { onJoined: (g: ShareGroupResponse) => void }) {
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [shareShoppingList, setShareShoppingList] = useState(true)
+  const [confirmCreateWithCode, setConfirmCreateWithCode] = useState(false)
 
   const create = useMutation({
     ...createShareGroupMutation(),
@@ -109,6 +115,21 @@ function ShareGroupOnboarding({ onJoined }: { onJoined: (g: ShareGroupResponse) 
     },
     onError: () => toast.error('グループの作成に失敗しました'),
   })
+
+  const doCreate = () => {
+    if (create.isPending) return
+    setConfirmCreateWithCode(false)
+    create.mutate({ body: { name: name.trim() } })
+  }
+
+  const submitCreate = () => {
+    if (create.isPending) return
+    if (INVITE_CODE_LIKE.test(name.trim())) {
+      setConfirmCreateWithCode(true)
+      return
+    }
+    doCreate()
+  }
 
   const join = useMutation({
     ...joinShareGroupMutation(),
@@ -148,10 +169,7 @@ function ShareGroupOnboarding({ onJoined }: { onJoined: (g: ShareGroupResponse) 
             maxLength={50}
             onChange={(e) => setName(e.target.value)}
           />
-          <Button
-            onClick={() => create.mutate({ body: { name: name.trim() } })}
-            disabled={create.isPending}
-          >
+          <Button onClick={submitCreate} disabled={create.isPending}>
             作成
           </Button>
         </div>
@@ -186,6 +204,15 @@ function ShareGroupOnboarding({ onJoined }: { onJoined: (g: ShareGroupResponse) 
           </span>
         </label>
       </div>
+
+      <ConfirmDialog
+        title="招待コードのようです"
+        description={`「${name.trim()}」はグループ名ではなく招待コードに見えます。\n招待コードで既存のグループに参加したい場合は、上の欄には入力せず下の「招待コードで参加」欄をお使いください。\nこのまま新しいグループを作成しますか？`}
+        open={confirmCreateWithCode}
+        onOpenChange={setConfirmCreateWithCode}
+        onConfirm={doCreate}
+        confirmLabel="このまま作成する"
+      />
     </div>
   )
 }
