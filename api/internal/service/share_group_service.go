@@ -101,7 +101,9 @@ func (s *shareGroupService) Join(ctx context.Context, userID, code string, share
 	if existing != nil {
 		return nil, ErrAlreadyInGroup
 	}
-	group, err := s.groups.FindByInviteCode(ctx, strings.TrimSpace(code))
+	// 招待コードは常に大文字で発行される(internal/pkg/invite)。手入力での大小文字違いを
+	// 無効コード扱いにしないよう正規化してから照合する。
+	group, err := s.groups.FindByInviteCode(ctx, strings.ToUpper(strings.TrimSpace(code)))
 	if err != nil {
 		return nil, err
 	}

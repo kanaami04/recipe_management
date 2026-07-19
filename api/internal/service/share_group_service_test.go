@@ -74,6 +74,23 @@ func TestShareGroupJoin_Succeeds(t *testing.T) {
 	assert.Contains(t, ids, "u2")
 }
 
+// 招待コードを小文字で入力して参加した時も、メンバーに加わること。
+func TestShareGroupJoin_CodeIsCaseInsensitive(t *testing.T) {
+	// Arrange
+	gr := newMockShareGroupRepo()
+	g := gr.seed("g1", "owner")
+	g.InviteCode = "CODE1234"
+	g.InviteCodeExpiresAt = time.Now().Add(time.Hour)
+	svc := NewShareGroupService(gr, newMockShoppingListRepo(), newMockRecipeRepo())
+
+	// Act
+	group, err := svc.Join(context.Background(), "u2", "code1234", true)
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, "g1", group.ID)
+}
+
 // 統合を選んで参加した時、自分の個人リストが物理削除されること。
 func TestShareGroupJoin_SharesShoppingList_DeletesPersonalList(t *testing.T) {
 	// Arrange
