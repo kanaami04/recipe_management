@@ -45,6 +45,19 @@ type Config struct {
 	// (本番: CloudFront 同一オリジン)。値があれば "{AvatarPublicBaseURL}/{key}" になる
 	// (ローカル: pgsty/minio への絶対 URL)。
 	AvatarPublicBaseURL string
+
+	// --- メール送信(AWS SES)・確認/リセットの遷移先 ---
+	// SESFromAddress は確認/リセットメールの送信元(SES で検証済みのアドレス)。
+	// 空ならメールを実送信せず内容をログに出す(dev)。
+	SESFromAddress string
+	// SESRegion は SES を呼ぶリージョン。SES を有効化したリージョンに合わせる。
+	SESRegion string
+	// EmailVerifyURL は確認メール内リンクのベース URL(フロントの確認ページ)。
+	// 実際のリンクは "{EmailVerifyURL}?token=..." になる。
+	EmailVerifyURL string
+	// PasswordResetURL はリセットメール内リンクのベース URL(フロントの再設定ページ)。
+	// 実際のリンクは "{PasswordResetURL}?token=..." になる。
+	PasswordResetURL string
 }
 
 // Load は指定された env ファイル（存在すれば）と環境変数から設定を読み込む。
@@ -77,6 +90,13 @@ func Load(envFile string) *Config {
 		S3SecretAccessKey: lookupOr("S3_SECRET_ACCESS_KEY", "minioadmin"),
 		// 本番は "" を明示指定して相対パス "/avatars/{key}"(同一オリジンの CloudFront)にする。
 		AvatarPublicBaseURL: lookupOr("AVATAR_PUBLIC_BASE_URL", "http://localhost:9000/recipe-avatars"),
+
+		// SES 送信元は未設定なら空(dev はログ出力のみ)。リージョンは S3 と揃える。
+		// 確認/リセットの遷移先は dev のフロント(Vite)を既定にする。
+		SESFromAddress:   getEnv("SES_FROM_ADDRESS", ""),
+		SESRegion:        getEnv("SES_REGION", "ap-northeast-1"),
+		EmailVerifyURL:   getEnv("EMAIL_VERIFY_URL", "http://localhost:5273/verify-email"),
+		PasswordResetURL: getEnv("PASSWORD_RESET_URL", "http://localhost:5273/reset-password/confirm"),
 	}
 }
 

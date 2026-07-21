@@ -5,6 +5,10 @@ import { index, route, type RouteConfig } from '@react-router/dev/routes'
 export default [
   index('routes/login.tsx'),
   route('signup', 'routes/signup.tsx'),
+  // メール確認・パスワードリセットは未ログインで到達するため公開ルートに置く。
+  route('verify-email', 'routes/verify-email.tsx'),
+  route('reset-password', 'routes/reset-password.tsx'),
+  route('reset-password/confirm', 'routes/reset-password-confirm.tsx'),
   route('top', 'routes/protected.tsx', [
     index('routes/recipes.tsx'),
     route('shopping-list', 'routes/shopping-list.tsx'),

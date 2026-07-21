@@ -96,6 +96,7 @@ type mockUserRepo struct {
 	newPasswordHash   string
 	deletedUserID     string
 	avatarKeyUpdates  []*string // UpdateAvatarKey に渡された key を呼び出し順に記録
+	emailVerifiedSet  *bool     // SetEmailVerified に最後に渡された値(未呼び出しなら nil)
 }
 
 func (m *mockUserRepo) FindByUsername(_ context.Context, username string) (*domain.User, error) {
@@ -144,6 +145,30 @@ func (m *mockUserRepo) UpdateAvatarKey(_ context.Context, userID string, key *st
 		u.AvatarKey = key
 	}
 	return nil
+}
+func (m *mockUserRepo) SetEmailVerified(_ context.Context, userID string, verified bool) error {
+	m.emailVerifiedSet = &verified
+	if u, ok := m.byID[userID]; ok {
+		u.EmailVerified = verified
+	}
+	return nil
+}
+
+// --- Mailer のモック ---
+
+type mockMailer struct {
+	verifyTo, verifyLink string // SendEmailVerification に渡された宛先・リンク
+	resetTo, resetLink   string // SendPasswordReset に渡された宛先・リンク
+	err                  error
+}
+
+func (m *mockMailer) SendEmailVerification(_ context.Context, toEmail, link string) error {
+	m.verifyTo, m.verifyLink = toEmail, link
+	return m.err
+}
+func (m *mockMailer) SendPasswordReset(_ context.Context, toEmail, link string) error {
+	m.resetTo, m.resetLink = toEmail, link
+	return m.err
 }
 
 // --- LabelRepository のモック ---

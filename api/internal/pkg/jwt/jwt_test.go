@@ -22,6 +22,50 @@ func TestGenerateAndParseAccess(t *testing.T) {
 	assert.Equal(t, "user-42", uid)
 }
 
+// メール確認トークンを発行して検証した時、元のユーザーIDと email が復元されること。
+func TestGenerateAndParseEmailVerify(t *testing.T) {
+	// Arrange
+	m := NewManager("secret")
+
+	// Act
+	token, errGen := m.GenerateEmailVerify("user-7", "u7@example.com")
+	uid, email, errParse := m.ParseEmailVerify(token)
+
+	// Assert
+	require.NoError(t, errGen)
+	require.NoError(t, errParse)
+	assert.Equal(t, "user-7", uid)
+	assert.Equal(t, "u7@example.com", email)
+}
+
+// パスワードリセットトークンを発行して検証した時、元のユーザーIDが復元されること。
+func TestGenerateAndParsePasswordReset(t *testing.T) {
+	// Arrange
+	m := NewManager("secret")
+
+	// Act
+	token, errGen := m.GeneratePasswordReset("user-9")
+	uid, errParse := m.Parse(token, TypePasswordReset)
+
+	// Assert
+	require.NoError(t, errGen)
+	require.NoError(t, errParse)
+	assert.Equal(t, "user-9", uid)
+}
+
+// 確認トークンをリセットとして検証した時、token_type 不一致でエラーになること。
+func TestParse_EmailVerifyAsPasswordReset(t *testing.T) {
+	// Arrange
+	m := NewManager("secret")
+	verify, _ := m.GenerateEmailVerify("u1", "u1@example.com")
+
+	// Act
+	_, err := m.Parse(verify, TypePasswordReset)
+
+	// Assert
+	assert.Error(t, err)
+}
+
 // access トークンを refresh として検証した時、エラーになること。
 func TestParse_AccessTokenAsRefresh(t *testing.T) {
 	// Arrange

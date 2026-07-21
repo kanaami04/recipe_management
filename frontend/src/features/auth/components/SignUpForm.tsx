@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { registerMutation } from '@/shared/api/generated/@tanstack/react-query.gen'
-import { login } from '@/shared/auth/authClient'
 import { Button } from '@/shared/ui/button'
 import {
   Card,
@@ -34,19 +33,13 @@ export function SignUpForm() {
     mode: 'onBlur',
   })
 
-  // 登録は生成 mutation。成功したらそのままログインして /top へ。
+  // 登録は生成 mutation。確認メールを送るので、自動ログインはせずログイン画面へ誘導する
+  //(確認が済むまでログインできない)。
   const register = useMutation({
     ...registerMutation(),
-    onSuccess: async (_data, variables) => {
-      const { username, password } = variables.body!
-      try {
-        await login(username, password)
-        navigate('/top')
-      } catch {
-        // 登録は成功。自動ログインに失敗した場合はログイン画面へ誘導する。
-        toast.success('登録しました。ログインしてください')
-        navigate('/')
-      }
+    onSuccess: () => {
+      toast.success('確認メールを送信しました。メール内のリンクから確認を完了してください')
+      navigate('/')
     },
     onError: () =>
       toast.error('登録に失敗しました。ユーザー名またはメールが既に使われている可能性があります'),

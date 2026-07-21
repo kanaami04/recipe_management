@@ -18,6 +18,7 @@ import (
 	"recipe-backend/internal/config"
 	"recipe-backend/internal/database"
 	"recipe-backend/internal/logger"
+	"recipe-backend/internal/pkg/mail"
 	"recipe-backend/internal/storage"
 )
 
@@ -64,6 +65,12 @@ func run() error {
 		return fmt.Errorf("create s3 client: %w", err)
 	}
 
+	// メール送信基盤。SES_FROM_ADDRESS 未設定の dev ではログ出力のみのメーラーになる。
+	mailer, err := mail.New(context.Background(), cfg.SESRegion, cfg.SESFromAddress)
+	if err != nil {
+		return fmt.Errorf("create mailer: %w", err)
+	}
+
 	if *migrateOnly {
 		if err := database.Migrate(db); err != nil {
 			return fmt.Errorf("migrate: %w", err)
@@ -85,7 +92,7 @@ func run() error {
 		log.Error("database schema is behind code; run `mise run migrate`", "missing_columns", missing)
 	}
 
-	e := app.New(cfg, db, s3Client, log)
+	e := app.New(cfg, db, s3Client, mailer, log)
 
 	// SIGINT / SIGTERM を待ち受ける context。
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

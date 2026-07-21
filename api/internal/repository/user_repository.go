@@ -60,7 +60,11 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).
 		Model(&domain.User{ID: user.ID}).
-		Updates(map[string]any{"username": user.Username, "email": user.Email}).Error
+		Updates(map[string]any{
+			"username":       user.Username,
+			"email":          user.Email,
+			"email_verified": user.EmailVerified,
+		}).Error
 }
 
 func (r *userRepository) UpdatePassword(ctx context.Context, userID, passwordHash string) error {
@@ -73,6 +77,12 @@ func (r *userRepository) UpdateAvatarKey(ctx context.Context, userID string, key
 	return r.db.WithContext(ctx).
 		Model(&domain.User{ID: userID}).
 		Update("avatar_key", key).Error
+}
+
+func (r *userRepository) SetEmailVerified(ctx context.Context, userID string, verified bool) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.User{ID: userID}).
+		Update("email_verified", verified).Error
 }
 
 func (r *userRepository) Delete(ctx context.Context, userID string) error {

@@ -10,6 +10,10 @@ var (
 	ErrDuplicate          = errors.New("duplicate")
 	ErrIncorrectPassword  = errors.New("incorrect password")
 	ErrInvalidURL         = errors.New("invalid url")
+	// ErrInvalidToken は確認/リセットトークンが不正・期限切れのときに返す。
+	ErrInvalidToken = errors.New("invalid or expired token")
+	// ErrEmailNotVerified はメール未確認のままログインを試みたときに返す。
+	ErrEmailNotVerified = errors.New("email not verified")
 
 	// シェアグループ関連。
 	ErrAlreadyInGroup    = errors.New("already in a share group")

@@ -64,6 +64,18 @@ func serveLogout() *httptest.ResponseRecorder {
 	return rec
 }
 
+// servePost は path 用の 1 エンドポイントだけを張った Echo に body を POST する。
+// 新しい auth エンドポイント(verify/resend/reset)のテスト用。
+func servePost(path string, register func(*echo.Echo, *AuthHandler), h *AuthHandler, body string) *httptest.ResponseRecorder {
+	e := newTestEcho()
+	register(e, h)
+	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	return rec
+}
+
 // findCookie はレスポンスから指定名の Set-Cookie を探す。
 func findCookie(rec *httptest.ResponseRecorder, name string) *http.Cookie {
 	for _, c := range rec.Result().Cookies() {
@@ -267,4 +279,123 @@ func TestAuthHandler_Logout_ClearsRefreshCookie(t *testing.T) {
 	cookie := findCookie(rec, refreshCookieName)
 	assert.NotNil(t, cookie)
 	assert.Empty(t, cookie.Value)
+}
+
+// メール未確認でログインした時、資格情報不正(401)と区別して 403 が返ること。
+func TestAuthHandler_Token_EmailNotVerified(t *testing.T) {
+	// Arrange & Act
+	rec := serveToken(func(_ context.Context, _, _ string) (string, string, error) {
+		return "", "", service.ErrEmailNotVerified
+	}, validLoginBody)
+
+	// Assert
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+// 有効な確認トークンで検証した時、204 が返ること。
+func TestAuthHandler_VerifyEmail_Success(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{verifyEmailFn: func(context.Context, string) error { return nil }}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/verify/", func(e *echo.Echo, h *AuthHandler) { e.POST("/api/auth/verify/", h.VerifyEmail) }, h, `{"token":"tok"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// 確認トークンが無効な時、400 が返ること。
+func TestAuthHandler_VerifyEmail_InvalidToken(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{verifyEmailFn: func(context.Context, string) error { return service.ErrInvalidToken }}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/verify/", func(e *echo.Echo, h *AuthHandler) { e.POST("/api/auth/verify/", h.VerifyEmail) }, h, `{"token":"bad"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// token が欠けている時、サービスを呼ばず 400 が返ること。
+func TestAuthHandler_VerifyEmail_ValidationError(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{verifyEmailFn: func(context.Context, string) error {
+		t.Fatal("validation fail 時に service を呼んではいけない")
+		return nil
+	}}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/verify/", func(e *echo.Echo, h *AuthHandler) { e.POST("/api/auth/verify/", h.VerifyEmail) }, h, `{}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// 確認メールを再送した時、204 が返ること。
+func TestAuthHandler_ResendVerification_Success(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{resendVerificationFn: func(context.Context, string) error { return nil }}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/verify/resend/", func(e *echo.Echo, h *AuthHandler) { e.POST("/api/auth/verify/resend/", h.ResendVerification) }, h, `{"email":"alice@example.com"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// パスワードリセットを申請した時、204 が返ること。
+func TestAuthHandler_RequestPasswordReset_Success(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{requestPasswordResetFn: func(context.Context, string) error { return nil }}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/password/reset/", func(e *echo.Echo, h *AuthHandler) { e.POST("/api/auth/password/reset/", h.RequestPasswordReset) }, h, `{"email":"alice@example.com"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// 有効なトークンでパスワードを再設定した時、204 が返ること。
+func TestAuthHandler_ConfirmPasswordReset_Success(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{confirmPasswordResetFn: func(context.Context, string, string) error { return nil }}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/password/reset/confirm/", func(e *echo.Echo, h *AuthHandler) {
+		e.POST("/api/auth/password/reset/confirm/", h.ConfirmPasswordReset)
+	}, h, `{"token":"tok","password":"password123"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+// リセットトークンが無効な時、400 が返ること。
+func TestAuthHandler_ConfirmPasswordReset_InvalidToken(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{confirmPasswordResetFn: func(context.Context, string, string) error { return service.ErrInvalidToken }}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/password/reset/confirm/", func(e *echo.Echo, h *AuthHandler) {
+		e.POST("/api/auth/password/reset/confirm/", h.ConfirmPasswordReset)
+	}, h, `{"token":"bad","password":"password123"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+// パスワードが短い時、サービスを呼ばず 400 が返ること。
+func TestAuthHandler_ConfirmPasswordReset_ValidationError(t *testing.T) {
+	// Arrange
+	h := NewAuthHandler(&mockAuthService{confirmPasswordResetFn: func(context.Context, string, string) error {
+		t.Fatal("validation fail 時に service を呼んではいけない")
+		return nil
+	}}, false, mockAvatarStorage{})
+
+	// Act
+	rec := servePost("/api/auth/password/reset/confirm/", func(e *echo.Echo, h *AuthHandler) {
+		e.POST("/api/auth/password/reset/confirm/", h.ConfirmPasswordReset)
+	}, h, `{"token":"tok","password":"short"}`)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }

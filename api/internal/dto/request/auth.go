@@ -8,6 +8,10 @@ import "recipe-backend/internal/apigen"
 //
 // refresh は Cookie から読むため body の型は持たない。
 type (
-	TokenRequest    = apigen.TokenRequest
-	RegisterRequest = apigen.RegisterRequest
+	TokenRequest                = apigen.TokenRequest
+	RegisterRequest             = apigen.RegisterRequest
+	VerifyEmailRequest          = apigen.VerifyEmailRequest
+	ResendVerificationRequest   = apigen.ResendVerificationRequest
+	PasswordResetRequest        = apigen.PasswordResetRequest
+	PasswordResetConfirmRequest = apigen.PasswordResetConfirmRequest
 )

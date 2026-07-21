@@ -132,6 +132,17 @@ type OgpResponse struct {
 	Title string `json:"title"`
 }
 
+// PasswordResetConfirmRequest defines model for PasswordResetConfirmRequest.
+type PasswordResetConfirmRequest struct {
+	Password string `json:"password" validate:"required,min=8"`
+	Token    string `json:"token" validate:"required"`
+}
+
+// PasswordResetRequest defines model for PasswordResetRequest.
+type PasswordResetRequest struct {
+	Email string `json:"email" validate:"required,email,max=50"`
+}
+
 // RecipeRequest defines model for RecipeRequest.
 type RecipeRequest struct {
 	Cooking []CookingInput `json:"cooking,omitempty"`
@@ -197,6 +208,11 @@ type RegisterRequest struct {
 // ReorderRequest 表示したい順にレシピ ID を並べた配列(先頭 = 一番上)
 type ReorderRequest struct {
 	RecipeIds []string `json:"recipe_ids" validate:"required,dive,uuid"`
+}
+
+// ResendVerificationRequest defines model for ResendVerificationRequest.
+type ResendVerificationRequest struct {
+	Email string `json:"email" validate:"required,email,max=50"`
 }
 
 // SeasonInput defines model for SeasonInput.
@@ -317,6 +333,11 @@ type UserListItem struct {
 	Username  string  `json:"username"`
 }
 
+// VerifyEmailRequest defines model for VerifyEmailRequest.
+type VerifyEmailRequest struct {
+	Token string `json:"token" validate:"required"`
+}
+
 // BadRequest Echo の既定エラー形式
 type BadRequest = Error
 
@@ -341,8 +362,20 @@ type FetchOgpParams struct {
 	Url string `form:"url" json:"url"`
 }
 
+// RequestPasswordResetJSONRequestBody defines body for RequestPasswordReset for application/json ContentType.
+type RequestPasswordResetJSONRequestBody = PasswordResetRequest
+
+// ConfirmPasswordResetJSONRequestBody defines body for ConfirmPasswordReset for application/json ContentType.
+type ConfirmPasswordResetJSONRequestBody = PasswordResetConfirmRequest
+
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest
+
+// VerifyEmailJSONRequestBody defines body for VerifyEmail for application/json ContentType.
+type VerifyEmailJSONRequestBody = VerifyEmailRequest
+
+// ResendVerificationJSONRequestBody defines body for ResendVerification for application/json ContentType.
+type ResendVerificationJSONRequestBody = ResendVerificationRequest
 
 // CreateLabelJSONRequestBody defines body for CreateLabel for application/json ContentType.
 type CreateLabelJSONRequestBody = LabelInput

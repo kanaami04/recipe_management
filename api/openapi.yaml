@@ -57,6 +57,12 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: メール未確認(確認が済むまでログインできない)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/token/refresh/:
     post:
@@ -116,6 +122,86 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '409':
           $ref: '#/components/responses/Conflict'
+
+  /api/auth/verify/:
+    post:
+      tags: [auth]
+      summary: メールアドレスの確認
+      description: 確認トークンを検証し、有効ならそのユーザーを確認済みにする。
+      operationId: verifyEmail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+      responses:
+        '204':
+          description: 確認成功(本文なし)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/verify/resend/:
+    post:
+      tags: [auth]
+      summary: 確認メールの再送
+      description: |
+        指定メールのユーザーが未確認なら確認メールを再送する。
+        メール列挙を防ぐため、ユーザー不在・確認済みでも 204 を返す。
+      operationId: resendVerification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+      responses:
+        '204':
+          description: 受け付け成功(本文なし)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/password/reset/:
+    post:
+      tags: [auth]
+      summary: パスワードリセットの申請
+      description: |
+        指定メールのユーザーがいればリセットリンクを送る。
+        メール列挙を防ぐため、ユーザー不在でも 204 を返す。
+      operationId: requestPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '204':
+          description: 受け付け成功(本文なし)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/password/reset/confirm/:
+    post:
+      tags: [auth]
+      summary: パスワードリセットの確定
+      description: リセットトークンと新パスワードを受け取り、パスワードを更新する。
+      operationId: confirmPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+      responses:
+        '204':
+          description: 更新成功(本文なし)
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/user_info/:
     get:
@@ -977,6 +1063,53 @@ components:
           x-go-type: string
           x-oapi-codegen-extra-tags:
             validate: required,email,max=50
+        password:
+          type: string
+          minLength: 8
+          x-oapi-codegen-extra-tags:
+            validate: required,min=8
+
+    VerifyEmailRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
+
+    ResendVerificationRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 50
+          x-go-type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,email,max=50
+
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 50
+          x-go-type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,email,max=50
+
+    PasswordResetConfirmRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required
         password:
           type: string
           minLength: 8
